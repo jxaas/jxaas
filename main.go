@@ -97,7 +97,7 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 	if req.Method == "GET" {
 		method, found := self.ptrT.MethodByName("Get")
 		if !found {
-			// TOOD: 404
+			// TODO: 404
 			panic("Method not found")
 		}
 		args := make([]reflect.Value, 1)
@@ -105,6 +105,8 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 		out := method.Func.Call(args)
 		//		fmt.Fprintf(w, "Returned %v", out)
 
+		// TODO: Handle error
+		// TODO: Don't assume position 0
 		data, _ := json.Marshal(out[0].Interface())
 		res.Header().Set("Content-Type", "application/json; charset=utf-8")
 		res.Write(data)
