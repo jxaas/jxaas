@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
 	"log"
@@ -28,12 +29,16 @@ Error details:
 type CharmsEndpoint struct {
 }
 
-func (self *CharmsEndpoint) Get() (string, error) {
+type Instance struct {
+	Id string
+}
+
+func (self *CharmsEndpoint) Get() ([]Instance, error) {
 	//	return "Hello world"
 	envName := cmd.ReadCurrentEnvironment()
 	apiclient, err := juju.NewAPIClientFromName(envName)
 	if err != nil {
-		return "", fmt.Errorf(connectionError, envName, err)
+		return nil, fmt.Errorf(connectionError, envName, err)
 	}
 	defer apiclient.Close()
 
@@ -49,16 +54,21 @@ func (self *CharmsEndpoint) Get() (string, error) {
 	//	}
 	// Display any error, but continue to print status if some was returned
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
+	instances := make([]Instance, 0)
 	for key, state := range status.Services {
 		fmt.Printf("%v => %v\n\n", key, state)
+		instance := Instance{}
+		instance.Id = key
+
+		instances = append(instances, instance)
 	}
 
 	fmt.Printf("%v", status)
 
-	return "OK", nil
+	return instances, nil
 	//
 	//	result := formatStatus(status)
 	//
@@ -81,7 +91,7 @@ func NewRestEndpoint(path string, object interface{}) *RestEndpointHandler {
 	return self
 }
 
-func (self *RestEndpointHandler) httpHandler(w http.ResponseWriter, req *http.Request) {
+func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.Request) {
 	o := reflect.New(self.structT)
 
 	if req.Method == "GET" {
@@ -93,7 +103,11 @@ func (self *RestEndpointHandler) httpHandler(w http.ResponseWriter, req *http.Re
 		args := make([]reflect.Value, 1)
 		args[0] = o
 		out := method.Func.Call(args)
-		fmt.Fprintf(w, "Returned %v", out)
+		//		fmt.Fprintf(w, "Returned %v", out)
+
+		data, _ := json.Marshal(out[0].Interface())
+		res.Header().Set("Content-Type", "application/json; charset=utf-8")
+		res.Write(data)
 	}
 
 	//	fmt.Fprintf(w, "Hello, %v", html.EscapeString(req.URL.Path))
