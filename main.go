@@ -125,9 +125,6 @@ func main() {
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	http.HandleFunc("/bar/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-	})
 
 	NewRestEndpoint("/charm/", (*CharmsEndpoint)(nil))
 
