@@ -7,15 +7,63 @@ import (
 	"net/http"
 	"reflect"
 	"time"
+
+	//	"launchpad.net/gnuflag"
+	//
+	"launchpad.net/juju-core/cmd"
+	//	"launchpad.net/juju-core/instance"
+	"launchpad.net/juju-core/juju"
+	//	"launchpad.net/juju-core/state/api"
+	//	"launchpad.net/juju-core/state/api/params"
+	//	"launchpad.net/juju-core/state/statecmd"
 )
+
+var connectionError = `Unable to connect to environment "%s".
+Please check your credentials or use 'juju bootstrap' to create a new environment.
+
+Error details:
+%v
+`
 
 type CharmsEndpoint struct {
 }
 
-func (self *CharmsEndpoint) Get() string {
-	return "Hello world"
-}
+func (self *CharmsEndpoint) Get() (string, error) {
+	//	return "Hello world"
+	envName := cmd.ReadCurrentEnvironment()
+	apiclient, err := juju.NewAPIClientFromName(envName)
+	if err != nil {
+		return "", fmt.Errorf(connectionError, envName, err)
+	}
+	defer apiclient.Close()
 
+	patterns := make([]string, 0)
+
+	status, err := apiclient.Status(patterns)
+
+	//	if params.IsCodeNotImplemented(err) {
+	//		logger.Infof("Status not supported by the API server, " +
+	//			"falling back to 1.16 compatibility mode " +
+	//			"(direct DB access)")
+	//		status, err = c.getStatus1dot16()
+	//	}
+	// Display any error, but continue to print status if some was returned
+	if err != nil {
+		return "", err
+	}
+
+	for key, state := range status.Services {
+		fmt.Printf("%v => %v\n\n", key, state)
+	}
+
+	fmt.Printf("%v", status)
+
+	return "OK", nil
+	//
+	//	result := formatStatus(status)
+	//
+	//	return c.out.Write(ctx, result), nil
+}
 
 type RestEndpointHandler struct {
 	ptrT    reflect.Type
@@ -53,6 +101,8 @@ func (self *RestEndpointHandler) httpHandler(w http.ResponseWriter, req *http.Re
 }
 
 func main() {
+	juju.InitJujuHome()
+
 	s := &http.Server{
 		Addr:           ":8080",
 		ReadTimeout:    10 * time.Second,
