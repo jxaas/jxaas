@@ -2,6 +2,7 @@ package main
 
 import (
 	"path"
+	"strconv"
 
 	"github.com/justinsb/gova/files"
 )
@@ -16,8 +17,10 @@ type JujuLog struct {
 	path string
 }
 
-func (self *JujuLogStore) ReadLog(unitId string) (*JujuLog, error) {
-	path := path.Join(self.basedir, unitId+".log")
+func (self *JujuLogStore) ReadLog(service string, unitId int) (*JujuLog, error) {
+	// TODO: Block path traversal
+	filename := "unit-" + service + "-" + strconv.Itoa(unitId) + ".log"
+	path := path.Join(self.basedir, filename)
 	ok, err := files.Exists(path)
 	if err != nil {
 		return nil, err

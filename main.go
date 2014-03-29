@@ -188,6 +188,17 @@ type EndpointCharm struct {
 	Key string
 }
 
+func (self *EndpointCharm) Item(key string) (interface{}, error) {
+	// TODO: Auto-discover using struct fields
+	if key == "log" {
+		log := &EndpointLog{}
+		log.Parent = self
+		return log, nil
+	} else {
+		return nil, nil
+	}
+}
+
 func (self *EndpointCharm) HttpGet() (*Instance, error) {
 	//	return "Hello world"
 	envName := cmd.ReadCurrentEnvironment()
@@ -236,6 +247,45 @@ func (self *EndpointCharm) HttpDelete() (*HttpResponse, error) {
 	}
 
 	return &HttpResponse{Status: http.StatusAccepted}, nil
+}
+
+type EndpointLog struct {
+	Parent *EndpointCharm
+}
+
+type Lines struct {
+	Line []string
+}
+
+func (self *EndpointLog) HttpGet() (*Lines, error) {
+	service := self.Parent.Key
+
+	// TODO: Inject
+	logStore := &JujuLogStore{}
+	logStore.basedir = "/var/log/juju-justinsb-local/"
+
+	// TODO: Expose units?
+	unitId := 0
+
+	logfile, err := logStore.ReadLog(service, unitId)
+	if err != nil {
+		log.Warn("Error reading log: %v", unitId, err)
+		return nil, err
+	}
+	if logfile == nil {
+		log.Warn("Log not found: %v", unitId)
+		return nil, nil
+	}
+
+	lines := &Lines{}
+	lines.Line = make([]string, 0)
+
+	logfile.ReadLines(func(line string) (bool, error) {
+		lines.Line = append(lines.Line, line)
+		return true, nil
+	})
+
+	return lines, nil
 }
 
 func main() {

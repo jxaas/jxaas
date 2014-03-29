@@ -126,6 +126,9 @@ func (self *RestEndpointHandler) resolveEndpoint(res http.ResponseWriter, req *h
 			if endpoint.IsNil() {
 				return nil, nil
 			}
+			if endpoint.Kind() == reflect.Interface {
+				endpoint = endpoint.Elem()
+			}
 		}
 	}
 
@@ -168,7 +171,7 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 
 		method = endpoint.MethodByName(methodName)
 		if !method.IsValid() {
-			log.Debug("Method not found: %v", methodName)
+			log.Debug("Method not found: %v on %v", methodName, endpoint.Type())
 
 			err = HttpError(http.StatusNotFound)
 		}
@@ -226,7 +229,4 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 
 		http.Error(res, message, status)
 	}
-
-	//	fmt.Fprintf(w, "Hello, %v", html.EscapeString(req.URL.Path))
-	//	fmt.Fprintf(w, "Hello, %v", self.ptrT)
 }
