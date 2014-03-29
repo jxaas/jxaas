@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/justinsb/gova/log"
 
 	"launchpad.net/juju-core/cmd"
+	"launchpad.net/juju-core/constraints"
 	//	"launchpad.net/juju-core/instance"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
@@ -56,12 +59,15 @@ type Unit struct {
 	Id string
 
 	PublicAddress string
+
+	Status string
 }
 
 func MapToUnit(id string, api *api.UnitStatus) *Unit {
 	unit := &Unit{}
 	unit.Id = id
 	unit.PublicAddress = api.PublicAddress
+	unit.Status = string(api.AgentState)
 	return unit
 }
 
@@ -148,6 +154,102 @@ func (self *CharmsEndpoint) Find(id string) (*Instance, error) {
 	return MapToInstance(id, &state), nil
 }
 
+func (self *CharmsEndpoint) Create() (*Instance, error) {
+	//	return "Hello world"
+	envName := cmd.ReadCurrentEnvironment()
+	apiclient, err := juju.NewAPIClientFromName(envName)
+	if err != nil {
+		return nil, fmt.Errorf(connectionError, envName, err)
+	}
+	defer apiclient.Close()
+
+	//	curl, err := charm.InferURL(c.CharmName, conf.DefaultSeries())
+	//	if err != nil {
+	//		return err
+	//	}
+	//	repo, err := charm.InferRepository(curl, ctx.AbsPath(c.RepoPath))
+	//	if err != nil {
+	//		return err
+	//	}
+	//
+	//	repo = config.SpecializeCharmRepo(repo, conf)
+	//
+	//	curl, err = addCharmViaAPI(client, ctx, curl, repo)
+	//	if err != nil {
+	//		return err
+	//	}
+
+	//
+	//	charmInfo, err := client.CharmInfo(curl.String())
+	//	if err != nil {
+	//		return err
+	//	}
+
+	numUnits := 1
+
+	serviceName := "service" + strconv.Itoa(rand.Int())
+
+	//	if serviceName == "" {
+	//		serviceName = charmInfo.Meta.Name
+	//	}
+
+	var configYAML []byte
+	//	if c.Config.Path != "" {
+	//		configYAML, err = c.Config.Read(ctx)
+	//		if err != nil {
+	//			return err
+	//		}
+	//	}
+	var constraints constraints.Value
+	var toMachineSpec string
+
+	charmUrl := "cs:precise/mysql-38"
+
+	err = apiclient.ServiceDeploy(
+		charmUrl,
+		serviceName,
+		numUnits,
+		string(configYAML),
+		constraints,
+		toMachineSpec,
+	)
+
+	//	if params.IsCodeNotImplemented(err) {
+	//		logger.Infof("Status not supported by the API server, " +
+	//			"falling back to 1.16 compatibility mode " +
+	//			"(direct DB access)")
+	//		status, err = c.getStatus1dot16()
+	//	}
+	// Display any error, but continue to print status if some was returned
+	if err != nil {
+		return nil, err
+	}
+
+	return self.Find(serviceName)
+}
+
+type HttpResponse struct {
+	Status  int
+	Content []byte
+	Headers map[string]string
+}
+
+func (self *CharmsEndpoint) Delete(serviceName string) (*HttpResponse, error) {
+	envName := cmd.ReadCurrentEnvironment()
+	apiclient, err := juju.NewAPIClientFromName(envName)
+	if err != nil {
+		return nil, fmt.Errorf(connectionError, envName, err)
+	}
+	defer apiclient.Close()
+
+	err = apiclient.ServiceDestroy(serviceName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &HttpResponse{Status: http.StatusAccepted}, nil
+}
+
 type RestEndpointHandler struct {
 	ptrT    reflect.Type
 	structT reflect.Type
@@ -202,6 +304,31 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 		}
 	}
 
+	if req.Method == "DELETE" {
+		prefixComponents := 1
+
+		if len(pathComponents) == (prefixComponents + 1) {
+			methodName = "Delete"
+			args = append(args, reflect.ValueOf(pathComponents[prefixComponents]))
+		} else {
+			log.Debug("Could not match path: %v (len=%v)", pathComponents, len(pathComponents))
+
+			err = HttpError(http.StatusNotFound)
+		}
+	}
+	if req.Method == "POST" {
+		prefixComponents := 1
+
+		if len(pathComponents) == prefixComponents {
+			methodName = "Create"
+			//args = append(args, reflect.ValueOf(pathComponents[prefixComponents]))
+		} else {
+			log.Debug("Could not match path: %v (len=%v)", pathComponents, len(pathComponents))
+
+			err = HttpError(http.StatusNotFound)
+		}
+	}
+
 	var method reflect.Method
 	if err == nil {
 		var found bool
@@ -248,10 +375,36 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 		}
 	}
 
+	var response *HttpResponse
 	if err == nil {
-		data, _ := json.Marshal(val.Interface())
-		res.Header().Set("Content-Type", "application/json; charset=utf-8")
-		res.Write(data)
+		var ok bool
+		response, ok = val.Interface().(*HttpResponse)
+		if !ok {
+			data, _ := json.Marshal(val.Interface())
+			response = &HttpResponse{Status: http.StatusOK}
+			response.Content = data
+			response.Headers = make(map[string]string)
+			response.Headers["content-type"] = "application/json; charset=utf-8"
+		}
+
+		if response == nil {
+			log.Warn("Unable to build response for %v", val)
+			err = HttpError(http.StatusInternalServerError)
+		}
+	}
+
+	if err == nil && response != nil {
+		if response.Headers != nil {
+			for name, value := range response.Headers {
+				res.Header().Set(name, value)
+			}
+		}
+
+		res.WriteHeader(response.Status)
+
+		res.Write(response.Content)
+	} else if err == nil && response == nil {
+		res.WriteHeader(http.StatusNoContent)
 	} else {
 		httpError, ok := err.(*HttpErrorObject)
 		if !ok {
