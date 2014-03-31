@@ -194,13 +194,16 @@ func (self *EndpointCharm) Item(key string) (interface{}, error) {
 		log := &EndpointLog{}
 		log.Parent = self
 		return log, nil
+	} else if key == "metrics" {
+		log := &EndpointMetrics{}
+		log.Parent = self
+		return log, nil
 	} else {
 		return nil, nil
 	}
 }
 
 func (self *EndpointCharm) HttpGet() (*Instance, error) {
-	//	return "Hello world"
 	envName := cmd.ReadCurrentEnvironment()
 	apiclient, err := juju.NewAPIClientFromName(envName)
 	if err != nil {
@@ -208,6 +211,7 @@ func (self *EndpointCharm) HttpGet() (*Instance, error) {
 	}
 	defer apiclient.Close()
 
+	// TODO: Is this efficient?  Any direct just-this-service call?
 	patterns := make([]string, 1)
 	patterns[0] = self.Key
 	status, err := apiclient.Status(patterns)
@@ -227,6 +231,8 @@ func (self *EndpointCharm) HttpGet() (*Instance, error) {
 	if !found {
 		return nil, HttpError(http.StatusNotFound)
 	}
+
+	log.Debug("Service state: %v", state)
 
 	return MapToInstance(self.Key, &state), nil
 }
@@ -287,6 +293,7 @@ func (self *EndpointLog) HttpGet() (*Lines, error) {
 
 	return lines, nil
 }
+
 
 func main() {
 	juju.InitJujuHome()

@@ -15,7 +15,7 @@ brctl addbr lxcbr0
 
 ip a a 100.64.64.0/24 brd + dev lxcbr0
 
-mkdir ~/juju
+mkdir -p ~/juju
 cd ~/juju
 
 BASE=`pwd`
@@ -25,14 +25,14 @@ export PATH=$PATH:/usr/local/bin
 export GOPATH=${BASE}
 export GOHOME=/usr/local/go
 
+# Use a sandbox
+export JUJU_HOME=${BASE}/.juju/
 
 go get -v launchpad.net/juju-core
 go get -u -v launchpad.net/juju-core/...
 
 go install launchpad.net/juju-core/cmd/...
 
-# Use a sandbox
-export JUJU_HOME=${BASE}/.juju/
 
 # Let's use local (LXC)
 juju generate-config
