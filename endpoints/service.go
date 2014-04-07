@@ -57,9 +57,11 @@ type EndpointService struct {
 //func (self *EndpointService) HttpPut() {
 //
 //}
-//func (self *EndpointService) ItemLog() {
-//
-//}
+func (self *EndpointService) ItemMetrics() *EndpointMetrics {
+	child := &EndpointMetrics{}
+	child.Parent = self
+	return child
+}
 
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) {
 	status, err := apiclient.GetStatus(self.ServiceId)

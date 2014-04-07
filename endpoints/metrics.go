@@ -10,7 +10,7 @@ import (
 )
 
 type EndpointMetrics struct {
-	Parent *EndpointCharm
+	Parent *EndpointService
 }
 
 type Metrics struct {
@@ -22,20 +22,22 @@ func (self *EndpointMetrics) HttpGet() (*Metrics, error) {
 
 	// TODO: Inject
 	// TODO: Use an ES client that isn't a singleton
-	api.Domain = "10.0.3.72"
+	api.Domain = "10.0.3.58"
 	api.Port = "9200"
 
-	//	var searchQuery = `{
-	//		"query": {
-	//			"term": {"sex":"female"}
-	//		}
-	//	}`
-
+	// TODO: We need to make sure that most fields are _not_ analyzed
+	// That is why we have match below, not term
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
-			"term": map[string]string{"Type": "logfile"},
+			"match": map[string]string{"Logger": "LoadAverage"},
 		},
 	}
+
+	//	query := map[string]interface{}{
+	//		"query": map[string]interface{}{
+	//			"match_all": map[string]string {},
+	//		},
+	//	}
 
 	response, err := core.SearchRequest("_all", "message", nil, query)
 	if err != nil {
