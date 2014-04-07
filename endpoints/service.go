@@ -55,7 +55,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 	request.Id = self.ServiceId
 	request.Units = nil
 	if request.Config == nil {
-		request.Config = make(map[string]string)
+		request.Config = make(map[string]ConfigValue)
 	}
 
 	config, err := apiclient.GetConfig(self.ServiceId)
@@ -117,10 +117,26 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 			return nil, err
 		}
 	} else {
-		existingConfig := MapToConfiguration(config.Config)
+		existingConfig := MapToConfiguration(config)
 
-		if !reflect.DeepEqual(existingConfig, request.Config) {
-			err := apiclient.SetConfig(self.ServiceId, request.Config)
+		existingValues := make(map[string]string)
+		{
+			for key, value := range existingConfig {
+				existingValues[key] = value.Value
+			}
+		}
+		mergedValues := make(map[string]string)
+		{
+			for key, value := range existingConfig {
+				mergedValues[key] = value.Value
+			}
+			for key, value := range request.Config {
+				mergedValues[key] = value.Value
+			}
+		}
+
+		if !reflect.DeepEqual(existingValues, mergedValues) {
+			err := apiclient.SetConfig(self.ServiceId, mergedValues)
 			if err != nil {
 				return nil, err
 			}

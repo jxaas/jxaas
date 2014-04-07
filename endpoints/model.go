@@ -3,6 +3,8 @@ package endpoints
 import (
 	"fmt"
 
+	"github.com/justinsb/gova/log"
+
 	"launchpad.net/juju-core/state/api"
 	"launchpad.net/juju-core/state/api/params"
 )
@@ -12,7 +14,22 @@ type Instance struct {
 
 	Units map[string]*Unit
 
-	Config map[string]string
+	Config map[string]ConfigValue
+}
+
+//func (self *Instance) ConfigValues() map[string]string {
+//	flat := make(map[string]string)
+//	for k, v := range self.Config {
+//		flat[k] = v.Value
+//	}
+//	return flat
+//}
+
+type ConfigValue struct {
+	Default     string
+	Description string
+	Type        string
+	Value       string
 }
 
 type Unit struct {
@@ -31,11 +48,42 @@ func MapToUnit(id string, api *api.UnitStatus) *Unit {
 	return unit
 }
 
-func MapToConfiguration(config map[string]interface{}) map[string]string {
-	out := make(map[string]string)
+func getString(m map[string]interface{}, key string) string {
+	v, found := m[key]
+	if !found {
+		return ""
+	}
 
-	for k, v := range config {
-		out[k] = fmt.Sprint(v)
+	s, ok := v.(string)
+	if !ok {
+		s := fmt.Sprint(v)
+
+		//	log.Warn("Expected string for key: %v, was %v", key, reflect.TypeOf(v))
+		return s
+	}
+
+	return s
+}
+
+func MapToConfiguration(config *params.ServiceGetResults) map[string]ConfigValue {
+	out := make(map[string]ConfigValue)
+
+	if config.Config != nil {
+		for k, v := range config.Config {
+			m, ok := v.(map[string]interface{})
+			if !ok {
+				log.Warn("Unexpected type for config value: %v", k)
+				continue
+			}
+
+			configValue := &ConfigValue{}
+			configValue.Type = getString(m, "type")
+			configValue.Description = getString(m, "description")
+			configValue.Default = getString(m, "default")
+			configValue.Value = getString(m, "value")
+
+			out[k] = *configValue
+		}
 	}
 
 	return out
@@ -49,7 +97,7 @@ func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetR
 		instance.Units[key] = MapToUnit(key, &unit)
 	}
 	if config != nil {
-		instance.Config = MapToConfiguration(config.Config)
+		instance.Config = MapToConfiguration(config)
 	}
 
 	return instance
