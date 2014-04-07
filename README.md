@@ -38,4 +38,9 @@ export JUJU_HOME=${BASE}/.juju/
 juju generate-config
 juju switch local
 
-sudo JUJU_HOME=${BASE}/.juju ${BASE}/bin/juju bootstrap
+JUJU_HOME=${BASE}/.juju ${BASE}/bin/juju bootstrap
+
+# This starts a process:
+# /home/justinsb/juju/.juju/local/tools/machine-0/jujud machine --data-dir /home/justinsb/juju/.juju/local --machine-id 0 --debug
+# /usr/lib/juju/bin/mongod --auth --dbpath=/home/justinsb/juju/.juju/local/db --sslOnNormalPorts --sslPEMKeyFile /home/justinsb/juju/.juju/local/server.pem --sslPEMKeyPassword xxxxxxx --bind_ip 0.0.0.0 --port 37017 --noprealloc --syslog --smallfiles
+# We might need to restart this manually on reboot?
