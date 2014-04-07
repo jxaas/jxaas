@@ -148,14 +148,14 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 //
 //	return self.Item(serviceName).HttpGet()
 //}
-//
-//func (self *EndpointCharm) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
-//	serviceName := self.Key
-//
-//	err = apiclient.ServiceDestroy(serviceName)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &rs.HttpResponse{Status: http.StatusAccepted}, nil
-//}
+
+func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
+	serviceId := self.ServiceId
+
+	err := apiclient.ServiceDestroy(serviceId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rs.HttpResponse{Status: http.StatusAccepted}, nil
+}

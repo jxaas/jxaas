@@ -3,6 +3,8 @@ package juju
 import (
 	"fmt"
 
+	"github.com/justinsb/gova/log"
+
 	"launchpad.net/juju-core/cmd"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
@@ -36,7 +38,16 @@ func ClientFactory() (*Client, error) {
 	return wrapper, err
 }
 
+func (self *Client) canAccess(serviceId string) bool {
+	log.Warn("Juju connection canAccess is stub-implemented")
+	return true
+}
+
 func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
+	if !self.canAccess(serviceId) {
+		return nil, nil
+	}
+
 	// TODO: Is this efficient?  Any direct just-this-service call?
 	patterns := make([]string, 1)
 	patterns[0] = serviceId
@@ -59,4 +70,12 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	}
 
 	return &state, nil
+}
+
+func (self *Client) ServiceDestroy(serviceId string) error {
+	if !self.canAccess(serviceId) {
+		return nil
+	}
+
+	return self.api.ServiceDestroy(serviceId)
 }
