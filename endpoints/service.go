@@ -1,9 +1,8 @@
 package endpoints
 
 import (
-	"math/rand"
 	"net/http"
-	"strconv"
+	"reflect"
 
 	"bitbucket.org/jsantabarbara/jxaas/juju"
 	"bitbucket.org/jsantabarbara/jxaas/rs"
@@ -36,6 +35,11 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 		return nil, rs.HttpError(http.StatusNotFound)
 	}
 
+	config, err := apiclient.GetConfig(self.ServiceId)
+	if err != nil {
+		return nil, err
+	}
+
 	log.Debug("Service state: %v", status)
 
 	//
@@ -43,59 +47,84 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 	//
 	//	return c.out.Write(ctx, result), nil
 
-	return MapToInstance(self.ServiceId, status), nil
+	return MapToInstance(self.ServiceId, status, config), nil
 }
 
-func (self *EndpointService) HttpPut(apiclient *juju.Client) (*Instance, error) {
-	//	curl, err := charm.InferURL(c.CharmName, conf.DefaultSeries())
-	//	if err != nil {
-	//		return err
-	//	}
-	//	repo, err := charm.InferRepository(curl, ctx.AbsPath(c.RepoPath))
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	repo = config.SpecializeCharmRepo(repo, conf)
-	//
-	//	curl, err = addCharmViaAPI(client, ctx, curl, repo)
-	//	if err != nil {
-	//		return err
-	//	}
+func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) (*Instance, error) {
+	// Sanitize (just in case)
+	request.Id = self.ServiceId
+	request.Units = nil
+	if request.Config == nil {
+		request.Config = make(map[string]string)
+	}
 
-	//
-	//	charmInfo, err := client.CharmInfo(curl.String())
-	//	if err != nil {
-	//		return err
-	//	}
-
-	numUnits := 1
-
-	serviceName := "service" + strconv.Itoa(rand.Int())
-
-	//	if serviceName == "" {
-	//		serviceName = charmInfo.Meta.Name
-	//	}
-
-	var configYAML string
-	//	if c.Config.Path != "" {
-	//		configYAML, err = c.Config.Read(ctx)
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
-
-	charmUrl := "cs:precise/mysql-38"
-
-	err := apiclient.ServiceDeploy(
-		charmUrl,
-		serviceName,
-		numUnits,
-		configYAML,
-	)
-
+	config, err := apiclient.GetConfig(self.ServiceId)
 	if err != nil {
 		return nil, err
+	}
+
+	if config == nil {
+		// Create new service
+
+		//	curl, err := charm.InferURL(c.CharmName, conf.DefaultSeries())
+		//	if err != nil {
+		//		return err
+		//	}
+		//	repo, err := charm.InferRepository(curl, ctx.AbsPath(c.RepoPath))
+		//	if err != nil {
+		//		return err
+		//	}
+		//
+		//	repo = config.SpecializeCharmRepo(repo, conf)
+		//
+		//	curl, err = addCharmViaAPI(client, ctx, curl, repo)
+		//	if err != nil {
+		//		return err
+		//	}
+
+		//
+		//	charmInfo, err := client.CharmInfo(curl.String())
+		//	if err != nil {
+		//		return err
+		//	}
+
+		numUnits := 1
+
+		//		serviceName := "service" + strconv.Itoa(rand.Int())
+
+		//	if serviceName == "" {
+		//		serviceName = charmInfo.Meta.Name
+		//	}
+
+		var configYAML string
+		//	if c.Config.Path != "" {
+		//		configYAML, err = c.Config.Read(ctx)
+		//		if err != nil {
+		//			return err
+		//		}
+		//	}
+
+		charmUrl := "cs:precise/mysql-38"
+
+		err := apiclient.ServiceDeploy(
+			charmUrl,
+			self.ServiceId,
+			numUnits,
+			configYAML,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		existingConfig := MapToConfiguration(config.Config)
+
+		if !reflect.DeepEqual(existingConfig, request.Config) {
+			err := apiclient.SetConfig(self.ServiceId, request.Config)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return self.HttpGet(apiclient)

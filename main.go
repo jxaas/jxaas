@@ -20,6 +20,8 @@ func main() {
 	rest := rs.NewRestServer()
 	rest.AddEndpoint("/xaas/", (*endpoints.EndpointXaas)(nil))
 	rest.WithInjector(injector)
+	rest.AddReader(rs.NewJsonMessageBodyReader())
+	rest.AddWriter(rs.NewJsonMessageBodyWriter())
 
 	log.Fatal("Error serving HTTP", rest.ListenAndServe())
 }

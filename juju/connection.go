@@ -9,6 +9,7 @@ import (
 	"launchpad.net/juju-core/constraints"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
+	"launchpad.net/juju-core/state/api/params"
 )
 
 var connectionError = `Unable to connect to environment "%s".
@@ -74,6 +75,32 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	}
 
 	return &state, nil
+}
+
+func (self *Client) GetConfig(serviceId string) (*params.ServiceGetResults, error) {
+	if !self.canAccess(serviceId) {
+		return nil, nil
+	}
+
+	config, err := self.api.ServiceGet(serviceId)
+	if err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+func (self *Client) SetConfig(serviceId string, options map[string]string) error {
+	if !self.canAccess(serviceId) {
+		return fmt.Errorf("Unknown service: %v", serviceId)
+	}
+
+	err := self.api.ServiceSet(serviceId, options)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (self *Client) ListServices() (*api.Status, error) {

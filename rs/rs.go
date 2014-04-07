@@ -1,7 +1,6 @@
 package rs
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -27,7 +26,7 @@ func (self *HttpErrorObject) Error() string {
 
 type HttpResponse struct {
 	Status  int
-	Content []byte
+	Content interface{}
 	Headers map[string]string
 }
 
@@ -136,13 +135,17 @@ func (self *RestEndpointHandler) resolveEndpoint(res http.ResponseWriter, req *h
 
 func (self *RestEndpointHandler) makeResponse(val reflect.Value) (*HttpResponse, error) {
 	var ok bool
-	response, ok := val.Interface().(*HttpResponse)
-	if !ok {
-		data, _ := json.Marshal(val.Interface())
-		response = &HttpResponse{Status: http.StatusOK}
-		response.Content = data
-		response.Headers = make(map[string]string)
-		response.Headers["content-type"] = "application/json; charset=utf-8"
+	var response *HttpResponse
+
+	if val.IsNil() {
+		response = &HttpResponse{Status: http.StatusNoContent}
+		response.Content = nil
+	} else {
+		response, ok = val.Interface().(*HttpResponse)
+		if !ok {
+			response = &HttpResponse{Status: http.StatusOK}
+			response.Content = val.Interface()
+		}
 	}
 
 	if response == nil {
@@ -153,8 +156,36 @@ func (self *RestEndpointHandler) makeResponse(val reflect.Value) (*HttpResponse,
 	return response, nil
 }
 
+func getMediaType(req *http.Request) *MediaType {
+	v := req.Header.Get("Content-Type")
+	if v == "" {
+		return nil
+	}
+	mediaType, err := ParseMediaType(v)
+	if err != nil {
+		log.Warn("Error parsing mime type: %v", v, err)
+		return nil
+	}
+	return mediaType
+}
+
 func (self *RestEndpointHandler) buildArg(res http.ResponseWriter, req *http.Request, t reflect.Type) (interface{}, error) {
-	return self.server.injector.Get(t)
+	v, err := self.server.injector.Get(t)
+	if err == nil && v != nil {
+		return v, nil
+	}
+
+	// TODO: Only if has content?
+	mediaType := getMediaType(req)
+	
+	// TODO: Default media type?
+	v, err = self.server.readMessageBody(t, req, mediaType)
+	if err == nil && v != nil {
+		return v, nil
+	}
+
+	log.Warn("Unable to bind parameter: %v", t)
+	return nil, fmt.Errorf("Unable to bind parameter: %v", t)
 }
 
 func (self *RestEndpointHandler) buildArgs(res http.ResponseWriter, req *http.Request, method *reflect.Value) ([]reflect.Value, error) {
@@ -217,12 +248,36 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 	}
 
 	var response *HttpResponse
+	var mbw MessageBodyWriter
 
 	if err == nil {
 		response, err = self.makeResponse(val)
+
+		if response.Headers == nil {
+			response.Headers = make(map[string]string)
+		}
+
+		contentType := response.Headers["content-type"]
+		if contentType == "" && response.Content != nil {
+			contentType = "application/json; charset=utf-8"
+			response.Headers["content-type"] = contentType
+		}
+
+		var mediaType *MediaType
+		if contentType != "" {
+			mediaType, err = ParseMediaType(contentType)
+		}
+
+		if err == nil {
+			mbw = self.server.findMessageBodyWriter(response.Content, req, mediaType)
+			if mbw == nil {
+				log.Warn("Unable to find media type: %v", contentType)
+				err = HttpError(http.StatusUnsupportedMediaType)
+			}
+		}
 	}
 
-	if err == nil && response != nil {
+	if err == nil && response != nil && mbw != nil {
 		if response.Headers != nil {
 			for name, value := range response.Headers {
 				res.Header().Set(name, value)
@@ -231,7 +286,7 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 
 		res.WriteHeader(response.Status)
 
-		res.Write(response.Content)
+		mbw.Write(response.Content, reflect.TypeOf(response.Content), req, res)
 	} else if err == nil && response == nil {
 		res.WriteHeader(http.StatusNoContent)
 	} else {

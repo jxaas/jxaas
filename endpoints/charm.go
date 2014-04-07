@@ -31,7 +31,7 @@ func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*Instance, error) 
 	instances := make([]*Instance, 0)
 	for key, state := range status.Services {
 		//fmt.Printf("%v => %v\n\n", key, state)
-		instance := MapToInstance(key, &state)
+		instance := MapToInstance(key, &state, nil)
 
 		instances = append(instances, instance)
 	}
