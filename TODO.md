@@ -8,5 +8,7 @@ Close anything closeable after injection?
 
 Singleton injectors?  Pooled injectors?
 
+Juju should return the actual default value
+
 How do we do 'zero-unit' services?
 * Maybe we could create a parent service with the credentials, and then have our services be subordinate charms.  Reduces overhead to 1.

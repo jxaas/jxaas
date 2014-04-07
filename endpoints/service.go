@@ -59,7 +59,7 @@ func makeConfigYaml(request *Instance) (string, error) {
 	yaml[id] = make(map[string]string)
 
 	for k, v := range request.Config {
-		yaml[id][k] = v.Value
+		yaml[id][k] = v
 	}
 
 	bytes, err := goyaml.Marshal(yaml)
@@ -75,7 +75,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 	request.Id = self.ServiceId
 	request.Units = nil
 	if request.Config == nil {
-		request.Config = make(map[string]ConfigValue)
+		request.Config = make(map[string]string)
 	}
 
 	config, err := apiclient.GetConfig(self.ServiceId)
@@ -133,21 +133,14 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 			return nil, err
 		}
 	} else {
-		existingConfig := MapToConfiguration(config)
-
-		existingValues := make(map[string]string)
-		{
-			for key, value := range existingConfig {
-				existingValues[key] = value.Value
-			}
-		}
+		existingValues := MapToConfig(config)
 		mergedValues := make(map[string]string)
 		{
-			for key, value := range existingConfig {
-				mergedValues[key] = value.Value
+			for key, value := range existingValues {
+				mergedValues[key] = value
 			}
 			for key, value := range request.Config {
-				mergedValues[key] = value.Value
+				mergedValues[key] = value
 			}
 		}
 
@@ -156,6 +149,8 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 			if err != nil {
 				return nil, err
 			}
+		} else {
+			log.Debug("Configuration unchanged; won't reconfigure")
 		}
 	}
 

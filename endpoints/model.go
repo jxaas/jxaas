@@ -14,7 +14,9 @@ type Instance struct {
 
 	Units map[string]*Unit
 
-	Config map[string]ConfigValue
+	Config map[string]string
+
+	ConfigParameters map[string]ConfigParameter
 }
 
 //func (self *Instance) ConfigValues() map[string]string {
@@ -25,11 +27,10 @@ type Instance struct {
 //	return flat
 //}
 
-type ConfigValue struct {
+type ConfigParameter struct {
 	Default     string
 	Description string
 	Type        string
-	Value       string
 }
 
 type Unit struct {
@@ -65,8 +66,8 @@ func getString(m map[string]interface{}, key string) string {
 	return s
 }
 
-func MapToConfiguration(config *params.ServiceGetResults) map[string]ConfigValue {
-	out := make(map[string]ConfigValue)
+func MapToConfigParameters(config *params.ServiceGetResults) map[string]ConfigParameter {
+	out := make(map[string]ConfigParameter)
 
 	if config.Config != nil {
 		for k, v := range config.Config {
@@ -76,13 +77,34 @@ func MapToConfiguration(config *params.ServiceGetResults) map[string]ConfigValue
 				continue
 			}
 
-			configValue := &ConfigValue{}
-			configValue.Type = getString(m, "type")
-			configValue.Description = getString(m, "description")
-			configValue.Default = getString(m, "default")
-			configValue.Value = getString(m, "value")
+			p := &ConfigParameter{}
+			p.Type = getString(m, "type")
+			p.Description = getString(m, "description")
 
-			out[k] = *configValue
+			// juju returns true if the value is the default, false otherwise,
+			// but does not return the actual default value.  That's uninintuitive to me,
+			// so block it.
+			//p.Default = getString(m, "default")
+
+			out[k] = *p
+		}
+	}
+
+	return out
+}
+
+func MapToConfig(config *params.ServiceGetResults) map[string]string {
+	out := make(map[string]string)
+
+	if config.Config != nil {
+		for k, v := range config.Config {
+			m, ok := v.(map[string]interface{})
+			if !ok {
+				log.Warn("Unexpected type for config value: %v", k)
+				continue
+			}
+
+			out[k] = getString(m, "value")
 		}
 	}
 
@@ -97,7 +119,8 @@ func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetR
 		instance.Units[key] = MapToUnit(key, &unit)
 	}
 	if config != nil {
-		instance.Config = MapToConfiguration(config)
+		instance.Config = MapToConfig(config)
+		instance.ConfigParameters = MapToConfigParameters(config)
 	}
 
 	return instance
