@@ -19,7 +19,7 @@ func main() {
 
 	rest := rs.NewRestServer()
 	rest.AddEndpoint("/xaas/", (*endpoints.EndpointXaas)(nil))
-	rest.AddInjector(injector)
+	rest.WithInjector(injector)
 
 	log.Fatal("Error serving HTTP", rest.ListenAndServe())
 }

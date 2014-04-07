@@ -22,15 +22,22 @@ func (self *FunctionBinding) Get() (interface{}, error) {
 	// TODO: Inject arguments?
 	in := []reflect.Value{}
 	out := self.valFn.Call(in)
-	if len(out) == 1 {
-		return out[0], nil
-	} else if len(out) == 2 {
-		err := out[1].Interface().(error)
-		return out[0], err
-	} else {
-		// Should have been checked during construction
-		panic("Invalid number of outputs")
+
+	var val interface{}
+	if len(out) >= 1 {
+		if !out[0].IsNil() {
+			val = out[0].Interface()
+		}
 	}
+
+	var err error
+	if len(out) >= 2 {
+		if !out[1].IsNil() {
+			err = out[1].Interface().(error)
+		}
+	}
+
+	return val, err
 }
 
 func NewBinder() *Binder {

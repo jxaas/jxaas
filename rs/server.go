@@ -9,7 +9,7 @@ import (
 
 type RestServer struct {
 	httpServer *http.Server
-	injectors  []inject.Injector
+	injector   inject.Injector
 }
 
 func NewRestServer() *RestServer {
@@ -21,12 +21,11 @@ func NewRestServer() *RestServer {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	self.injectors = []inject.Injector{}
 	return self
 }
 
-func (self *RestServer) AddInjector(injector inject.Injector) {
-	self.injectors = append(self.injectors, injector)
+func (self *RestServer) WithInjector(injector inject.Injector) {
+	self.injector = injector
 }
 
 func (self *RestServer) AddEndpoint(path string, object interface{}) *RestEndpointHandler {

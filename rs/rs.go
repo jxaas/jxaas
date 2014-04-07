@@ -153,10 +153,29 @@ func (self *RestEndpointHandler) makeResponse(val reflect.Value) (*HttpResponse,
 	return response, nil
 }
 
+func (self *RestEndpointHandler) buildArg(res http.ResponseWriter, req *http.Request, t reflect.Type) (interface{}, error) {
+	return self.server.injector.Get(t)
+}
+
+func (self *RestEndpointHandler) buildArgs(res http.ResponseWriter, req *http.Request, method *reflect.Value) ([]reflect.Value, error) {
+	numIn := method.Type().NumIn()
+	args := make([]reflect.Value, numIn)
+	methodType := method.Type()
+	for i := 0; i < methodType.NumIn(); i++ {
+		val, err := self.buildArg(res, req, methodType.In(i))
+		if err != nil {
+			return nil, err
+		}
+		if val != nil {
+			args[i] = reflect.ValueOf(val)
+		}
+	}
+
+	return args, nil
+}
+
 func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.Request) {
 	endpoint, err := self.resolveEndpoint(res, req)
-
-	args := make([]reflect.Value, 0)
 
 	if endpoint == nil {
 		err = HttpError(http.StatusNotFound)
@@ -174,6 +193,11 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 
 			err = HttpError(http.StatusNotFound)
 		}
+	}
+
+	var args []reflect.Value
+	if err == nil {
+		args, err = self.buildArgs(res, req, &method)
 	}
 
 	var val reflect.Value
