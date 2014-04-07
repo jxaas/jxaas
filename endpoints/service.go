@@ -147,12 +147,26 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 		}
 
 		if !reflect.DeepEqual(existingValues, mergedValues) {
-			err := apiclient.SetConfig(self.ServiceId, mergedValues)
+			err = apiclient.SetConfig(self.ServiceId, mergedValues)
 			if err != nil {
 				return nil, err
 			}
 		} else {
 			log.Debug("Configuration unchanged; won't reconfigure")
+		}
+	}
+
+	if request.Exposed != nil {
+		status, err := apiclient.GetStatus(self.ServiceId)
+		if err != nil {
+			return nil, err
+		}
+		if status.Exposed != *request.Exposed {
+			err = apiclient.SetExposed(self.ServiceId, *request.Exposed)
+			if err != nil {
+				log.Warn("Error setting service to Exposed=%v", *request.Exposed, err)
+				return nil, err
+			}
 		}
 	}
 

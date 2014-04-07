@@ -12,6 +12,9 @@ import (
 type Instance struct {
 	Id string
 
+	// (Optional), so *bool
+	Exposed *bool
+
 	Units map[string]*Unit
 
 	Config map[string]string
@@ -115,6 +118,8 @@ func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetR
 	instance := &Instance{}
 	instance.Id = id
 	instance.Units = make(map[string]*Unit)
+	instance.Exposed = &api.Exposed
+
 	for key, unit := range api.Units {
 		instance.Units[key] = MapToUnit(key, &unit)
 	}

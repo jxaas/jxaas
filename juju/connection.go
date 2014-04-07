@@ -108,6 +108,25 @@ func (self *Client) SetConfig(serviceId string, options map[string]string) error
 	return nil
 }
 
+func (self *Client) SetExposed(serviceId string, exposed bool) error {
+	if !self.canAccess(serviceId) {
+		return fmt.Errorf("Unknown service: %v", serviceId)
+	}
+
+	var err error
+	if exposed {
+		err = self.api.ServiceExpose(serviceId)
+	} else {
+		err = self.api.ServiceUnexpose(serviceId)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (self *Client) ListServices() (*api.Status, error) {
 	patterns := []string{}
 	status, err := self.api.Status(patterns)
