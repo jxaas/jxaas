@@ -63,6 +63,12 @@ func (self *EndpointService) ItemMetrics() *EndpointMetrics {
 	return child
 }
 
+func (self *EndpointService) ItemLog() *EndpointLog {
+	child := &EndpointLog{}
+	child.Parent = self
+	return child
+}
+
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) {
 	status, err := apiclient.GetStatus(self.ServiceId)
 	if err != nil {
