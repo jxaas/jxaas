@@ -104,16 +104,20 @@ func (self *RestEndpointHandler) resolveEndpoint(res http.ResponseWriter, req *h
 		log.Info("Path components:  %v", pathComponents)
 
 		for _, pathComponent := range pathComponents {
-			itemMethod := endpoint.MethodByName("Item")
-			if !itemMethod.IsValid() {
-				log.Debug("Items method not found")
+			args := []reflect.Value{}
 
-				return nil, nil
+			methodName := strings.ToUpper(pathComponent[:1]) + strings.ToLower(pathComponent)[1:]
+			method := endpoint.MethodByName(methodName)
+			if !method.IsValid() {
+				method = endpoint.MethodByName("Item")
+				if !method.IsValid() {
+					log.Debug("Items method not found")
+					return nil, nil
+				}
+				args = append(args, reflect.ValueOf(pathComponent))
 			}
 
-			in := []reflect.Value{reflect.ValueOf(pathComponent)}
-
-			out := itemMethod.Call(in)
+			out := method.Call(args)
 			endpoint, err = parseReturn(out)
 			if err != nil {
 				return nil, err
