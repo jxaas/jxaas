@@ -1,4 +1,4 @@
-package main
+package juju
 
 import (
 	"path"
@@ -10,7 +10,7 @@ import (
 // For now, this uses direct filesystem access (and presumes it is local)
 // TODO: Move to SSH
 type JujuLogStore struct {
-	basedir string
+	BaseDir string
 }
 
 type JujuLog struct {
@@ -20,7 +20,7 @@ type JujuLog struct {
 func (self *JujuLogStore) ReadLog(service string, unitId int) (*JujuLog, error) {
 	// TODO: Block path traversal
 	filename := "unit-" + service + "-" + strconv.Itoa(unitId) + ".log"
-	path := path.Join(self.basedir, filename)
+	path := path.Join(self.BaseDir, filename)
 	ok, err := files.Exists(path)
 	if err != nil {
 		return nil, err

@@ -1,4 +1,4 @@
-package main
+package rs
 
 import (
 	"encoding/json"
@@ -7,15 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	//	"launchpad.net/gnuflag"
-	//
 	"github.com/justinsb/gova/log"
-
-	//	"launchpad.net/juju-core/instance"
-
-	//	"launchpad.net/juju-core/state/api"
-	//	"launchpad.net/juju-core/state/api/params"
-	//	"launchpad.net/juju-core/state/statecmd"
 )
 
 type HttpErrorObject struct {
@@ -40,18 +32,21 @@ type HttpResponse struct {
 }
 
 type RestEndpointHandler struct {
-	path string
+	server *RestServer
+	path   string
 
 	ptrT    reflect.Type
 	structT reflect.Type
 }
 
-func NewRestEndpoint(path string, object interface{}) *RestEndpointHandler {
+func newRestEndpoint(server *RestServer, path string, object interface{}) *RestEndpointHandler {
 	self := &RestEndpointHandler{}
+
+	self.server = server
+	self.path = path
 
 	self.ptrT = reflect.TypeOf(object)
 	self.structT = self.ptrT.Elem()
-	self.path = path
 
 	http.HandleFunc(path, self.httpHandler)
 
