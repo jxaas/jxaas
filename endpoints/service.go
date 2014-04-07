@@ -37,7 +37,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 		return nil, rs.HttpError(http.StatusNotFound)
 	}
 
-	config, err := apiclient.GetConfig(self.ServiceId)
+	config, err := apiclient.FindConfig(self.ServiceId)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 		request.Config = make(map[string]string)
 	}
 
-	config, err := apiclient.GetConfig(self.ServiceId)
+	config, err := apiclient.FindConfig(self.ServiceId)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +122,8 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 		if err != nil {
 			return nil, err
 		}
+
+		log.Debug("Deploying with YAML: %v", configYaml)
 
 		err = apiclient.ServiceDeploy(
 			charmUrl,

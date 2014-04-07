@@ -77,13 +77,18 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	return &state, nil
 }
 
-func (self *Client) GetConfig(serviceId string) (*params.ServiceGetResults, error) {
+func (self *Client) FindConfig(serviceId string) (*params.ServiceGetResults, error) {
 	if !self.canAccess(serviceId) {
 		return nil, nil
 	}
 
 	config, err := self.api.ServiceGet(serviceId)
 	if err != nil {
+		paramsError, ok := err.(*params.Error)
+		if ok && paramsError.Code == "not found" {
+			// Treat as not-an-error
+			return nil, nil
+		}
 		return nil, err
 	}
 
