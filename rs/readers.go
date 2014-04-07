@@ -2,9 +2,11 @@ package rs
 
 import (
 	"encoding/json"
-	"io"
 	"net/http"
 	"reflect"
+
+	"github.com/justinsb/gova/assert"
+	"github.com/justinsb/gova/log"
 )
 
 type MessageBodyReader interface {
@@ -34,12 +36,29 @@ func (self *JsonMessageBodyReader) Read(t reflect.Type, req *http.Request, media
 
 	decoder := json.NewDecoder(req.Body)
 
-	m := reflect.New(t).Interface()
+	valueT := t
+	pointerDepth := 0
+	for valueT.Kind() == reflect.Ptr {
+		valueT = valueT.Elem()
+		pointerDepth++
+	}
 
-	err := decoder.Decode(&m)
-	if err != nil && err != io.EOF {
+	msg := reflect.New(valueT)
+
+	err := decoder.Decode(msg.Interface())
+	if err != nil { // && err != io.EOF {
 		return nil, err
 	}
 
-	return m, nil
+	log.Warn("PointerDepth: %v, type %v", pointerDepth, t)
+
+	// reflect.New returns a pointer, so we start at 1
+	for i := 1; i < pointerDepth; i++ {
+		assert.That(msg.CanAddr())
+		msg = msg.Addr()
+	}
+
+	assert.Equal(msg.Type(), t)
+
+	return msg.Interface(), nil
 }

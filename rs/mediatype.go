@@ -14,6 +14,8 @@ type MediaType struct {
 	match string
 }
 
+// TODO: Make immutable, use cache / well-known values?
+
 func ParseMediaType(t string) (*MediaType, error) {
 	m, params, err := mime.ParseMediaType(t)
 	if err != nil {

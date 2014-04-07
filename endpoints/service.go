@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"launchpad.net/goyaml"
+
 	"bitbucket.org/jsantabarbara/jxaas/juju"
 	"bitbucket.org/jsantabarbara/jxaas/rs"
 	"github.com/justinsb/gova/log"
@@ -50,8 +52,26 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 	return MapToInstance(self.ServiceId, status, config), nil
 }
 
+func makeConfigYaml(request *Instance) (string, error) {
+	id := request.Id
+
+	yaml := make(map[string]map[string]string)
+	yaml[id] = make(map[string]string)
+
+	for k, v := range request.Config {
+		yaml[id][k] = v.Value
+	}
+
+	bytes, err := goyaml.Marshal(yaml)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
+}
+
 func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) (*Instance, error) {
-	// Sanitize (just in case)
+	// Sanitize
 	request.Id = self.ServiceId
 	request.Units = nil
 	if request.Config == nil {
@@ -96,22 +116,18 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 		//		serviceName = charmInfo.Meta.Name
 		//	}
 
-		var configYAML string
-		//	if c.Config.Path != "" {
-		//		configYAML, err = c.Config.Read(ctx)
-		//		if err != nil {
-		//			return err
-		//		}
-		//	}
-
 		charmUrl := "cs:precise/mysql-38"
 
-		err := apiclient.ServiceDeploy(
+		configYaml, err := makeConfigYaml(request)
+		if err != nil {
+			return nil, err
+		}
+
+		err = apiclient.ServiceDeploy(
 			charmUrl,
 			self.ServiceId,
 			numUnits,
-			configYAML,
-		)
+			configYaml)
 
 		if err != nil {
 			return nil, err

@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/justinsb/gova/assert"
+
 	"bitbucket.org/jsantabarbara/jxaas/inject"
 )
 
@@ -14,6 +16,8 @@ type RestServer struct {
 
 	readers []MessageBodyReader
 	writers []MessageBodyWriter
+
+	defaultMediaType *MediaType
 }
 
 func NewRestServer() *RestServer {
@@ -27,6 +31,10 @@ func NewRestServer() *RestServer {
 
 	self.readers = []MessageBodyReader{}
 	self.writers = []MessageBodyWriter{}
+
+	var err error
+	self.defaultMediaType, err = ParseMediaType("application/json")
+	assert.That(err == nil)
 
 	return self
 }

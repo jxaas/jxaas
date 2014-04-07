@@ -2,10 +2,12 @@ package rs
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
 
+	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
 )
 
@@ -156,17 +158,19 @@ func (self *RestEndpointHandler) makeResponse(val reflect.Value) (*HttpResponse,
 	return response, nil
 }
 
-func getMediaType(req *http.Request) *MediaType {
+func getMediaType(req *http.Request) (*MediaType, error) {
 	v := req.Header.Get("Content-Type")
 	if v == "" {
-		return nil
+		return nil, nil
 	}
+
 	mediaType, err := ParseMediaType(v)
 	if err != nil {
 		log.Warn("Error parsing mime type: %v", v, err)
-		return nil
+		return nil, err
 	}
-	return mediaType
+
+	return mediaType, nil
 }
 
 func (self *RestEndpointHandler) buildArg(res http.ResponseWriter, req *http.Request, t reflect.Type) (interface{}, error) {
@@ -176,11 +180,35 @@ func (self *RestEndpointHandler) buildArg(res http.ResponseWriter, req *http.Req
 	}
 
 	// TODO: Only if has content?
-	mediaType := getMediaType(req)
-	
-	// TODO: Default media type?
+	mediaType, err := getMediaType(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if mediaType == nil {
+		// Go does have a function to guess the media type, but that seems risky
+		// Instead, use a fixed default
+		mediaType = self.server.defaultMediaType
+	}
+
 	v, err = self.server.readMessageBody(t, req, mediaType)
-	if err == nil && v != nil {
+	if err != nil {
+		if err == io.EOF {
+			log.Debug("Error reading message body (EOF)")
+		} else {
+			log.Debug("Error reading message body", err)
+		}
+		err = HttpError(http.StatusBadRequest)
+		return nil, err
+	}
+
+	if v == nil && err == nil {
+		err = HttpError(http.StatusUnsupportedMediaType)
+		return nil, err
+	}
+
+	if v != nil {
+		assert.Equal(reflect.TypeOf(v), t)
 		return v, nil
 	}
 
