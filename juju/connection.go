@@ -6,6 +6,7 @@ import (
 	"github.com/justinsb/gova/log"
 
 	"launchpad.net/juju-core/cmd"
+	"launchpad.net/juju-core/constraints"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
 )
@@ -21,6 +22,9 @@ func Init() error {
 	return juju.InitJujuHome()
 }
 
+// Client is a simple wrapper around the Juju API.
+// It is responsible for enforcing multi-tenancy security,
+// and other additional concerns we have.
 type Client struct {
 	api *api.Client
 }
@@ -72,10 +76,43 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	return &state, nil
 }
 
+func (self *Client) ListServices() (*api.Status, error) {
+	patterns := []string{}
+	status, err := self.api.Status(patterns)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Filter to just our env
+	log.Warn("Service filtering not implemented")
+
+	return status, nil
+}
+
 func (self *Client) ServiceDestroy(serviceId string) error {
 	if !self.canAccess(serviceId) {
 		return nil
 	}
 
 	return self.api.ServiceDestroy(serviceId)
+}
+
+func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits int, configYAML string) error {
+	if !self.canAccess(serviceId) {
+		return nil
+	}
+
+	var constraints constraints.Value
+	var toMachineSpec string
+
+	return self.api.ServiceDeploy(charmUrl, serviceId, numUnits, configYAML, constraints, toMachineSpec)
+
+	//	if params.IsCodeNotImplemented(err) {
+	//		logger.Infof("Status not supported by the API server, " +
+	//			"falling back to 1.16 compatibility mode " +
+	//			"(direct DB access)")
+	//		status, err = c.getStatus1dot16()
+	//	}
+
 }
