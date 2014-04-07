@@ -1,11 +1,19 @@
 package endpoints
 
+import (
+	"net/http"
+
+	"bitbucket.org/jsantabarbara/jxaas/juju"
+	"bitbucket.org/jsantabarbara/jxaas/rs"
+	"github.com/justinsb/gova/log"
+)
+
 type EndpointService struct {
 	Parent    *EndpointCharm
 	ServiceId string
 }
 
-//func (self *EndpointCharms) HttpGet() ([]*Instance, error) {
+//func (self *EndpointService) HttpGet() ([]*Instance, error) {
 //	//	return "Hello world"
 //	envName := cmd.ReadCurrentEnvironment()
 //	apiclient, err := juju.NewAPIClientFromName(envName)
@@ -52,21 +60,21 @@ type EndpointService struct {
 //func (self *EndpointService) ItemLog() {
 //
 //}
-//
-//func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) {
-//	status, err := apiclient.GetStatus(self.ServiceId)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if status == nil {
-//		return nil, HttpError(http.StatusNotFound)
-//	}
-//
-//	log.Debug("Service state: %v", status)
-//
-//	return MapToInstance(self.ServiceId, &status), nil
-//}
-//
+
+func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) {
+	status, err := apiclient.GetStatus(self.ServiceId)
+	if err != nil {
+		return nil, err
+	}
+	if status == nil {
+		return nil, rs.HttpError(http.StatusNotFound)
+	}
+
+	log.Debug("Service state: %v", status)
+
+	return MapToInstance(self.ServiceId, status), nil
+}
+
 //func (self *EndpointService) HttpPost(apiclient *juju.Client) (*Instance, error) {
 //	//	curl, err := charm.InferURL(c.CharmName, conf.DefaultSeries())
 //	//	if err != nil {
