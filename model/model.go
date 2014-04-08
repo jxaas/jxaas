@@ -1,4 +1,4 @@
-package endpoints
+package model
 
 import (
 	"fmt"
@@ -8,6 +8,14 @@ import (
 	"launchpad.net/juju-core/state/api"
 	"launchpad.net/juju-core/state/api/params"
 )
+
+type RelationInfo struct {
+	UnitId     *string
+	RelationId *string
+	RemoteName *string
+	Action     *string
+	Properties map[string]string
+}
 
 type Instance struct {
 	Id string

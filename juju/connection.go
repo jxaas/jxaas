@@ -2,8 +2,11 @@ package juju
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/justinsb/gova/log"
+
+	"bitbucket.org/jsantabarbara/jxaas/model"
 
 	"launchpad.net/juju-core/cmd"
 	"launchpad.net/juju-core/constraints"
@@ -19,6 +22,10 @@ Error details:
 %v
 `
 
+const (
+	PREFIX_RELATIONINFO = "__jxaas_relinfo_"
+)
+
 func Init() error {
 	return juju.InitJujuHome()
 }
@@ -27,18 +34,23 @@ func Init() error {
 // It is responsible for enforcing multi-tenancy security,
 // and other additional concerns we have.
 type Client struct {
-	api *api.Client
+	state  *api.State
+	client *api.Client
 }
 
 func ClientFactory() (*Client, error) {
 	envName := cmd.ReadCurrentEnvironment()
-	apiclient, err := juju.NewAPIClientFromName(envName)
+
+	state, err := juju.NewAPIFromName(envName)
 	if err != nil {
 		return nil, fmt.Errorf(connectionError, envName, err)
 	}
 
+	client := state.Client()
+
 	wrapper := &Client{}
-	wrapper.api = apiclient
+	wrapper.client = client
+	wrapper.state = state
 	//defer apiclient.Close()
 	return wrapper, err
 }
@@ -56,7 +68,7 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	// TODO: Is this efficient?  Any direct just-this-service call?
 	patterns := make([]string, 1)
 	patterns[0] = serviceId
-	status, err := self.api.Status(patterns)
+	status, err := self.client.Status(patterns)
 
 	//	if params.IsCodeNotImplemented(err) {
 	//		logger.Infof("Status not supported by the API server, " +
@@ -82,7 +94,7 @@ func (self *Client) FindConfig(serviceId string) (*params.ServiceGetResults, err
 		return nil, nil
 	}
 
-	config, err := self.api.ServiceGet(serviceId)
+	config, err := self.client.ServiceGet(serviceId)
 	if err != nil {
 		paramsError, ok := err.(*params.Error)
 		if ok && paramsError.Code == "not found" {
@@ -100,7 +112,7 @@ func (self *Client) SetConfig(serviceId string, options map[string]string) error
 		return fmt.Errorf("Unknown service: %v", serviceId)
 	}
 
-	err := self.api.ServiceSet(serviceId, options)
+	err := self.client.ServiceSet(serviceId, options)
 	if err != nil {
 		return err
 	}
@@ -115,9 +127,9 @@ func (self *Client) SetExposed(serviceId string, exposed bool) error {
 
 	var err error
 	if exposed {
-		err = self.api.ServiceExpose(serviceId)
+		err = self.client.ServiceExpose(serviceId)
 	} else {
-		err = self.api.ServiceUnexpose(serviceId)
+		err = self.client.ServiceUnexpose(serviceId)
 	}
 
 	if err != nil {
@@ -129,7 +141,7 @@ func (self *Client) SetExposed(serviceId string, exposed bool) error {
 
 func (self *Client) ListServices() (*api.Status, error) {
 	patterns := []string{}
-	status, err := self.api.Status(patterns)
+	status, err := self.client.Status(patterns)
 
 	if err != nil {
 		return nil, err
@@ -146,7 +158,7 @@ func (self *Client) ServiceDestroy(serviceId string) error {
 		return nil
 	}
 
-	return self.api.ServiceDestroy(serviceId)
+	return self.client.ServiceDestroy(serviceId)
 }
 
 func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits int, configYAML string) error {
@@ -157,7 +169,7 @@ func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits in
 	var constraints constraints.Value
 	var toMachineSpec string
 
-	return self.api.ServiceDeploy(charmUrl, serviceId, numUnits, configYAML, constraints, toMachineSpec)
+	return self.client.ServiceDeploy(charmUrl, serviceId, numUnits, configYAML, constraints, toMachineSpec)
 
 	//	if params.IsCodeNotImplemented(err) {
 	//		logger.Infof("Status not supported by the API server, " +
@@ -166,4 +178,75 @@ func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits in
 	//		status, err = c.getStatus1dot16()
 	//	}
 
+}
+
+func (self *Client) SetRelationInfo(serviceId, unitId, relationId string, properties map[string]string) error {
+	if !self.canAccess(serviceId) {
+		return fmt.Errorf("Service not found")
+	}
+
+	// Annotations on relations aren't supported, and it is tricky to get the relation id
+	// So tag it on the service instead
+	annotateTag := "service-" + serviceId
+
+	pairs := make(map[string]string)
+	for k, v := range properties {
+		pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+k] = v
+	}
+
+	log.Info("Setting annotations on %v: %v", annotateTag, pairs)
+
+	err := self.client.SetAnnotations(annotateTag, pairs)
+	if err != nil {
+		log.Warn("Error setting annotations", err)
+		// TODO: Mask error?
+		return err
+	}
+
+	return nil
+}
+
+func (self *Client) GetRelationInfo(serviceId string, relationKey string) (*model.RelationInfo, error) {
+	if !self.canAccess(serviceId) {
+		return nil, fmt.Errorf("Service not found")
+	}
+
+	annotateTag := "service-" + serviceId
+
+	annotations, err := self.client.GetAnnotations(annotateTag)
+	if err != nil {
+		log.Warn("Error getting annotations", err)
+		// TODO: Mask error?
+		return nil, err
+	}
+
+	relationIdPrefix := relationKey + ":"
+
+	relationInfo := &model.RelationInfo{}
+	relationInfo.Properties = make(map[string]string)
+
+	for tagName, v := range annotations {
+		if !strings.HasPrefix(tagName, PREFIX_RELATIONINFO) {
+			//log.Debug("Prefix mismatch: %v", tagName)
+			continue
+		}
+		suffix := tagName[len(PREFIX_RELATIONINFO):]
+		tokens := strings.SplitN(suffix, "_", 3)
+		if len(tokens) < 3 {
+			log.Debug("Ignoring unparseable tag: %v", tagName)
+			continue
+		}
+
+		// unitId = tokens[0]
+		relationId := tokens[1]
+		if !strings.HasPrefix(relationId, relationIdPrefix) {
+			//log.Debug("Relation prefix mismatch: %v", relationId)
+			continue
+		}
+
+		key := tokens[2]
+		relationInfo.Properties[key] = v
+	}
+
+	return relationInfo, nil
 }

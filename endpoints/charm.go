@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"bitbucket.org/jsantabarbara/jxaas/juju"
+	"bitbucket.org/jsantabarbara/jxaas/model"
 	"bitbucket.org/jsantabarbara/jxaas/rs"
 )
 
@@ -19,7 +20,7 @@ func (self *EndpointCharm) Item(key string) *EndpointService {
 	return child
 }
 
-func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*Instance, error) {
+func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
 	status, err := apiclient.ListServices()
 	if err != nil {
 		return nil, err
@@ -28,10 +29,10 @@ func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*Instance, error) 
 		return nil, rs.HttpError(http.StatusNotFound)
 	}
 
-	instances := make([]*Instance, 0)
+	instances := make([]*model.Instance, 0)
 	for key, state := range status.Services {
 		//fmt.Printf("%v => %v\n\n", key, state)
-		instance := MapToInstance(key, &state, nil)
+		instance := model.MapToInstance(key, &state, nil)
 
 		instances = append(instances, instance)
 	}

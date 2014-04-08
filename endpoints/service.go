@@ -8,6 +8,7 @@ import (
 	"launchpad.net/goyaml"
 
 	"bitbucket.org/jsantabarbara/jxaas/juju"
+	"bitbucket.org/jsantabarbara/jxaas/model"
 	"bitbucket.org/jsantabarbara/jxaas/rs"
 	"github.com/justinsb/gova/log"
 )
@@ -29,6 +30,12 @@ func (self *EndpointService) ItemLog() *EndpointLog {
 	return child
 }
 
+func (self *EndpointService) ItemRelation() *EndpointRelations {
+	child := &EndpointRelations{}
+	child.Parent = self
+	return child
+}
+
 func (self *EndpointService) ServiceName() string {
 	tenant := self.Parent.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
@@ -40,11 +47,18 @@ func (self *EndpointService) ServiceName() string {
 	// The u prefix is for user.
 	// This is both a way to separate out user services from our services,
 	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	serviceName := "u" + tenant + "-" + serviceType + "-" + serviceKey
-	return serviceName
+	prefix := "u" + tenant + "-" + serviceType + "-"
+
+	if strings.HasPrefix(serviceKey, prefix) {
+		// If we already include the prefix, don't re-include it
+		// TODO: This is not a great idea
+		return serviceKey
+	} else {
+		return prefix + serviceKey
+	}
 }
 
-func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) {
+func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
 	serviceName := self.ServiceName()
 	status, err := apiclient.GetStatus(serviceName)
 	if err != nil {
@@ -66,7 +80,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 	//
 	//	return c.out.Write(ctx, result), nil
 
-	return MapToInstance(serviceName, status, config), nil
+	return model.MapToInstance(serviceName, status, config), nil
 }
 
 func makeConfigYaml(serviceName string, config map[string]string) (string, error) {
@@ -85,7 +99,7 @@ func makeConfigYaml(serviceName string, config map[string]string) (string, error
 	return string(bytes), nil
 }
 
-func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) (*Instance, error) {
+func (self *EndpointService) HttpPut(apiclient *juju.Client, request *model.Instance) (*model.Instance, error) {
 	serviceName := self.ServiceName()
 
 	// Sanitize
@@ -153,7 +167,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 			return nil, err
 		}
 	} else {
-		existingValues := MapToConfig(config)
+		existingValues := model.MapToConfig(config)
 		mergedValues := make(map[string]string)
 		{
 			for key, value := range existingValues {
