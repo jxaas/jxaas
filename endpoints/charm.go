@@ -15,7 +15,7 @@ type EndpointCharm struct {
 func (self *EndpointCharm) Item(key string) *EndpointService {
 	child := &EndpointService{}
 	child.Parent = self
-	child.ServiceId = key
+	child.ServiceKey = key
 	return child
 }
 

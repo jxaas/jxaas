@@ -3,6 +3,7 @@ package endpoints
 import (
 	"net/http"
 	"reflect"
+	"strings"
 
 	"launchpad.net/goyaml"
 
@@ -12,8 +13,8 @@ import (
 )
 
 type EndpointService struct {
-	Parent    *EndpointCharm
-	ServiceId string
+	Parent     *EndpointCharm
+	ServiceKey string
 }
 
 func (self *EndpointService) ItemMetrics() *EndpointMetrics {
@@ -28,8 +29,24 @@ func (self *EndpointService) ItemLog() *EndpointLog {
 	return child
 }
 
+func (self *EndpointService) ServiceName() string {
+	tenant := self.Parent.Parent.Parent.Tenant
+	tenant = strings.Replace(tenant, "-", "", -1)
+
+	serviceType := self.Parent.ServiceType
+
+	serviceKey := self.ServiceKey
+
+	// The u prefix is for user.
+	// This is both a way to separate out user services from our services,
+	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
+	serviceName := "u" + tenant + "-" + serviceType + "-" + serviceKey
+	return serviceName
+}
+
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) {
-	status, err := apiclient.GetStatus(self.ServiceId)
+	serviceName := self.ServiceName()
+	status, err := apiclient.GetStatus(serviceName)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +54,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 		return nil, rs.HttpError(http.StatusNotFound)
 	}
 
-	config, err := apiclient.FindConfig(self.ServiceId)
+	config, err := apiclient.FindConfig(serviceName)
 	if err != nil {
 		return nil, err
 	}
@@ -49,17 +66,15 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*Instance, error) 
 	//
 	//	return c.out.Write(ctx, result), nil
 
-	return MapToInstance(self.ServiceId, status, config), nil
+	return MapToInstance(serviceName, status, config), nil
 }
 
-func makeConfigYaml(request *Instance) (string, error) {
-	id := request.Id
-
+func makeConfigYaml(serviceName string, config map[string]string) (string, error) {
 	yaml := make(map[string]map[string]string)
-	yaml[id] = make(map[string]string)
+	yaml[serviceName] = make(map[string]string)
 
-	for k, v := range request.Config {
-		yaml[id][k] = v
+	for k, v := range config {
+		yaml[serviceName][k] = v
 	}
 
 	bytes, err := goyaml.Marshal(yaml)
@@ -71,14 +86,17 @@ func makeConfigYaml(request *Instance) (string, error) {
 }
 
 func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) (*Instance, error) {
+	serviceName := self.ServiceName()
+
 	// Sanitize
-	request.Id = self.ServiceId
+	request.Id = ""
 	request.Units = nil
 	if request.Config == nil {
 		request.Config = make(map[string]string)
 	}
+	request.ConfigParameters = nil
 
-	config, err := apiclient.FindConfig(self.ServiceId)
+	config, err := apiclient.FindConfig(serviceName)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +136,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 
 		charmUrl := "cs:precise/mysql-38"
 
-		configYaml, err := makeConfigYaml(request)
+		configYaml, err := makeConfigYaml(serviceName, request.Config)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +145,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 
 		err = apiclient.ServiceDeploy(
 			charmUrl,
-			self.ServiceId,
+			serviceName,
 			numUnits,
 			configYaml)
 
@@ -147,7 +165,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 		}
 
 		if !reflect.DeepEqual(existingValues, mergedValues) {
-			err = apiclient.SetConfig(self.ServiceId, mergedValues)
+			err = apiclient.SetConfig(serviceName, mergedValues)
 			if err != nil {
 				return nil, err
 			}
@@ -157,12 +175,12 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 	}
 
 	if request.Exposed != nil {
-		status, err := apiclient.GetStatus(self.ServiceId)
+		status, err := apiclient.GetStatus(serviceName)
 		if err != nil {
 			return nil, err
 		}
 		if status.Exposed != *request.Exposed {
-			err = apiclient.SetExposed(self.ServiceId, *request.Exposed)
+			err = apiclient.SetExposed(serviceName, *request.Exposed)
 			if err != nil {
 				log.Warn("Error setting service to Exposed=%v", *request.Exposed, err)
 				return nil, err
@@ -174,9 +192,9 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 }
 
 func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
-	serviceId := self.ServiceId
+	serviceName := self.ServiceName()
 
-	err := apiclient.ServiceDestroy(serviceId)
+	err := apiclient.ServiceDestroy(serviceName)
 	if err != nil {
 		return nil, err
 	}
