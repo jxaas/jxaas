@@ -10,5 +10,7 @@ Singleton injectors?  Pooled injectors?
 
 Juju should return the actual default value
 
+Don't forget to turn on SSL validation in python requests
+
 How do we do 'zero-unit' services?
 * Maybe we could create a parent service with the credentials, and then have our services be subordinate charms.  Reduces overhead to 1.
