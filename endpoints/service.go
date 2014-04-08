@@ -134,7 +134,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *Instance) 
 		//		serviceName = charmInfo.Meta.Name
 		//	}
 
-		charmUrl := "cs:precise/mysql-38"
+		charmUrl := "cs:~justin-fathomdb/precise/mysql-0"
 
 		configYaml, err := makeConfigYaml(serviceName, request.Config)
 		if err != nil {
