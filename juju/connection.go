@@ -8,7 +8,7 @@ import (
 
 	"bitbucket.org/jsantabarbara/jxaas/model"
 
-	"launchpad.net/juju-core/cmd"
+	"launchpad.net/juju-core/cmd/envcmd"
 	"launchpad.net/juju-core/constraints"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
@@ -39,7 +39,7 @@ type Client struct {
 }
 
 func ClientFactory() (*Client, error) {
-	envName := cmd.ReadCurrentEnvironment()
+	envName := envcmd.ReadCurrentEnvironment()
 
 	state, err := juju.NewAPIFromName(envName)
 	if err != nil {
