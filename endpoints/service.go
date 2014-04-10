@@ -2,11 +2,9 @@ package endpoints
 
 import (
 	"net/http"
-	"reflect"
 	"strings"
 
-	"launchpad.net/goyaml"
-
+	"bitbucket.org/jsantabarbara/jxaas/bundle"
 	"bitbucket.org/jsantabarbara/jxaas/juju"
 	"bitbucket.org/jsantabarbara/jxaas/model"
 	"bitbucket.org/jsantabarbara/jxaas/rs"
@@ -83,25 +81,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, e
 	return model.MapToInstance(serviceName, status, config), nil
 }
 
-func makeConfigYaml(serviceName string, config map[string]string) (string, error) {
-	yaml := make(map[string]map[string]string)
-	yaml[serviceName] = make(map[string]string)
-
-	for k, v := range config {
-		yaml[serviceName][k] = v
-	}
-
-	bytes, err := goyaml.Marshal(yaml)
-	if err != nil {
-		return "", err
-	}
-
-	return string(bytes), nil
-}
-
 func (self *EndpointService) HttpPut(apiclient *juju.Client, request *model.Instance) (*model.Instance, error) {
-	serviceName := self.ServiceName()
-
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
@@ -110,96 +90,22 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *model.Inst
 	}
 	request.ConfigParameters = nil
 
-	config, err := apiclient.FindConfig(serviceName)
+	context := &bundle.TemplateContext{}
+	context.SystemServices = map[string]string{}
+	context.SystemServices["elasticsearch"] = "es1"
+
+	tenant := self.Parent.Parent.Parent.Tenant
+	serviceType := self.Parent.ServiceType
+	name := self.ServiceName()
+
+	b, err := bundle.GetBundle(context, tenant, serviceType, name)
 	if err != nil {
 		return nil, err
 	}
 
-	if config == nil {
-		// Create new service
-
-		//	curl, err := charm.InferURL(c.CharmName, conf.DefaultSeries())
-		//	if err != nil {
-		//		return err
-		//	}
-		//	repo, err := charm.InferRepository(curl, ctx.AbsPath(c.RepoPath))
-		//	if err != nil {
-		//		return err
-		//	}
-		//
-		//	repo = config.SpecializeCharmRepo(repo, conf)
-		//
-		//	curl, err = addCharmViaAPI(client, ctx, curl, repo)
-		//	if err != nil {
-		//		return err
-		//	}
-
-		//
-		//	charmInfo, err := client.CharmInfo(curl.String())
-		//	if err != nil {
-		//		return err
-		//	}
-
-		numUnits := 1
-
-		//		serviceName := "service" + strconv.Itoa(rand.Int())
-
-		//	if serviceName == "" {
-		//		serviceName = charmInfo.Meta.Name
-		//	}
-
-		charmUrl := "cs:~justin-fathomdb/precise/mysql-0"
-
-		configYaml, err := makeConfigYaml(serviceName, request.Config)
-		if err != nil {
-			return nil, err
-		}
-
-		log.Debug("Deploying with YAML: %v", configYaml)
-
-		err = apiclient.ServiceDeploy(
-			charmUrl,
-			serviceName,
-			numUnits,
-			configYaml)
-
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		existingValues := model.MapToConfig(config)
-		mergedValues := make(map[string]string)
-		{
-			for key, value := range existingValues {
-				mergedValues[key] = value
-			}
-			for key, value := range request.Config {
-				mergedValues[key] = value
-			}
-		}
-
-		if !reflect.DeepEqual(existingValues, mergedValues) {
-			err = apiclient.SetConfig(serviceName, mergedValues)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			log.Debug("Configuration unchanged; won't reconfigure")
-		}
-	}
-
-	if request.Exposed != nil {
-		status, err := apiclient.GetStatus(serviceName)
-		if err != nil {
-			return nil, err
-		}
-		if status.Exposed != *request.Exposed {
-			err = apiclient.SetExposed(serviceName, *request.Exposed)
-			if err != nil {
-				log.Warn("Error setting service to Exposed=%v", *request.Exposed, err)
-				return nil, err
-			}
-		}
+	err = b.Deploy(apiclient)
+	if err != nil {
+		return nil, err
 	}
 
 	return self.HttpGet(apiclient)

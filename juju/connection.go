@@ -180,6 +180,24 @@ func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits in
 
 }
 
+func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, error) {
+	if !self.canAccess(from) {
+		return nil, fmt.Errorf("Cannot find service")
+	}
+
+	if !self.canAccess(to) {
+		return nil, fmt.Errorf("Cannot find service")
+	}
+
+	results, err := self.client.AddRelation(from, to)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 func (self *Client) SetRelationInfo(serviceId, unitId, relationId string, properties map[string]string) error {
 	if !self.canAccess(serviceId) {
 		return fmt.Errorf("Service not found")
