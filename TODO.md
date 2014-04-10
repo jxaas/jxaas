@@ -28,3 +28,5 @@ Juju ServiceDeploy needs to be able to deploy without NumUnits, for subordinate 
 We need to pre-download charms??
 
 Juju create relation when already exists, should return a nice code so we don't have to string-match on the message
+
+What should we call jxaas services?  Instances?
