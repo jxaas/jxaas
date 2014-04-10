@@ -9,7 +9,7 @@ const (
 
 func applyPrefix(key string, prefix string) string {
 	if strings.HasPrefix(SYSTEM_PREFIX, key) {
-		return key
+		return key[len(SYSTEM_PREFIX):]
 	}
 	return prefix + key
 }
