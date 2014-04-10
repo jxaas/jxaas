@@ -1,6 +1,6 @@
 Juju should pass JUJU_ACTION, rather than making us parse it.  Just like JUJU_RELATION.
 
-Juju should support uninstall (aka remove) hook
+Juju should support uninstall (aka remove) hook.  Otherwise our proxy charm can't remove the service.
 
 Make sure heka metrics are not analyzed by ES
 

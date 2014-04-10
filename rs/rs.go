@@ -292,40 +292,42 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 
 	if err == nil {
 		response, err = self.makeResponse(val)
+	}
+	if err == nil {
+		assert.That(response != nil)
 
 		if response.Headers == nil {
 			response.Headers = make(map[string]string)
 		}
 
-		contentType := response.Headers["content-type"]
-		if contentType == "" && response.Content != nil {
-			contentType = "application/json; charset=utf-8"
-			response.Headers["content-type"] = contentType
-		}
+		if response.Content == nil {
+			mbw = &NoResponseMessageBodyWriter{}
+		} else {
+			contentType := response.Headers["content-type"]
+			if contentType == "" {
+				contentType = "application/json; charset=utf-8"
+				response.Headers["content-type"] = contentType
+			}
 
-		var mediaType *MediaType
-		if contentType != "" {
-			mediaType, err = ParseMediaType(contentType)
-		}
+			var mediaType *MediaType
+			if contentType != "" {
+				mediaType, err = ParseMediaType(contentType)
+			}
 
-		if err == nil {
-			mbw = self.server.findMessageBodyWriter(response.Content, req, mediaType)
-			if mbw == nil {
-				log.Warn("Unable to find media type: %v", contentType)
-				err = HttpError(http.StatusUnsupportedMediaType)
+			if err == nil {
+				assert.That(mediaType != nil)
+
+				mbw = self.server.findMessageBodyWriter(response.Content, req, mediaType)
+				if mbw == nil {
+					log.Warn("Unable to find media type: %v", contentType)
+					err = HttpError(http.StatusUnsupportedMediaType)
+				}
 			}
 		}
 	}
 
 	if err == nil {
-
-		if response == nil {
-			response = &HttpResponse{}
-			response.Status = http.StatusNoContent
-
-			assert.That(mbw == nil)
-			mbw = &NoResponseMessageBodyWriter{}
-		}
+		assert.That(response != nil)
 		assert.That(mbw != nil)
 
 		log.Info("%v %v %v", response.Status, requestMethod, requestUrl)

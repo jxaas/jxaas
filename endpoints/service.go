@@ -34,12 +34,12 @@ func (self *EndpointService) ItemRelation() *EndpointRelations {
 	return child
 }
 
-// TODO: Deprecated
+// TODO: Deprecate?
 func (self *EndpointService) PrimaryServiceName() string {
-	serviceType := self.Parent.ServiceType
+	primaryService := self.Parent.ServiceType
 
 	v := self.jujuPrefix()
-	v = v + "-" + serviceType
+	v = v + primaryService
 	return v
 }
 
@@ -59,14 +59,22 @@ func (self *EndpointService) jujuPrefix() string {
 }
 
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
+	//prefix := self.jujuPrefix()
+
+	//	statusResponse, err := apiclient.GetStatusList(prefix)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	if len(statusResponse) == 0 {
+	//	return nil, rs.ErrNotFound()
+	//	}
+	//
+	//	for serviceId, status := range statusResponse {
+	//		 model.MapToInstance(serviceName, status, config), nil
+	//	}
+
 	serviceName := self.PrimaryServiceName()
 	status, err := apiclient.GetStatus(serviceName)
-	if err != nil {
-		return nil, err
-	}
-	if status == nil {
-		return nil, rs.HttpError(http.StatusNotFound)
-	}
 
 	config, err := apiclient.FindConfig(serviceName)
 	if err != nil {
@@ -74,11 +82,6 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, e
 	}
 
 	log.Debug("Service state: %v", status)
-
-	//
-	//	result := formatStatus(status)
-	//
-	//	return c.out.Write(ctx, result), nil
 
 	return model.MapToInstance(serviceName, status, config), nil
 }
@@ -132,6 +135,8 @@ func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpRespons
 		return nil, err
 	}
 	for serviceId, _ := range listResponse.Services {
+		log.Debug("Destroying service %v", serviceId)
+
 		err = apiclient.ServiceDestroy(serviceId)
 		if err != nil {
 			log.Warn("Error destroying service: %v", serviceId)

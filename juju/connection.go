@@ -56,7 +56,14 @@ func ClientFactory() (*Client, error) {
 }
 
 func (self *Client) canAccess(serviceId string) bool {
+	// Maybe we should panic here
 	log.Warn("Juju connection canAccess is stub-implemented")
+	return true
+}
+
+func (self *Client) canAccessPrefix(serviceId string) bool {
+	// Maybe we should panic here
+	log.Warn("Juju connection canAccessPrefix is stub-implemented")
 	return true
 }
 
@@ -87,6 +94,23 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	}
 
 	return &state, nil
+}
+
+func (self *Client) GetStatusList(prefix string) (map[string]api.ServiceStatus, error) {
+	if !self.canAccessPrefix(prefix) {
+		return nil, nil
+	}
+
+	patterns := make([]string, 1)
+	patterns[0] = prefix + "*"
+	status, err := self.client.Status(patterns)
+
+	// Display any error, but continue to print status if some was returned
+	if err != nil {
+		return nil, err
+	}
+
+	return status.Services, nil
 }
 
 func (self *Client) FindConfig(serviceId string) (*params.ServiceGetResults, error) {
@@ -139,10 +163,14 @@ func (self *Client) SetExposed(serviceId string, exposed bool) error {
 	return nil
 }
 
-func (self *Client) ListServices(pattern string) (*api.Status, error) {
+func (self *Client) ListServices(prefix string) (*api.Status, error) {
+	if !self.canAccessPrefix(prefix) {
+		return nil, fmt.Errorf("No access")
+	}
+
 	patterns := []string{}
-	if pattern != "" {
-		patterns = append(patterns, pattern)
+	if prefix != "" {
+		patterns = append(patterns, prefix + "*")
 	}
 	status, err := self.client.Status(patterns)
 
