@@ -9,37 +9,6 @@ type Binder struct {
 	bindings map[reflect.Type]Binding
 }
 
-type Binding interface {
-	Get() (interface{}, error)
-}
-
-type FunctionBinding struct {
-	fn    interface{}
-	valFn reflect.Value
-}
-
-func (self *FunctionBinding) Get() (interface{}, error) {
-	// TODO: Inject arguments?
-	in := []reflect.Value{}
-	out := self.valFn.Call(in)
-
-	var val interface{}
-	if len(out) >= 1 {
-		if !out[0].IsNil() {
-			val = out[0].Interface()
-		}
-	}
-
-	var err error
-	if len(out) >= 2 {
-		if !out[1].IsNil() {
-			err = out[1].Interface().(error)
-		}
-	}
-
-	return val, err
-}
-
 func NewBinder() *Binder {
 	self := &Binder{}
 	self.bindings = make(map[reflect.Type]Binding)
@@ -62,6 +31,13 @@ func (self *Binder) AddProvider(fn interface{}) {
 
 	returnType := binding.valFn.Type().Out(0)
 	self.bindings[returnType] = binding
+}
+
+func (self *Binder) AddSingleton(obj interface{}) {
+	binding := &SingletonBinding{}
+	binding.obj = obj
+	t := reflect.TypeOf(obj)
+	self.bindings[t] = binding
 }
 
 func (self *Binder) Get(t reflect.Type) (interface{}, error) {
