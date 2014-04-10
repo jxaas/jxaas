@@ -94,9 +94,17 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 	context.SystemServices = map[string]string{}
 	context.SystemServices["elasticsearch"] = "es1"
 
+	if request.NumberUnits == nil {
+		// TODO: Need to determine current # of units
+		context.NumberUnits = 1
+	} else {
+		context.NumberUnits = *request.NumberUnits
+	}
+
 	tenant := self.Parent.Parent.Parent.Tenant
+	tenant = strings.Replace(tenant, "-", "", -1)
 	serviceType := self.Parent.ServiceType
-	name := self.ServiceName()
+	name := self.ServiceKey
 
 	b, err := bundleStore.GetBundle(context, tenant, serviceType, name)
 	if err != nil {

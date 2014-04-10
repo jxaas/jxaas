@@ -161,6 +161,26 @@ func (self *Client) ServiceDestroy(serviceId string) error {
 	return self.client.ServiceDestroy(serviceId)
 }
 
+func (c *Client) call(method string, params, result interface{}) error {
+	return c.state.Call("Client", "", method, params, result)
+}
+
+// Fixed so that we can omit numUnits (by passing -1)
+func (c *Client) serviceDeploy(charmURL string, serviceName string, numUnits int, configYAML string, cons constraints.Value, toMachineSpec string) error {
+	params := params.ServiceDeploy{
+		ServiceName:   serviceName,
+		CharmUrl:      charmURL,
+		ConfigYAML:    configYAML,
+		Constraints:   cons,
+		ToMachineSpec: toMachineSpec,
+	}
+	if numUnits >= 0 {
+		params.NumUnits = numUnits
+	}
+
+	return c.call("ServiceDeploy", params, nil)
+}
+
 func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits int, configYAML string) error {
 	if !self.canAccess(serviceId) {
 		return nil
@@ -169,7 +189,7 @@ func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits in
 	var constraints constraints.Value
 	var toMachineSpec string
 
-	return self.client.ServiceDeploy(charmUrl, serviceId, numUnits, configYAML, constraints, toMachineSpec)
+	return self.serviceDeploy(charmUrl, serviceId, numUnits, configYAML, constraints, toMachineSpec)
 
 	//	if params.IsCodeNotImplemented(err) {
 	//		logger.Infof("Status not supported by the API server, " +
@@ -177,7 +197,11 @@ func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits in
 	//			"(direct DB access)")
 	//		status, err = c.getStatus1dot16()
 	//	}
+}
 
+func (self *Client) CharmInfo(charmUrl string) (*api.CharmInfo, error) {
+	// TODO: Caching?
+	return self.client.CharmInfo(charmUrl)
 }
 
 func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, error) {

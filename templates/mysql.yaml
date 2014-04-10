@@ -8,10 +8,8 @@ mysql:
         performance: <<
     proxyclient:
       charm: "cs:~justin-fathomdb/precise/proxy-client-0"
-      num_units: 0
     metrics:
       charm: "cs:~justin-fathomdb/precise/heka-collector-0"
-      num_units: 0
   relations: 
     - - "proxyclient"
       - "mysql"

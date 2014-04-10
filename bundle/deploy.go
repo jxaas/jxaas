@@ -60,6 +60,16 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		return err
 	}
 
+	charmUrl := self.Charm
+
+	charmInfo, err := apiclient.CharmInfo(charmUrl)
+	if err != nil {
+		log.Warn("Error reading charm: %v", charmUrl, err)
+	}
+	if charmInfo == nil {
+		log.Warn("Unable to find charm: %v", charmUrl)
+	}
+
 	if config == nil {
 		// Create new service
 
@@ -79,21 +89,17 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		//		return err
 		//	}
 
-		//
-		//	charmInfo, err := client.CharmInfo(curl.String())
-		//	if err != nil {
-		//		return err
-		//	}
-
 		numUnits := self.NumberUnits
+
+		if charmInfo.Meta.Subordinate {
+			numUnits = -1
+		}
 
 		//		serviceName := "service" + strconv.Itoa(rand.Int())
 
 		//	if serviceName == "" {
 		//		serviceName = charmInfo.Meta.Name
 		//	}
-
-		charmUrl := self.Charm
 
 		configYaml, err := makeConfigYaml(jujuServiceId, self.Options)
 		if err != nil {
@@ -133,7 +139,7 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		}
 	}
 
-	if true { //self.Exposed != nil {
+	if !charmInfo.Meta.Subordinate { // && self.Exposed != nil {
 		status, err := apiclient.GetStatus(jujuServiceId)
 		if err != nil {
 			return err

@@ -22,6 +22,9 @@ type Instance struct {
 
 	// (Optional), so *bool
 	Exposed *bool
+	
+	// (Optional)
+	NumberUnits *int
 
 	Units map[string]*Unit
 
