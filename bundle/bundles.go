@@ -3,7 +3,6 @@ package bundle
 import (
 	"bytes"
 	"fmt"
-	"text/template"
 
 	"github.com/justinsb/gova/log"
 )
@@ -12,9 +11,7 @@ type TemplateContext struct {
 	SystemServices map[string]string
 }
 
-func GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
-	var def string
-
+func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
 	// Copy and apply the system prefix
 	templateContextCopy := *templateContext
 
@@ -24,23 +21,13 @@ func GetBundle(templateContext *TemplateContext, tenant, serviceType, name strin
 	}
 	templateContextCopy.SystemServices = systemServices
 
-	// TODO: Load from file
-	if serviceType == "mysql" {
-		def = DEF_MYSQL
-	}
-
-	if def == "" {
-		return nil, nil
-	}
-
-	// TODO: Cache templates
-	tmpl, err := template.New("bundle-" + serviceType).Parse(def)
+	template, err := self.getBundleTemplate(serviceType)
 	if err != nil {
 		return nil, err
 	}
 
 	var buffer bytes.Buffer
-	err = tmpl.Execute(&buffer, templateContextCopy)
+	err = template.Execute(&buffer, templateContextCopy)
 	if err != nil {
 		return nil, err
 	}

@@ -179,6 +179,8 @@ func (self *RestEndpointHandler) buildArg(res http.ResponseWriter, req *http.Req
 		return v, nil
 	}
 
+	// TODO: Fail if two args...
+
 	// TODO: Only if has content?
 	mediaType, err := getMediaType(req)
 	if err != nil {

@@ -1,37 +1,38 @@
 package bundle
 
 import (
-	"bytes"
-	"fmt"
+	"os"
 	"path"
 
-	"os/filepath"
+	"io/ioutil"
 	"text/template"
-
-	"github.com/justinsb/gova/log"
 )
 
 type BundleStore struct {
 	basedir string
 }
 
-func (self *BundleStore) getBundleTemplate(key string) (*Bundle, error) {
-	var def string
+func NewBundleStore(basedir string) *BundleStore {
+	self := &BundleStore{}
+	self.basedir = basedir
+	return self
+}
 
+func (self *BundleStore) getBundleTemplate(key string) (*template.Template, error) {
 	// TODO: Check for path traversal
-	path := path.Join(self.basedir, key + ".yaml")
+	path := path.Join(self.basedir, key+".yaml")
 
-	def, err := files.Read(path)
+	def, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, err
-	}
-
-	if def == nil {
-		return nil, nil
+		if os.IsNotExist(err) {
+			return nil, nil
+		} else {
+			return nil, err
+		}
 	}
 
 	// TODO: Cache templates
-	template, err := template.New("bundle-" + key).Parse(def)
+	template, err := template.New("bundle-" + key).Parse(string(def))
 	if err != nil {
 		return nil, err
 	}

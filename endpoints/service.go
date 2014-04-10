@@ -81,7 +81,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, e
 	return model.MapToInstance(serviceName, status, config), nil
 }
 
-func (self *EndpointService) HttpPut(apiclient *juju.Client, request *model.Instance) (*model.Instance, error) {
+func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, request *model.Instance) (*model.Instance, error) {
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
@@ -98,7 +98,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, request *model.Inst
 	serviceType := self.Parent.ServiceType
 	name := self.ServiceName()
 
-	b, err := bundle.GetBundle(context, tenant, serviceType, name)
+	b, err := bundleStore.GetBundle(context, tenant, serviceType, name)
 	if err != nil {
 		return nil, err
 	}

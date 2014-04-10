@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/justinsb/gova/log"
 
+	"bitbucket.org/jsantabarbara/jxaas/bundle"
 	"bitbucket.org/jsantabarbara/jxaas/endpoints"
 	"bitbucket.org/jsantabarbara/jxaas/inject"
 	"bitbucket.org/jsantabarbara/jxaas/juju"
@@ -14,6 +15,9 @@ func main() {
 
 	binder := inject.NewBinder()
 	binder.AddProvider(juju.ClientFactory)
+
+	bundleStore := bundle.NewBundleStore("templates")
+	binder.AddSingleton(bundleStore)
 
 	injector := binder.CreateInjector()
 
