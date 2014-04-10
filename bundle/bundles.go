@@ -12,28 +12,6 @@ type TemplateContext struct {
 	SystemServices map[string]string
 }
 
-const (
-	DEF_MYSQL = `envExport: 
-  services: 
-    sql: 
-      charm: "cs:~justin-fathomdb/precise/mysql-0"
-      num_units: 1
-    proxyclient: 
-      charm: "cs:~justin-fathomdb/precise/proxy-client-0"
-      num_units: 1
-    metrics: 
-      charm: "cs:~justin-fathomdb/precise/heka-collector-0"
-      num_units: 1
-  relations: 
-    - - "proxyclient"
-      - "mysql"
-    - - "metrics"
-      - "mysql"
-    - - "metrics:elasticsearch"
-      - "{{.SystemServices.elasticsearch}}:cluster"
-`
-)
-
 func GetBundle(key string, templateContext *TemplateContext, tenant, service, name string) (*Bundle, error) {
 	var def string
 
