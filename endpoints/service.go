@@ -34,30 +34,32 @@ func (self *EndpointService) ItemRelation() *EndpointRelations {
 	return child
 }
 
-func (self *EndpointService) ServiceName() string {
+// TODO: Deprecated
+func (self *EndpointService) PrimaryServiceName() string {
+	serviceType := self.Parent.ServiceType
+
+	v := self.jujuPrefix()
+	v = v + "-" + serviceType
+	return v
+}
+
+func (self *EndpointService) jujuPrefix() string {
 	tenant := self.Parent.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
 
 	serviceType := self.Parent.ServiceType
 
-	serviceKey := self.ServiceKey
+	name := self.ServiceKey
 
 	// The u prefix is for user.
 	// This is both a way to separate out user services from our services,
 	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + serviceType + "-"
-
-	if strings.HasPrefix(serviceKey, prefix) {
-		// If we already include the prefix, don't re-include it
-		// TODO: This is not a great idea
-		return serviceKey
-	} else {
-		return prefix + serviceKey
-	}
+	prefix := "u" + tenant + "-" + serviceType + "-" + name + "-"
+	return prefix
 }
 
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
-	serviceName := self.ServiceName()
+	serviceName := self.PrimaryServiceName()
 	status, err := apiclient.GetStatus(serviceName)
 	if err != nil {
 		return nil, err
@@ -110,25 +112,34 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 	if err != nil {
 		return nil, err
 	}
+	if b == nil {
+		return nil, rs.ErrNotFound()
+	}
 
 	err = b.Deploy(apiclient)
 	if err != nil {
 		return nil, err
-	}
-	if b == nil {
-		return nil, rs.ErrNotFound()
 	}
 
 	return self.HttpGet(apiclient)
 }
 
 func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
-	serviceName := self.ServiceName()
+	prefix := self.jujuPrefix()
 
-	err := apiclient.ServiceDestroy(serviceName)
+	listResponse, err := apiclient.ListServices(prefix)
 	if err != nil {
 		return nil, err
 	}
+	for serviceId, _ := range listResponse.Services {
+		err = apiclient.ServiceDestroy(serviceId)
+		if err != nil {
+			log.Warn("Error destroying service: %v", serviceId)
+			return nil, err
+		}
+	}
 
+	// TODO: Wait for deletion
+	// TODO: Remove machines
 	return &rs.HttpResponse{Status: http.StatusAccepted}, nil
 }

@@ -14,7 +14,7 @@ type Lines struct {
 }
 
 func (self *EndpointLog) HttpGet() (*Lines, error) {
-	service := self.Parent.ServiceName()
+	service := self.Parent.PrimaryServiceName()
 
 	// TODO: Inject
 	logStore := &juju.JujuLogStore{}

@@ -139,8 +139,11 @@ func (self *Client) SetExposed(serviceId string, exposed bool) error {
 	return nil
 }
 
-func (self *Client) ListServices() (*api.Status, error) {
+func (self *Client) ListServices(pattern string) (*api.Status, error) {
 	patterns := []string{}
+	if pattern != "" {
+		patterns = append(patterns, pattern)
+	}
 	status, err := self.client.Status(patterns)
 
 	if err != nil {

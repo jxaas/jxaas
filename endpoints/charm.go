@@ -21,7 +21,7 @@ func (self *EndpointCharm) Item(key string) *EndpointService {
 }
 
 func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
-	status, err := apiclient.ListServices()
+	status, err := apiclient.ListServices("")
 	if err != nil {
 		return nil, err
 	}

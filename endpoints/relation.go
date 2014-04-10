@@ -31,7 +31,7 @@ func (self *EndpointRelation) HttpPost(apiclient *juju.Client, relationInfo *mod
 
 	service := self.Service()
 
-	serviceName := service.ServiceName()
+	serviceName := service.PrimaryServiceName()
 	unitId := coalesce(relationInfo.UnitId, "")
 	relationId := coalesce(relationInfo.RelationId, "")
 	err := apiclient.SetRelationInfo(serviceName, unitId, relationId, relationInfo.Properties)
@@ -47,7 +47,7 @@ func (self *EndpointRelation) HttpGet(apiclient *juju.Client) (*model.RelationIn
 	service := self.Service()
 	relationKey := self.RelationKey
 
-	serviceName := service.ServiceName()
+	serviceName := service.PrimaryServiceName()
 	relationInfo, err := apiclient.GetRelationInfo(serviceName, relationKey)
 	if err != nil {
 		return nil, err
