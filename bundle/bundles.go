@@ -12,7 +12,7 @@ type TemplateContext struct {
 	SystemServices map[string]string
 }
 
-func GetBundle(key string, templateContext *TemplateContext, tenant, service, name string) (*Bundle, error) {
+func GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
 	var def string
 
 	// Copy and apply the system prefix
@@ -25,7 +25,7 @@ func GetBundle(key string, templateContext *TemplateContext, tenant, service, na
 	templateContextCopy.SystemServices = systemServices
 
 	// TODO: Load from file
-	if key == "mysql" {
+	if serviceType == "mysql" {
 		def = DEF_MYSQL
 	}
 
@@ -34,7 +34,7 @@ func GetBundle(key string, templateContext *TemplateContext, tenant, service, na
 	}
 
 	// TODO: Cache templates
-	tmpl, err := template.New("bundle-" + key).Parse(def)
+	tmpl, err := template.New("bundle-" + serviceType).Parse(def)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func GetBundle(key string, templateContext *TemplateContext, tenant, service, na
 	}
 
 	for _, v := range bundles {
-		v.ApplyPrefix(tenant, service, name)
+		v.ApplyPrefix(tenant, serviceType, name)
 		return v, nil
 	}
 
