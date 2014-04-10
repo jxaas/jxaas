@@ -21,7 +21,7 @@ func coalesce(p *string, alternative string) string {
 	return *p
 }
 
-func (self *EndpointRelation) HttpPut(apiclient *juju.Client, relationInfo *model.RelationInfo) (*model.RelationInfo, error) {
+func (self *EndpointRelation) HttpPost(apiclient *juju.Client, relationInfo *model.RelationInfo) (*model.RelationInfo, error) {
 	// TODO: Validate that this is coming from one of our machines?
 
 	// Sanitize
