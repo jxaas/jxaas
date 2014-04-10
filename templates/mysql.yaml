@@ -10,10 +10,12 @@ mysql:
       charm: "cs:~justin-fathomdb/precise/proxy-client-0"
     metrics:
       charm: "cs:~justin-fathomdb/precise/heka-collector-0"
-  relations: 
-    - - "proxyclient"
-      - "mysql"
-    - - "metrics"
-      - "mysql"
+  relations:
+    - - "proxyclient:juju-info"
+      - "mysql:juju-info"
+    - - "metrics:juju-info"
+      - "mysql:juju-info"
+    - - "metrics:db"
+      - "mysql:db"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
