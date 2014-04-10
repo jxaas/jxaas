@@ -2,10 +2,10 @@ mysql:
   services:
     mysql:
       charm: "cs:~justin-fathomdb/precise/mysql-0"
-      num_units: @
+      num_units: <<
       exposed: true
       options:
-        performance: @
+        performance: <<
     proxyclient:
       charm: "cs:~justin-fathomdb/precise/proxy-client-0"
       num_units: 0

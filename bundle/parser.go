@@ -32,6 +32,11 @@ func getInt(config map[interface{}]interface{}, key string, defaultValue int) (i
 	}
 
 	s := asString(v)
+
+	if s == "<<" {
+		return IMPLICIT_MARKER_INT, nil
+	}
+
 	n, err := strconv.Atoi(s)
 	if err != nil {
 		return 0, err

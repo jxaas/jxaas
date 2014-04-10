@@ -9,6 +9,9 @@ import (
 
 type TemplateContext struct {
 	SystemServices map[string]string
+	Options        map[string]string
+
+	NumberUnits int
 }
 
 func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
@@ -16,14 +19,23 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 	templateContextCopy := *templateContext
 
 	systemServices := map[string]string{}
-	for k, v := range templateContextCopy.SystemServices {
-		systemServices[k] = SYSTEM_PREFIX + v
+	if templateContextCopy.SystemServices != nil {
+		for k, v := range templateContextCopy.SystemServices {
+			systemServices[k] = SYSTEM_PREFIX + v
+		}
 	}
 	templateContextCopy.SystemServices = systemServices
+
+	if templateContextCopy.Options == nil {
+		templateContextCopy.Options = map[string]string{}
+	}
 
 	template, err := self.getBundleTemplate(serviceType)
 	if err != nil {
 		return nil, err
+	}
+	if template == nil {
+		return nil, nil
 	}
 
 	var buffer bytes.Buffer
@@ -40,12 +52,24 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 		return nil, err
 	}
 
+	bundle, err := getOnly(bundles)
+	if err != nil {
+		return nil, err
+	}
+
+	bundle.ApplyImplicits(templateContext)
+
+	bundle.ApplyPrefix(tenant, serviceType, name)
+
+	return bundle, nil
+}
+
+func getOnly(bundles map[string]*Bundle) (*Bundle, error) {
 	if len(bundles) > 1 {
 		return nil, fmt.Errorf("Multiple sections not handled")
 	}
 
 	for _, v := range bundles {
-		v.ApplyPrefix(tenant, serviceType, name)
 		return v, nil
 	}
 

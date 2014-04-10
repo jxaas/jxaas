@@ -4,6 +4,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/justinsb/gova/log"
+
 	"io/ioutil"
 	"text/template"
 )
@@ -25,6 +27,7 @@ func (self *BundleStore) getBundleTemplate(key string) (*template.Template, erro
 	def, err := ioutil.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
+			log.Warn("Service bundle not found: %v", path)
 			return nil, nil
 		} else {
 			return nil, err
