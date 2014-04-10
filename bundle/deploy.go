@@ -29,6 +29,8 @@ func makeConfigYaml(serviceName string, config map[string]string) (string, error
 }
 
 func (self *Bundle) Deploy(apiclient *juju.Client) error {
+	log.Debug("Deploying bundle: %v", self)
+
 	for key, service := range self.Services {
 		err := service.deploy(key, apiclient)
 		if err != nil {
