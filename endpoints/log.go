@@ -1,7 +1,7 @@
 package endpoints
 
 import (
-	"bitbucket.org/jsantabarbara/jxaas/juju"
+	"github.com/jxaas/jxaas/juju"
 	"github.com/justinsb/gova/log"
 )
 

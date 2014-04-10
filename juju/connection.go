@@ -6,7 +6,7 @@ import (
 
 	"github.com/justinsb/gova/log"
 
-	"bitbucket.org/jsantabarbara/jxaas/model"
+	"github.com/jxaas/jxaas/model"
 
 	"launchpad.net/juju-core/cmd/envcmd"
 	"launchpad.net/juju-core/constraints"

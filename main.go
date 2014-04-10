@@ -3,11 +3,11 @@ package main
 import (
 	"github.com/justinsb/gova/log"
 
-	"bitbucket.org/jsantabarbara/jxaas/bundle"
-	"bitbucket.org/jsantabarbara/jxaas/endpoints"
-	"bitbucket.org/jsantabarbara/jxaas/inject"
-	"bitbucket.org/jsantabarbara/jxaas/juju"
-	"bitbucket.org/jsantabarbara/jxaas/rs"
+	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/endpoints"
+	"github.com/jxaas/jxaas/inject"
+	"github.com/jxaas/jxaas/juju"
+	"github.com/jxaas/jxaas/rs"
 )
 
 func main() {

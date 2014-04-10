@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"bitbucket.org/jsantabarbara/jxaas/juju"
-	"bitbucket.org/jsantabarbara/jxaas/model"
+	"github.com/jxaas/jxaas/juju"
+	"github.com/jxaas/jxaas/model"
 
 	"launchpad.net/goyaml"
 

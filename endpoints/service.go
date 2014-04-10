@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/jsantabarbara/jxaas/bundle"
-	"bitbucket.org/jsantabarbara/jxaas/juju"
-	"bitbucket.org/jsantabarbara/jxaas/model"
-	"bitbucket.org/jsantabarbara/jxaas/rs"
 	"github.com/justinsb/gova/log"
+	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/juju"
+	"github.com/jxaas/jxaas/model"
+	"github.com/jxaas/jxaas/rs"
 )
 
 type EndpointService struct {

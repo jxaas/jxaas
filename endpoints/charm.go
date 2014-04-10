@@ -3,9 +3,9 @@ package endpoints
 import (
 	"net/http"
 
-	"bitbucket.org/jsantabarbara/jxaas/juju"
-	"bitbucket.org/jsantabarbara/jxaas/model"
-	"bitbucket.org/jsantabarbara/jxaas/rs"
+	"github.com/jxaas/jxaas/juju"
+	"github.com/jxaas/jxaas/model"
+	"github.com/jxaas/jxaas/rs"
 )
 
 type EndpointCharm struct {

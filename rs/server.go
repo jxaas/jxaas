@@ -7,7 +7,7 @@ import (
 
 	"github.com/justinsb/gova/assert"
 
-	"bitbucket.org/jsantabarbara/jxaas/inject"
+	"github.com/jxaas/jxaas/inject"
 )
 
 type RestServer struct {
