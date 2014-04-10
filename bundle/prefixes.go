@@ -8,7 +8,7 @@ const (
 )
 
 func applyPrefix(key string, prefix string) string {
-	if strings.HasPrefix(SYSTEM_PREFIX, key) {
+	if strings.HasPrefix(key, SYSTEM_PREFIX) {
 		return key[len(SYSTEM_PREFIX):]
 	}
 	return prefix + key
