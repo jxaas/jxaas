@@ -21,16 +21,16 @@ func (self *EndpointCharm) Item(key string) *EndpointService {
 }
 
 func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
-	status, err := apiclient.ListServices("")
+	statuses, err := apiclient.GetStatusList("")
 	if err != nil {
 		return nil, err
 	}
-	if status == nil {
+	if statuses == nil {
 		return nil, rs.HttpError(http.StatusNotFound)
 	}
 
 	instances := make([]*model.Instance, 0)
-	for key, state := range status.Services {
+	for key, state := range statuses {
 		//fmt.Printf("%v => %v\n\n", key, state)
 		instance := model.MapToInstance(key, &state, nil)
 

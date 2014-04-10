@@ -130,11 +130,11 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
 	prefix := self.jujuPrefix()
 
-	listResponse, err := apiclient.ListServices(prefix)
+	statuses, err := apiclient.GetStatusList(prefix)
 	if err != nil {
 		return nil, err
 	}
-	for serviceId, _ := range listResponse.Services {
+	for serviceId, _ := range statuses {
 		log.Debug("Destroying service %v", serviceId)
 
 		err = apiclient.ServiceDestroy(serviceId)

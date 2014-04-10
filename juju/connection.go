@@ -163,27 +163,6 @@ func (self *Client) SetExposed(serviceId string, exposed bool) error {
 	return nil
 }
 
-func (self *Client) ListServices(prefix string) (*api.Status, error) {
-	if !self.canAccessPrefix(prefix) {
-		return nil, fmt.Errorf("No access")
-	}
-
-	patterns := []string{}
-	if prefix != "" {
-		patterns = append(patterns, prefix + "*")
-	}
-	status, err := self.client.Status(patterns)
-
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: Filter to just our env
-	log.Warn("Service filtering not implemented")
-
-	return status, nil
-}
-
 func (self *Client) ServiceDestroy(serviceId string) error {
 	if !self.canAccess(serviceId) {
 		return nil
