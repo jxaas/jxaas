@@ -115,6 +115,9 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 	if err != nil {
 		return nil, err
 	}
+	if b == nil {
+		return nil, rs.ErrNotFound()
+	}
 
 	return self.HttpGet(apiclient)
 }

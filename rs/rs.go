@@ -26,6 +26,11 @@ func (self *HttpErrorObject) Error() string {
 	return ""
 }
 
+func ErrNotFound() *HttpErrorObject {
+	err := HttpError(http.StatusNotFound)
+	return err
+}
+
 type HttpResponse struct {
 	Status  int
 	Content interface{}
