@@ -119,6 +119,18 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		if err != nil {
 			return err
 		}
+
+		//		for retry := 0; retry < 5; retry++ {
+		//			status, err := apiclient.GetStatus(jujuServiceId)
+		//			if err != nil {
+		//				return err
+		//			}
+		//			if status != nil {
+		//				break
+		//			}
+		//			log.Info("Service was not yet visible; waiting")
+		//			time.Sleep(1 * time.Second)
+		//		}
 	} else {
 		existingValues := model.MapToConfig(config)
 		mergedValues := make(map[string]string)
@@ -156,6 +168,11 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 				log.Warn("Error setting service to Exposed=%v", self.Exposed, err)
 				return err
 			}
+		}
+
+		nUnits := len(status.Units)
+		if nUnits != self.NumberUnits {
+			log.Warn("NumberUnits mismatch")
 		}
 	}
 

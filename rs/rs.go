@@ -236,6 +236,11 @@ func (self *RestEndpointHandler) buildArgs(res http.ResponseWriter, req *http.Re
 }
 
 func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.Request) {
+	requestUrl := req.URL
+	requestMethod := req.Method
+
+	log.Debug("%v %v", requestMethod, requestUrl)
+
 	endpoint, err := self.resolveEndpoint(res, req)
 
 	if endpoint == nil {
@@ -307,7 +312,19 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 		}
 	}
 
-	if err == nil && response != nil && mbw != nil {
+	if err == nil {
+
+		if response == nil {
+			response = &HttpResponse{}
+			response.Status = http.StatusNoContent
+
+			assert.That(mbw == nil)
+			mbw = &NoResponseMessageBodyWriter{}
+		}
+		assert.That(mbw != nil)
+
+		log.Info("%v %v %v", response.Status, requestMethod, requestUrl)
+
 		if response.Headers != nil {
 			for name, value := range response.Headers {
 				res.Header().Set(name, value)
@@ -317,8 +334,6 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 		res.WriteHeader(response.Status)
 
 		mbw.Write(response.Content, reflect.TypeOf(response.Content), req, res)
-	} else if err == nil && response == nil {
-		res.WriteHeader(http.StatusNoContent)
 	} else {
 		httpError, ok := err.(*HttpErrorObject)
 		if !ok {
@@ -334,6 +349,8 @@ func (self *RestEndpointHandler) httpHandler(res http.ResponseWriter, req *http.
 				message = "Error"
 			}
 		}
+
+		log.Info("%v %v %v", status, requestMethod, requestUrl)
 
 		http.Error(res, message, status)
 	}

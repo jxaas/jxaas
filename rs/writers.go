@@ -11,6 +11,17 @@ type MessageBodyWriter interface {
 	Write(obj interface{}, t reflect.Type, req *http.Request, res http.ResponseWriter) error
 }
 
+type NoResponseMessageBodyWriter struct {
+}
+
+func (self *NoResponseMessageBodyWriter) IsWritable(t reflect.Type, req *http.Request, mediaType *MediaType) bool {
+	return false
+}
+
+func (self *NoResponseMessageBodyWriter) Write(o interface{}, t reflect.Type, req *http.Request, res http.ResponseWriter) error {
+	return nil
+}
+
 type JsonMessageBodyWriter struct {
 }
 
