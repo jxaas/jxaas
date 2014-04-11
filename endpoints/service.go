@@ -28,7 +28,7 @@ func (self *EndpointService) ItemLog() *EndpointLog {
 	return child
 }
 
-func (self *EndpointService) ItemRelation() *EndpointRelations {
+func (self *EndpointService) ItemRelations() *EndpointRelations {
 	child := &EndpointRelations{}
 	child.Parent = self
 	return child
@@ -43,6 +43,14 @@ func (self *EndpointService) PrimaryServiceName() string {
 	return v
 }
 
+func buildQualifiedJujuName(tenant string, serviceType string, name string, child string) string {
+	// The u prefix is for user.
+	// This is both a way to separate out user services from our services,
+	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
+	prefix := "u" + tenant + "-" + serviceType + "-" + name + "-"
+	return prefix + child
+}
+
 func (self *EndpointService) jujuPrefix() string {
 	tenant := self.Parent.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
@@ -51,11 +59,7 @@ func (self *EndpointService) jujuPrefix() string {
 
 	name := self.ServiceKey
 
-	// The u prefix is for user.
-	// This is both a way to separate out user services from our services,
-	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + serviceType + "-" + name + "-"
-	return prefix
+	return buildQualifiedJujuName(tenant, serviceType, name, "")
 }
 
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {

@@ -10,10 +10,6 @@ import (
 )
 
 type RelationInfo struct {
-	UnitId     *string
-	RelationId *string
-	RemoteName *string
-	Action     *string
 	Properties map[string]string
 }
 
@@ -22,7 +18,7 @@ type Instance struct {
 
 	// (Optional), so *bool
 	Exposed *bool
-	
+
 	// (Optional)
 	NumberUnits *int
 
