@@ -54,6 +54,13 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(apiclient *juju.Client
 
 	log.Info("Got RPC request: UpdateRelationProperties: %v", request)
 
+	response := &RpcUpdateRelationPropertiesResponse{}
+
+	if request.Action == "broken" {
+		log.Info("Ignoring 'broken' action")
+		return response, nil
+	}
+
 	// Sanitize
 	if request.Properties == nil {
 		request.Properties = make(map[string]string)
@@ -84,6 +91,5 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(apiclient *juju.Client
 		return nil, err
 	}
 
-	response := &RpcUpdateRelationPropertiesResponse{}
 	return response, nil
 }
