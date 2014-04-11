@@ -7,7 +7,7 @@ mysql:
       options:
         performance: <<
     proxyclient:
-      charm: "cs:~justin-fathomdb/precise/proxy-client-0"
+      charm: "cs:~justin-fathomdb/precise/proxy-client-2"
     metrics:
       charm: "cs:~justin-fathomdb/precise/heka-collector-0"
   relations:
@@ -15,7 +15,7 @@ mysql:
       - "mysql:juju-info"
     - - "metrics:juju-info"
       - "mysql:juju-info"
-    - - "metrics:db"
+    - - "proxyclient:db"
       - "mysql:db"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
