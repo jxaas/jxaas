@@ -6,6 +6,7 @@ mysql:
       exposed: true
       options:
         performance: <<
+        slow-query-time: <<
     proxyclient:
       charm: "cs:~justin-fathomdb/precise/proxy-client-2"
     metrics:
