@@ -113,6 +113,8 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 		context.NumberUnits = *request.NumberUnits
 	}
 
+	context.Options = request.Config
+
 	tenant := self.Parent.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
 	serviceType := self.Parent.ServiceType
