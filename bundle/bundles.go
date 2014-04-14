@@ -64,6 +64,39 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 	return bundle, nil
 }
 
+func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
+	template, err := self.getBundleTemplate(key)
+	if err != nil {
+		return nil, err
+	}
+	if template == nil {
+		return nil, nil
+	}
+
+	context := make(map[string]string)
+
+	var buffer bytes.Buffer
+	err = template.Execute(&buffer, context)
+	if err != nil {
+		return nil, err
+	}
+
+	yaml := buffer.String()
+	log.Debug("Bundle is:\n%v", yaml)
+
+	bundles, err := ParseBundle(yaml)
+	if err != nil {
+		return nil, err
+	}
+
+	bundle, err := getOnly(bundles)
+	if err != nil {
+		return nil, err
+	}
+
+	return bundle, nil
+}
+
 func getOnly(bundles map[string]*Bundle) (*Bundle, error) {
 	if len(bundles) > 1 {
 		return nil, fmt.Errorf("Multiple sections not handled")

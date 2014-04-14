@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/justinsb/gova/log"
+	"github.com/jxaas/jxaas/core"
+	"github.com/jxaas/jxaas/rs"
 
-	"github.com/mattbaird/elastigo/api"
-	"github.com/mattbaird/elastigo/core"
+	elasticgo_api "github.com/mattbaird/elastigo/api"
+	elastigo_core "github.com/mattbaird/elastigo/core"
 )
 
 type EndpointMetrics struct {
@@ -17,13 +19,18 @@ type Metrics struct {
 	Metric []string
 }
 
-func (self *EndpointMetrics) HttpGet() (*Metrics, error) {
+func (self *EndpointMetrics) HttpGet(huddle *core.Huddle) (*Metrics, error) {
 	//service := self.Parent.Key
+
+	es := huddle.SharedServices["elasticsearch"]
+	if es == nil {
+		return nil, rs.ErrNotFound()
+	}
 
 	// TODO: Inject
 	// TODO: Use an ES client that isn't a singleton
-	api.Domain = "10.0.3.58"
-	api.Port = "9200"
+	elasticgo_api.Domain = es.PublicAddress.String()
+	elasticgo_api.Port = "9200"
 
 	// TODO: We need to make sure that most fields are _not_ analyzed
 	// That is why we have match below, not term
@@ -39,7 +46,7 @@ func (self *EndpointMetrics) HttpGet() (*Metrics, error) {
 	//		},
 	//	}
 
-	response, err := core.SearchRequest("_all", "message", nil, query)
+	response, err := elastigo_core.SearchRequest("_all", "message", nil, query)
 	if err != nil {
 		log.Warn("Error searching elasticsearch", err)
 		return nil, fmt.Errorf("Error searching elasticsearch")

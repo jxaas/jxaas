@@ -8,9 +8,18 @@ import (
 	"github.com/jxaas/jxaas/model"
 
 	"launchpad.net/goyaml"
+	"launchpad.net/juju-core/state/api"
 
 	"github.com/justinsb/gova/log"
 )
+
+type DeployInfo struct {
+	Services map[string]*DeployServiceInfo
+}
+
+type DeployServiceInfo struct {
+	Status *api.ServiceStatus
+}
 
 func makeConfigYaml(serviceName string, config map[string]string) (string, error) {
 	yaml := make(map[string]map[string]string)
@@ -28,24 +37,28 @@ func makeConfigYaml(serviceName string, config map[string]string) (string, error
 	return string(bytes), nil
 }
 
-func (self *Bundle) Deploy(apiclient *juju.Client) error {
+func (self *Bundle) Deploy(apiclient *juju.Client) (*DeployInfo, error) {
 	log.Debug("Deploying bundle: %v", self)
 
+	info := &DeployInfo{}
+	info.Services = map[string]*DeployServiceInfo{}
+
 	for key, service := range self.Services {
-		err := service.deploy(key, apiclient)
+		serviceInfo, err := service.deploy(key, apiclient)
 		if err != nil {
-			return err
+			return nil, err
 		}
+		info.Services[key] = serviceInfo
 	}
 
 	for _, relation := range self.Relations {
 		err := relation.deploy(apiclient)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return info, nil
 }
 
 func (self *RelationConfig) deploy(apiclient *juju.Client) error {
@@ -56,10 +69,12 @@ func (self *RelationConfig) deploy(apiclient *juju.Client) error {
 	return nil
 }
 
-func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) error {
+func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) (*DeployServiceInfo, error) {
+	serviceInfo := &DeployServiceInfo{}
+
 	config, err := apiclient.FindConfig(jujuServiceId)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	charmUrl := self.Charm
@@ -105,7 +120,7 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 
 		configYaml, err := makeConfigYaml(jujuServiceId, self.Options)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		log.Debug("Deploying with YAML: %v", configYaml)
@@ -117,7 +132,7 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 			configYaml)
 
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		//		for retry := 0; retry < 5; retry++ {
@@ -146,7 +161,7 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		if !reflect.DeepEqual(existingValues, mergedValues) {
 			err = apiclient.SetConfig(jujuServiceId, mergedValues)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		} else {
 			log.Debug("Configuration unchanged; won't reconfigure")
@@ -156,17 +171,19 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 	if !charmInfo.Meta.Subordinate { // && self.Exposed != nil {
 		status, err := apiclient.GetStatus(jujuServiceId)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if status == nil {
-			return fmt.Errorf("Service not found: %v", jujuServiceId)
+			return nil, fmt.Errorf("Service not found: %v", jujuServiceId)
 		}
+
+		serviceInfo.Status = status
 
 		if status.Exposed != self.Exposed {
 			err = apiclient.SetExposed(jujuServiceId, self.Exposed)
 			if err != nil {
 				log.Warn("Error setting service to Exposed=%v", self.Exposed, err)
-				return err
+				return nil, err
 			}
 		}
 
@@ -176,5 +193,5 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		}
 	}
 
-	return nil
+	return serviceInfo, nil
 }

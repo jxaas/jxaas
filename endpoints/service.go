@@ -6,6 +6,7 @@ import (
 
 	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
@@ -90,7 +91,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, e
 	return model.MapToInstance(serviceName, status, config), nil
 }
 
-func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, request *model.Instance) (*model.Instance, error) {
+func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle, request *model.Instance) (*model.Instance, error) {
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
@@ -101,7 +102,9 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 
 	context := &bundle.TemplateContext{}
 	context.SystemServices = map[string]string{}
-	context.SystemServices["elasticsearch"] = "es1"
+	for key, service := range huddle.SharedServices {
+		context.SystemServices[key] = service.JujuName
+	}
 
 	if request.NumberUnits == nil {
 		// TODO: Need to determine current # of units
@@ -123,7 +126,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 		return nil, rs.ErrNotFound()
 	}
 
-	err = b.Deploy(apiclient)
+	_, err = b.Deploy(apiclient)
 	if err != nil {
 		return nil, err
 	}

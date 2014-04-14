@@ -1,0 +1,10 @@
+shared:
+  services:
+    elasticsearch:
+      charm: "cs:~justin-fathomdb/precise/elasticsearch-0"
+      exposed: true
+    kibana:
+      charm: "cs:~justin-fathomdb/precise/kibana-0"
+  relations:
+    - - "kibana"
+      - "elasticsearch:rest"
