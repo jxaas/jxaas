@@ -44,23 +44,13 @@ func (self *EndpointService) PrimaryServiceName() string {
 	return v
 }
 
-func buildQualifiedJujuName(tenant string, serviceType string, name string, child string) string {
-	// The u prefix is for user.
-	// This is both a way to separate out user services from our services,
-	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + serviceType + "-" + name + "-"
-	return prefix + child
-}
-
 func (self *EndpointService) jujuPrefix() string {
-	tenant := self.Parent.Parent.Parent.Tenant
-	tenant = strings.Replace(tenant, "-", "", -1)
-
-	serviceType := self.Parent.ServiceType
+	prefix := self.Parent.jujuPrefix()
 
 	name := self.ServiceKey
+	prefix += name + "-"
 
-	return buildQualifiedJujuName(tenant, serviceType, name, "")
+	return prefix
 }
 
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
@@ -84,6 +74,10 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, e
 	config, err := apiclient.FindConfig(serviceName)
 	if err != nil {
 		return nil, err
+	}
+
+	if status == nil {
+		return nil, rs.ErrNotFound()
 	}
 
 	log.Debug("Service state: %v", status)
