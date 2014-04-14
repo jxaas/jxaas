@@ -211,7 +211,10 @@ func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits in
 
 func (self *Client) CharmInfo(charmUrl string) (*api.CharmInfo, error) {
 	// TODO: Caching?
-	return self.client.CharmInfo(charmUrl)
+	defaultSeries := "precise"
+	localRepoPath := ""
+	return getCharmInfo(self.client, charmUrl, localRepoPath, defaultSeries)
+	//return self.client.CharmInfo(charmUrl)
 }
 
 func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, error) {
