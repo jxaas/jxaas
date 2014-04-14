@@ -52,6 +52,8 @@ func buildHuddle(bundleStore *bundle.BundleStore, jujuApi *juju.Client) (*core.H
 		huddle.SharedServices[key] = sharedService
 	}
 
+	// TODO: Wait until initialized or offer a separate 'bootstrap' command
+
 	return huddle, nil
 }
 
