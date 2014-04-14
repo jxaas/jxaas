@@ -13,7 +13,7 @@ type Huddle struct {
 }
 
 func (self *Huddle) String() string {
-	return asJson(self)
+	return AsJson(self)
 }
 
 type SharedService struct {
@@ -22,7 +22,7 @@ type SharedService struct {
 	PublicAddress net.IP
 }
 
-func asJson(o interface{}) string {
+func AsJson(o interface{}) string {
 	if o == nil {
 		return "nil"
 	}
@@ -35,5 +35,5 @@ func asJson(o interface{}) string {
 }
 
 func (self *SharedService) String() string {
-	return asJson(self)
+	return AsJson(self)
 }

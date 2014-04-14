@@ -1,6 +1,10 @@
 package bundle
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/jxaas/jxaas/core"
+)
 
 type Bundle struct {
 	Services  map[string]*ServiceConfig
@@ -18,6 +22,10 @@ type ServiceConfig struct {
 type RelationConfig struct {
 	From string
 	To   string
+}
+
+func (self *Bundle) String() string {
+	return core.AsJson(self)
 }
 
 func (self *RelationConfig) String() string {
