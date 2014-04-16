@@ -21,7 +21,7 @@ const (
 func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId string) *Instance {
 	s := &Instance{}
 	s.huddle = self
-	s.tenant = strings.Replace(tenant, "-", "", -1)
+	s.tenant = tenant
 	s.bundleType = bundleType
 	s.instanceId = instanceId
 
