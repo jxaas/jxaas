@@ -124,29 +124,31 @@ func MapToConfig(config *params.ServiceGetResults) map[string]string {
 	return out
 }
 
+func MergeInstanceStatus(instance *Instance, unit *api.UnitStatus) {
+	unitStatus := string(unit.AgentState)
+
+	if instance.Status != unitStatus {
+		if instance.Status == "" {
+			instance.Status = unitStatus
+		} else {
+			// TODO: Resolve mixed state
+			log.Warn("Unable to resolve mixed state: %v vs %v", instance.Status, unitStatus)
+		}
+	}
+}
+
 func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetResults) *Instance {
 	instance := &Instance{}
 	instance.Id = id
 	instance.Units = make(map[string]*Unit)
 	instance.Exposed = &api.Exposed
 
-	instanceStatus := ""
-
 	for key, unit := range api.Units {
 		unitState := MapToUnit(key, &unit)
 		instance.Units[key] = unitState
 
-		if instanceStatus != unitState.Status {
-			if instanceStatus == "" {
-				instanceStatus = unitState.Status
-			} else {
-				// TODO: Resolve mixed state
-				log.Warn("Unable to resolve mixed state: %v vs %v", instanceStatus, unitState.Status)
-			}
-		}
+		MergeInstanceStatus(instance, &unit)
 	}
-
-	instance.Status = instanceStatus
 
 	if config != nil {
 		instance.Config = MapToConfig(config)

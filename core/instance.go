@@ -52,12 +52,12 @@ type Instance struct {
 }
 
 func (self *Instance) GetState() (*model.Instance, error) {
-	serviceName := self.primaryServiceId
 	client := self.huddle.JujuClient
 
-	status, err := client.GetStatus(serviceName)
+	primaryServiceId := self.primaryServiceId
+	status, err := client.GetStatus(primaryServiceId)
 
-	config, err := client.FindConfig(serviceName)
+	config, err := client.FindConfig(primaryServiceId)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,39 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	log.Debug("Service state: %v", status)
 
-	return model.MapToInstance(serviceName, status, config), nil
+	instance := model.MapToInstance(primaryServiceId, status, config)
+
+	serviceNames, err := self.getBundleKeys()
+	if err != nil {
+		return nil, err
+	}
+
+	if serviceNames == nil {
+		return nil, rs.ErrNotFound()
+	}
+
+	// TODO: This is pretty expensive... we could just check to see if properties have been set
+	for _, serviceName := range serviceNames {
+		if serviceName == primaryServiceId {
+			continue
+		}
+
+		status, err := client.GetStatus(serviceName)
+		if err != nil {
+			log.Warn("Error while fetching status of service: %v", serviceName, err)
+			instance.Status = "pending"
+		} else if status == nil {
+			log.Warn("No status for service: %v", serviceName)
+			instance.Status = "pending"
+		} else {
+			log.Info("Got state of secondary service: %v => %v", serviceName, status)
+			for _, unitStatus := range status.Units {
+				model.MergeInstanceStatus(instance, &unitStatus)
+			}
+		}
+	}
+
+	return instance, nil
 }
 
 func (self *Instance) Delete() error {
@@ -202,10 +234,60 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	return relationInfo, nil
 }
 
-func (self *Instance) Configure(request *model.Instance) error {
-	//apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle,
+func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	huddle := self.huddle
+
+	context := &bundle.TemplateContext{}
+	context.SystemServices = map[string]string{}
+	for key, service := range huddle.SharedServices {
+		context.SystemServices[key] = service.JujuName
+	}
+
+	return context
+}
+
+func (self *Instance) getBundle(context *bundle.TemplateContext) (*bundle.Bundle, error) {
 	bundleStore := self.huddle.System.BundleStore
+
+	tenant := self.tenant
+	bundleType := self.bundleType
+	name := self.instanceId
+
+	b, err := bundleStore.GetBundle(context, tenant, bundleType, name)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func (self *Instance) getBundleKeys() ([]string, error) {
+	// TODO: This is easy to optimize... we really don't need to run the full template...
+
+	context := self.buildSkeletonTemplateContext()
+
+	// TODO: Need to determine current # of units
+	context.NumberUnits = 1
+
+	// TODO: Do we need the real config?
+	context.Options = map[string]string{}
+
+	bundle, err := self.getBundle(context)
+	if err != nil {
+		return nil, err
+	}
+	if bundle == nil {
+		return nil, nil
+	}
+
+	keys := []string{}
+	for key, _ := range bundle.Services {
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+func (self *Instance) Configure(request *model.Instance) error {
 	jujuClient := self.huddle.JujuClient
 
 	// Sanitize
@@ -216,11 +298,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 	}
 	request.ConfigParameters = nil
 
-	context := &bundle.TemplateContext{}
-	context.SystemServices = map[string]string{}
-	for key, service := range huddle.SharedServices {
-		context.SystemServices[key] = service.JujuName
-	}
+	context := self.buildSkeletonTemplateContext()
 
 	if request.NumberUnits == nil {
 		// TODO: Need to determine current # of units
@@ -231,11 +309,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 
 	context.Options = request.Config
 
-	tenant := self.tenant
-	bundleType := self.bundleType
-	name := self.instanceId
-
-	b, err := bundleStore.GetBundle(context, tenant, bundleType, name)
+	b, err := self.getBundle(context)
 	if err != nil {
 		return err
 	}
