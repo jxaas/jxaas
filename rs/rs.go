@@ -110,7 +110,6 @@ func (self *RestEndpointHandler) resolveEndpoint(res http.ResponseWriter, req *h
 		log.Info("Path components:  %v", pathComponents)
 
 		for _, pathComponent := range pathComponents {
-			args := []reflect.Value{}
 
 			methodName := "Item" + strings.ToUpper(pathComponent[:1]) + strings.ToLower(pathComponent)[1:]
 			method := endpoint.MethodByName(methodName)
@@ -120,7 +119,24 @@ func (self *RestEndpointHandler) resolveEndpoint(res http.ResponseWriter, req *h
 					log.Debug("Items method not found (nor %v)", methodName)
 					return nil, nil
 				}
-				args = append(args, reflect.ValueOf(pathComponent))
+			}
+
+			injector := self.server.injector
+			methodType := method.Type()
+			numIn := method.Type().NumIn()
+			args := make([]reflect.Value, numIn, numIn)
+			for i := 0; i < numIn; i++ {
+				argType := methodType.In(i)
+				if argType.Kind() == reflect.String {
+					args[i] = reflect.ValueOf(pathComponent)
+				} else {
+					v, err := injector.Get(argType)
+					if err != nil {
+						log.Warn("Error injecting argument of type: %v", argType, err)
+						return nil, err
+					}
+					args[i] = reflect.ValueOf(v)
+				}
 			}
 
 			out := method.Call(args)
