@@ -23,6 +23,8 @@ type Instance struct {
 	// (Optional)
 	NumberUnits *int
 
+	Status string
+
 	Units map[string]*Unit
 
 	Config map[string]string
@@ -128,9 +130,24 @@ func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetR
 	instance.Units = make(map[string]*Unit)
 	instance.Exposed = &api.Exposed
 
+	instanceStatus := ""
+
 	for key, unit := range api.Units {
-		instance.Units[key] = MapToUnit(key, &unit)
+		unitState := MapToUnit(key, &unit)
+		instance.Units[key] = unitState
+
+		if instanceStatus != unitState.Status {
+			if instanceStatus == "" {
+				instanceStatus = unitState.Status
+			} else {
+				// TODO: Resolve mixed state
+				log.Warn("Unable to resolve mixed state: %v vs %v", instanceStatus, unitState.Status)
+			}
+		}
 	}
+
+	instance.Status = instanceStatus
+
 	if config != nil {
 		instance.Config = MapToConfig(config)
 		instance.ConfigParameters = MapToConfigParameters(config)
