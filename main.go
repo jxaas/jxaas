@@ -14,10 +14,10 @@ import (
 	"github.com/jxaas/jxaas/rs"
 )
 
-func buildHuddle(bundleStore *bundle.BundleStore, jujuApi *juju.Client) (*core.Huddle, error) {
+func buildHuddle(system *core.System, jujuApi *juju.Client) (*core.Huddle, error) {
 	key := "shared"
 
-	systemBundle, err := bundleStore.GetSystemBundle(key)
+	systemBundle, err := system.BundleStore.GetSystemBundle(key)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func buildHuddle(bundleStore *bundle.BundleStore, jujuApi *juju.Client) (*core.H
 	}
 
 	huddle.JujuClient = jujuApi
-
+	huddle.System = system
 	// TODO: Wait until initialized or offer a separate 'bootstrap' command
 
 	return huddle, nil
@@ -73,7 +73,11 @@ func main() {
 		log.Fatal("Error building Juju client", err)
 		os.Exit(1)
 	}
-	huddle, err := buildHuddle(bundleStore, apiclient)
+
+	system := &core.System{}
+	system.BundleStore = bundleStore
+
+	huddle, err := buildHuddle(system, apiclient)
 	if err != nil {
 		log.Fatal("Error building huddle", err)
 		os.Exit(1)
