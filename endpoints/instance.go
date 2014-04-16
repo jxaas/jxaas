@@ -2,11 +2,8 @@ package endpoints
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/core"
-	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
 )
@@ -58,7 +55,7 @@ func (self *EndpointInstance) getInstance() *core.Instance {
 //	return prefix
 //}
 
-func (self *EndpointInstance) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
+func (self *EndpointInstance) HttpGet() (*model.Instance, error) {
 	model, err := self.getInstance().GetState()
 	if err == nil && model == nil {
 		return nil, rs.ErrNotFound()
@@ -66,52 +63,16 @@ func (self *EndpointInstance) HttpGet(apiclient *juju.Client) (*model.Instance, 
 	return model, err
 }
 
-func (self *EndpointInstance) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle, request *model.Instance) (*model.Instance, error) {
-	// Sanitize
-	request.Id = ""
-	request.Units = nil
-	if request.Config == nil {
-		request.Config = make(map[string]string)
-	}
-	request.ConfigParameters = nil
-
-	context := &bundle.TemplateContext{}
-	context.SystemServices = map[string]string{}
-	for key, service := range huddle.SharedServices {
-		context.SystemServices[key] = service.JujuName
-	}
-
-	if request.NumberUnits == nil {
-		// TODO: Need to determine current # of units
-		context.NumberUnits = 1
-	} else {
-		context.NumberUnits = *request.NumberUnits
-	}
-
-	context.Options = request.Config
-
-	tenant := self.Parent.Parent.Parent.Tenant
-	tenant = strings.Replace(tenant, "-", "", -1)
-	bundleType := self.Parent.BundleType
-	name := self.InstanceId
-
-	b, err := bundleStore.GetBundle(context, tenant, bundleType, name)
-	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, rs.ErrNotFound()
-	}
-
-	_, err = b.Deploy(apiclient)
+func (self *EndpointInstance) HttpPut(request *model.Instance) (*model.Instance, error) {
+	err := self.getInstance().Configure(request)
 	if err != nil {
 		return nil, err
 	}
 
-	return self.HttpGet(apiclient)
+	return self.HttpGet()
 }
 
-func (self *EndpointInstance) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
+func (self *EndpointInstance) HttpDelete() (*rs.HttpResponse, error) {
 	err := self.getInstance().Delete()
 	if err != nil {
 		return nil, err

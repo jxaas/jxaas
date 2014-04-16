@@ -3,7 +3,7 @@ package bundle
 import (
 	"fmt"
 
-	"github.com/jxaas/jxaas/core"
+	"github.com/justinsb/gova/log"
 )
 
 type Bundle struct {
@@ -25,7 +25,7 @@ type RelationConfig struct {
 }
 
 func (self *Bundle) String() string {
-	return core.AsJson(self)
+	return log.AsJson(self)
 }
 
 func (self *RelationConfig) String() string {

@@ -1,12 +1,21 @@
 package core
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
+	"github.com/jxaas/jxaas/rs"
 
 	"github.com/justinsb/gova/log"
+)
+
+const (
+	PREFIX_RELATIONINFO = "__jxaas_relinfo_"
+	SYS_TIMESTAMP       = "timestamp"
 )
 
 func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId string) *Instance {
@@ -41,10 +50,6 @@ type Instance struct {
 	jujuPrefix       string
 	primaryServiceId string
 }
-
-const (
-	PREFIX_RELATIONINFO = "__jxaas_relinfo_"
-)
 
 func (self *Instance) GetState() (*model.Instance, error) {
 	serviceName := self.primaryServiceId
@@ -127,8 +132,9 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 
 	pairs := make(map[string]string)
 	for k, v := range properties {
-		pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+k] = v
+		pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"__"+k] = v
 	}
+	pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+SYS_TIMESTAMP] = strconv.Itoa(time.Now().Second())
 
 	log.Info("Setting annotations on service %v: %v", serviceId, pairs)
 
@@ -161,6 +167,8 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	relationInfo := &model.RelationInfo{}
 	relationInfo.Properties = make(map[string]string)
 
+	sysInfo := map[string]string{}
+
 	for tagName, v := range annotations {
 		if !strings.HasPrefix(tagName, PREFIX_RELATIONINFO) {
 			//log.Debug("Prefix mismatch: %v", tagName)
@@ -181,8 +189,64 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		}
 
 		key := tokens[2]
-		relationInfo.Properties[key] = v
+
+		if key[0] == '_' {
+			relationInfo.Properties[key[1:]] = v
+		} else {
+			sysInfo[key] = v
+		}
 	}
 
+	relationInfo.Timestamp = sysInfo[SYS_TIMESTAMP]
+
 	return relationInfo, nil
+}
+
+func (self *Instance) Configure(request *model.Instance) error {
+	//apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle,
+	huddle := self.huddle
+	bundleStore := self.huddle.System.BundleStore
+	jujuClient := self.huddle.JujuClient
+
+	// Sanitize
+	request.Id = ""
+	request.Units = nil
+	if request.Config == nil {
+		request.Config = make(map[string]string)
+	}
+	request.ConfigParameters = nil
+
+	context := &bundle.TemplateContext{}
+	context.SystemServices = map[string]string{}
+	for key, service := range huddle.SharedServices {
+		context.SystemServices[key] = service.JujuName
+	}
+
+	if request.NumberUnits == nil {
+		// TODO: Need to determine current # of units
+		context.NumberUnits = 1
+	} else {
+		context.NumberUnits = *request.NumberUnits
+	}
+
+	context.Options = request.Config
+
+	tenant := self.tenant
+	bundleType := self.bundleType
+	name := self.instanceId
+
+	b, err := bundleStore.GetBundle(context, tenant, bundleType, name)
+	if err != nil {
+		return err
+	}
+	if b == nil {
+		return rs.ErrNotFound()
+	}
+
+	_, err = b.Deploy(jujuClient)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

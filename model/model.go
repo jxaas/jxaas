@@ -11,6 +11,7 @@ import (
 
 type RelationInfo struct {
 	Properties map[string]string
+	Timestamp  string
 }
 
 type Instance struct {
