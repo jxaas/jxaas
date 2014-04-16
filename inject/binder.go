@@ -3,6 +3,8 @@ package inject
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/justinsb/gova/log"
 )
 
 type Binder struct {
@@ -34,9 +36,14 @@ func (self *Binder) AddProvider(fn interface{}) {
 }
 
 func (self *Binder) AddSingleton(obj interface{}) {
+	t := reflect.TypeOf(obj)
+	self.addBinding(t, obj)
+}
+
+func (self *Binder) addBinding(t reflect.Type, obj interface{}) {
 	binding := &SingletonBinding{}
 	binding.obj = obj
-	t := reflect.TypeOf(obj)
+	log.Debug("Binding type %v to %v", t, obj)
 	self.bindings[t] = binding
 }
 
@@ -51,5 +58,6 @@ func (self *Binder) Get(t reflect.Type) (interface{}, error) {
 func (self *Binder) CreateInjector() Injector {
 	i := &BinderInjector{}
 	i.binder = self
+	self.addBinding(reflect.TypeOf((*Injector)(nil)).Elem(), i)
 	return i
 }
