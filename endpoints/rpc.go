@@ -21,14 +21,18 @@ type EndpointRpcUpdateRelationProperties struct {
 
 type RpcUpdateRelationPropertiesRequest struct {
 	Tenant      string
-	ServiceType string
-	ServiceId   string
+	BundleType  string
+	ServiceName string
 	Relation    string
 	RelationId  string
 	UnitId      string
 	RemoteName  string
 	Action      string
 	Properties  map[string]string
+}
+
+func (self *RpcUpdateRelationPropertiesRequest) String() string {
+	return log.AsJson(self)
 }
 
 type RpcUpdateRelationPropertiesResponse struct {
