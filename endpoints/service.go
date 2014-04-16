@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/juju"
@@ -14,7 +13,11 @@ import (
 
 type EndpointService struct {
 	Parent     *EndpointCharm
-	ServiceKey string
+	InstanceId string
+
+	Huddle *core.Huddle
+
+	instance *core.Instance
 }
 
 func (self *EndpointService) ItemMetrics() *EndpointMetrics {
@@ -35,54 +38,33 @@ func (self *EndpointService) ItemRelations() *EndpointRelations {
 	return child
 }
 
-// TODO: Deprecate?
-func (self *EndpointService) PrimaryServiceName() string {
-	primaryService := self.Parent.ServiceType
-
-	v := self.jujuPrefix()
-	v = v + primaryService
-	return v
+func (self *EndpointService) getHuddle() *core.Huddle {
+	return self.Huddle
 }
 
-func (self *EndpointService) jujuPrefix() string {
-	prefix := self.Parent.jujuPrefix()
-
-	name := self.ServiceKey
-	prefix += name + "-"
-
-	return prefix
+func (self *EndpointService) getInstance() *core.Instance {
+	if self.instance == nil {
+		huddle := self.getHuddle()
+		self.instance = huddle.GetInstance(self.Parent.Parent.Parent.Tenant, self.Parent.ServiceType, self.InstanceId)
+	}
+	return self.instance
 }
+
+//func (self *EndpointService) jujuPrefix() string {
+//	prefix := self.Parent.jujuPrefix()
+//
+//	name := self.ServiceKey
+//	prefix += name + "-"
+//
+//	return prefix
+//}
 
 func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
-	//prefix := self.jujuPrefix()
-
-	//	statusResponse, err := apiclient.GetStatusList(prefix)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	if len(statusResponse) == 0 {
-	//	return nil, rs.ErrNotFound()
-	//	}
-	//
-	//	for serviceId, status := range statusResponse {
-	//		 model.MapToInstance(serviceName, status, config), nil
-	//	}
-
-	serviceName := self.PrimaryServiceName()
-	status, err := apiclient.GetStatus(serviceName)
-
-	config, err := apiclient.FindConfig(serviceName)
-	if err != nil {
-		return nil, err
-	}
-
-	if status == nil {
+	model, err := self.getInstance().GetState()
+	if err == nil && model == nil {
 		return nil, rs.ErrNotFound()
 	}
-
-	log.Debug("Service state: %v", status)
-
-	return model.MapToInstance(serviceName, status, config), nil
+	return model, err
 }
 
 func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle, request *model.Instance) (*model.Instance, error) {
@@ -112,9 +94,9 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 	tenant := self.Parent.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
 	serviceType := self.Parent.ServiceType
-	name := self.ServiceKey
+	instanceId := self.InstanceId
 
-	b, err := bundleStore.GetBundle(context, tenant, serviceType, name)
+	b, err := bundleStore.GetBundle(context, tenant, serviceType, instanceId)
 	if err != nil {
 		return nil, err
 	}
@@ -131,20 +113,9 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 }
 
 func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
-	prefix := self.jujuPrefix()
-
-	statuses, err := apiclient.GetStatusList(prefix)
+	err := self.getInstance().Delete()
 	if err != nil {
 		return nil, err
-	}
-	for serviceId, _ := range statuses {
-		log.Debug("Destroying service %v", serviceId)
-
-		err = apiclient.ServiceDestroy(serviceId)
-		if err != nil {
-			log.Warn("Error destroying service: %v", serviceId)
-			return nil, err
-		}
 	}
 
 	// TODO: Wait for deletion

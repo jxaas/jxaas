@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jxaas/jxaas/inject"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
@@ -28,10 +29,13 @@ func (self *EndpointCharm) jujuPrefix() string {
 	return prefix
 }
 
-func (self *EndpointCharm) Item(key string) *EndpointService {
+func (self *EndpointCharm) Item(key string, injector inject.Injector) *EndpointService {
 	child := &EndpointService{}
 	child.Parent = self
-	child.ServiceKey = key
+	child.InstanceId = key
+
+	injector.Inject(&child.Huddle)
+
 	return child
 }
 

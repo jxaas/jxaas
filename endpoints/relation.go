@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 )
@@ -14,15 +15,13 @@ func (self *EndpointRelation) Service() *EndpointService {
 	return self.Parent.Parent
 }
 
+func (self *EndpointRelation) getInstance() *core.Instance {
+	return self.Parent.Parent.getInstance()
+}
+
 func (self *EndpointRelation) HttpGet(apiclient *juju.Client) (*model.RelationInfo, error) {
-	service := self.Service()
+	instance := self.getInstance()
+
 	relationKey := self.RelationKey
-
-	serviceName := service.PrimaryServiceName()
-	relationInfo, err := apiclient.GetRelationInfo(serviceName, relationKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return relationInfo, nil
+	return instance.GetRelationInfo(relationKey)
 }

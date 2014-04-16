@@ -6,8 +6,6 @@ import (
 
 	"github.com/justinsb/gova/log"
 
-	"github.com/jxaas/jxaas/model"
-
 	"launchpad.net/juju-core/cmd/envcmd"
 	"launchpad.net/juju-core/constraints"
 	"launchpad.net/juju-core/juju"
@@ -21,10 +19,6 @@ Please check your credentials or use 'juju bootstrap' to create a new environmen
 Error details:
 %v
 `
-
-const (
-	PREFIX_RELATIONINFO = "__jxaas_relinfo_"
-)
 
 func Init() error {
 	return juju.InitJujuHome()
@@ -246,73 +240,23 @@ func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, er
 	return results, nil
 }
 
-func (self *Client) SetRelationInfo(serviceId, unitId, relationId string, properties map[string]string) error {
+func (self *Client) SetServiceAnnotations(serviceId string, pairs map[string]string) error {
 	if !self.canAccess(serviceId) {
-		return fmt.Errorf("Service not found")
+		return nil
 	}
 
-	// Annotations on relations aren't supported, and it is tricky to get the relation id
-	// So tag it on the service instead
 	annotateTag := "service-" + serviceId
 
-	pairs := make(map[string]string)
-	for k, v := range properties {
-		pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+k] = v
-	}
-
-	log.Info("Setting annotations on %v: %v", annotateTag, pairs)
-
-	err := self.client.SetAnnotations(annotateTag, pairs)
-	if err != nil {
-		log.Warn("Error setting annotations", err)
-		// TODO: Mask error?
-		return err
-	}
-
-	return nil
+	return self.client.SetAnnotations(annotateTag, pairs)
 }
 
-func (self *Client) GetRelationInfo(serviceId string, relationKey string) (*model.RelationInfo, error) {
+func (self *Client) GetServiceAnnotations(serviceId string) (map[string]string, error) {
 	if !self.canAccess(serviceId) {
-		return nil, fmt.Errorf("Service not found")
+		return nil, nil
 	}
 
 	annotateTag := "service-" + serviceId
 
 	annotations, err := self.client.GetAnnotations(annotateTag)
-	if err != nil {
-		log.Warn("Error getting annotations", err)
-		// TODO: Mask error?
-		return nil, err
-	}
-
-	relationIdPrefix := relationKey + ":"
-
-	relationInfo := &model.RelationInfo{}
-	relationInfo.Properties = make(map[string]string)
-
-	for tagName, v := range annotations {
-		if !strings.HasPrefix(tagName, PREFIX_RELATIONINFO) {
-			//log.Debug("Prefix mismatch: %v", tagName)
-			continue
-		}
-		suffix := tagName[len(PREFIX_RELATIONINFO):]
-		tokens := strings.SplitN(suffix, "_", 3)
-		if len(tokens) < 3 {
-			log.Debug("Ignoring unparseable tag: %v", tagName)
-			continue
-		}
-
-		// unitId = tokens[0]
-		relationId := tokens[1]
-		if !strings.HasPrefix(relationId, relationIdPrefix) {
-			//log.Debug("Relation prefix mismatch: %v", relationId)
-			continue
-		}
-
-		key := tokens[2]
-		relationInfo.Properties[key] = v
-	}
-
-	return relationInfo, nil
+	return annotations, err
 }
