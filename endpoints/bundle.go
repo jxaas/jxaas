@@ -10,27 +10,27 @@ import (
 	"github.com/jxaas/jxaas/rs"
 )
 
-type EndpointCharm struct {
-	Parent      *EndpointServices
-	ServiceType string
+type EndpointBundle struct {
+	Parent     *EndpointBundles
+	BundleType string
 }
 
-func (self *EndpointCharm) jujuPrefix() string {
+func (self *EndpointBundle) jujuPrefix() string {
 	tenant := self.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
 
-	serviceType := self.ServiceType
+	bundleType := self.BundleType
 
 	// The u prefix is for user.
 	// This is both a way to separate out user services from our services,
 	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + serviceType + "-"
+	prefix := "u" + tenant + "-" + bundleType + "-"
 
 	return prefix
 }
 
-func (self *EndpointCharm) Item(key string, injector inject.Injector) *EndpointService {
-	child := &EndpointService{}
+func (self *EndpointBundle) Item(key string, injector inject.Injector) *EndpointInstance {
+	child := &EndpointInstance{}
 	child.Parent = self
 	child.InstanceId = key
 
@@ -39,7 +39,7 @@ func (self *EndpointCharm) Item(key string, injector inject.Injector) *EndpointS
 	return child
 }
 
-func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
+func (self *EndpointBundle) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
 	prefix := self.jujuPrefix()
 
 	statuses, err := apiclient.GetStatusList(prefix)
@@ -54,7 +54,7 @@ func (self *EndpointCharm) HttpGet(apiclient *juju.Client) ([]*model.Instance, e
 	for key, state := range statuses {
 		// TODO: Make this better - actively match
 		// TODO: Reverse the config & shared logic with service get
-		if !strings.HasSuffix(key, "-"+self.ServiceType) {
+		if !strings.HasSuffix(key, "-"+self.BundleType) {
 			continue
 		}
 

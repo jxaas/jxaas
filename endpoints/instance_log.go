@@ -2,11 +2,11 @@ package endpoints
 
 import "github.com/jxaas/jxaas/model"
 
-type EndpointLog struct {
-	Parent *EndpointService
+type EndpointInstanceLog struct {
+	Parent *EndpointInstance
 }
 
-func (self *EndpointLog) HttpGet() (*model.LogData, error) {
+func (self *EndpointInstanceLog) HttpGet() (*model.LogData, error) {
 	instance := self.Parent.getInstance()
 
 	data, err := instance.GetLog()

@@ -1,7 +1,7 @@
 package endpoints
 
 type EndpointRelations struct {
-	Parent *EndpointService
+	Parent *EndpointInstance
 }
 
 func (self *EndpointRelations) Item(key string) *EndpointRelation {

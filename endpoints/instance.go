@@ -11,46 +11,45 @@ import (
 	"github.com/jxaas/jxaas/rs"
 )
 
-type EndpointService struct {
-	Parent     *EndpointCharm
+type EndpointInstance struct {
+	Parent     *EndpointBundle
 	InstanceId string
-
-	Huddle *core.Huddle
+	Huddle     *core.Huddle
 
 	instance *core.Instance
 }
 
-func (self *EndpointService) ItemMetrics() *EndpointMetrics {
-	child := &EndpointMetrics{}
+func (self *EndpointInstance) ItemMetrics() *EndpointInstanceMetrics {
+	child := &EndpointInstanceMetrics{}
 	child.Parent = self
 	return child
 }
 
-func (self *EndpointService) ItemLog() *EndpointLog {
-	child := &EndpointLog{}
+func (self *EndpointInstance) ItemLog() *EndpointInstanceLog {
+	child := &EndpointInstanceLog{}
 	child.Parent = self
 	return child
 }
 
-func (self *EndpointService) ItemRelations() *EndpointRelations {
+func (self *EndpointInstance) ItemRelations() *EndpointRelations {
 	child := &EndpointRelations{}
 	child.Parent = self
 	return child
 }
 
-func (self *EndpointService) getHuddle() *core.Huddle {
+func (self *EndpointInstance) getHuddle() *core.Huddle {
 	return self.Huddle
 }
 
-func (self *EndpointService) getInstance() *core.Instance {
+func (self *EndpointInstance) getInstance() *core.Instance {
 	if self.instance == nil {
 		huddle := self.getHuddle()
-		self.instance = huddle.GetInstance(self.Parent.Parent.Parent.Tenant, self.Parent.ServiceType, self.InstanceId)
+		self.instance = huddle.GetInstance(self.Parent.Parent.Parent.Tenant, self.Parent.BundleType, self.InstanceId)
 	}
 	return self.instance
 }
 
-//func (self *EndpointService) jujuPrefix() string {
+//func (self *EndpointInstance) jujuPrefix() string {
 //	prefix := self.Parent.jujuPrefix()
 //
 //	name := self.ServiceKey
@@ -59,7 +58,7 @@ func (self *EndpointService) getInstance() *core.Instance {
 //	return prefix
 //}
 
-func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
+func (self *EndpointInstance) HttpGet(apiclient *juju.Client) (*model.Instance, error) {
 	model, err := self.getInstance().GetState()
 	if err == nil && model == nil {
 		return nil, rs.ErrNotFound()
@@ -67,7 +66,7 @@ func (self *EndpointService) HttpGet(apiclient *juju.Client) (*model.Instance, e
 	return model, err
 }
 
-func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle, request *model.Instance) (*model.Instance, error) {
+func (self *EndpointInstance) HttpPut(apiclient *juju.Client, bundleStore *bundle.BundleStore, huddle *core.Huddle, request *model.Instance) (*model.Instance, error) {
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
@@ -93,10 +92,10 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 
 	tenant := self.Parent.Parent.Parent.Tenant
 	tenant = strings.Replace(tenant, "-", "", -1)
-	serviceType := self.Parent.ServiceType
-	instanceId := self.InstanceId
+	bundleType := self.Parent.BundleType
+	name := self.InstanceId
 
-	b, err := bundleStore.GetBundle(context, tenant, serviceType, instanceId)
+	b, err := bundleStore.GetBundle(context, tenant, bundleType, name)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +111,7 @@ func (self *EndpointService) HttpPut(apiclient *juju.Client, bundleStore *bundle
 	return self.HttpGet(apiclient)
 }
 
-func (self *EndpointService) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
+func (self *EndpointInstance) HttpDelete(apiclient *juju.Client) (*rs.HttpResponse, error) {
 	err := self.getInstance().Delete()
 	if err != nil {
 		return nil, err

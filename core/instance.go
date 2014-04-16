@@ -9,23 +9,23 @@ import (
 	"github.com/justinsb/gova/log"
 )
 
-func (self *Huddle) GetInstance(tenant string, serviceType string, instanceId string) *Instance {
+func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId string) *Instance {
 	s := &Instance{}
 	s.huddle = self
 	s.tenant = strings.Replace(tenant, "-", "", -1)
-	s.serviceType = serviceType
+	s.bundleType = bundleType
 	s.instanceId = instanceId
 
 	// The u prefix is for user.
 	// This is both a way to separate out user services from our services,
 	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + serviceType + "-"
+	prefix := "u" + tenant + "-" + bundleType + "-"
 
 	prefix = prefix + instanceId + "-"
 
 	s.jujuPrefix = prefix
 
-	primaryJujuService := serviceType
+	primaryJujuService := bundleType
 	prefix = prefix + primaryJujuService
 	s.primaryServiceId = prefix
 
@@ -33,10 +33,10 @@ func (self *Huddle) GetInstance(tenant string, serviceType string, instanceId st
 }
 
 type Instance struct {
-	huddle      *Huddle
-	tenant      string
-	serviceType string
-	instanceId  string
+	huddle     *Huddle
+	tenant     string
+	bundleType string
+	instanceId string
 
 	jujuPrefix       string
 	primaryServiceId string

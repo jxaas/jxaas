@@ -11,10 +11,6 @@ type EndpointRelation struct {
 	RelationKey string
 }
 
-func (self *EndpointRelation) Service() *EndpointService {
-	return self.Parent.Parent
-}
-
 func (self *EndpointRelation) getInstance() *core.Instance {
 	return self.Parent.Parent.getInstance()
 }

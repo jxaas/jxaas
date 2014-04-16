@@ -1,14 +1,14 @@
 package endpoints
 
-type EndpointServiceProperties struct {
-	Parent *EndpointService
+type EndpointInstanceProperties struct {
+	Parent *EndpointInstance
 }
 
 type Properties struct {
 	Properties map[string]string
 }
 
-//func (self *EndpointServiceProperties) HttpGet(apiclient *juju.Client) (*Properties, error) {
+//func (self *EndpointInstanceProperties) HttpGet(apiclient *juju.Client) (*Properties, error) {
 //	service := self.Parent.ServiceName()
 //
 //	apiclient.GetProperties(serviceId)

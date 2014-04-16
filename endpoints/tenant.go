@@ -4,8 +4,8 @@ type EndpointTenant struct {
 	Tenant string
 }
 
-func (self *EndpointTenant) ItemServices() *EndpointServices {
-	child := &EndpointServices{}
+func (self *EndpointTenant) ItemServices() *EndpointBundles {
+	child := &EndpointBundles{}
 	child.Parent = self
 	return child
 }

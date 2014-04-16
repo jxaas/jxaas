@@ -11,15 +11,15 @@ import (
 	elastigo_core "github.com/mattbaird/elastigo/core"
 )
 
-type EndpointMetrics struct {
-	Parent *EndpointService
+type EndpointInstanceMetrics struct {
+	Parent *EndpointInstance
 }
 
 type Metrics struct {
 	Metric []string
 }
 
-func (self *EndpointMetrics) HttpGet(huddle *core.Huddle) (*Metrics, error) {
+func (self *EndpointInstanceMetrics) HttpGet(huddle *core.Huddle) (*Metrics, error) {
 	//service := self.Parent.Key
 
 	es := huddle.SharedServices["elasticsearch"]
