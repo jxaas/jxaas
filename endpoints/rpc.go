@@ -47,11 +47,12 @@ type RpcUpdateRelationPropertiesResponse struct {
 //	return service
 //}
 
-func parseService(s string) (tenant, serviceType, instanceId string, err error) {
+func parseService(s string) (tenant, serviceType, instanceId, module string, err error) {
 	tokens := strings.SplitN(s, "-", 3)
 
 	if len(tokens) != 3 {
-		return "", "", "", fmt.Errorf("Cannot parse service")
+		err = fmt.Errorf("Cannot parse service")
+		return
 	}
 
 	if !strings.HasPrefix(tokens[0], "u") {
@@ -61,12 +62,21 @@ func parseService(s string) (tenant, serviceType, instanceId string, err error) 
 
 	tenant = tokens[0][1:]
 	serviceType = tokens[1]
-	instanceId = tokens[2]
+
+	tail := tokens[2]
+	lastDash := strings.LastIndex(tail, "-")
+	if lastDash == -1 {
+		instanceId = tail
+		module = ""
+	} else {
+		instanceId = tail[:lastDash]
+		module = tail[lastDash:]
+	}
 
 	return
 }
 
-func parseUnit(s string) (tenant, serviceType, instanceId, unitId string, err error) {
+func parseUnit(s string) (tenant, serviceType, instanceId, module, unitId string, err error) {
 	lastSlash := strings.LastIndex(s, "/")
 
 	var serviceSpec string
@@ -78,7 +88,7 @@ func parseUnit(s string) (tenant, serviceType, instanceId, unitId string, err er
 		serviceSpec = s
 	}
 
-	tenant, serviceType, instanceId, err = parseService(serviceSpec)
+	tenant, serviceType, instanceId, module, err = parseService(serviceSpec)
 	return
 }
 
@@ -115,7 +125,7 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 
 	remoteUnit := request.RemoteName
 	//	primaryServiceName := unitToService(remoteUnit)
-	tenant, serviceType, instanceId, unitId, err := parseUnit(remoteUnit)
+	tenant, serviceType, instanceId, _, unitId, err := parseUnit(remoteUnit)
 	if err != nil {
 		return nil, err
 	}
