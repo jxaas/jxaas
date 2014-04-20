@@ -87,6 +87,8 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		log.Warn("Unable to find charm: %v", charmUrl)
 	}
 
+	charmUrl = charmInfo.URL
+
 	if config == nil {
 		// Create new service
 

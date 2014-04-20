@@ -30,6 +30,7 @@ func buildHuddle(system *core.System, jujuApi *juju.Client) (*core.Huddle, error
 
 	systemBundle, err := system.BundleStore.GetSystemBundle(key)
 	if err != nil {
+		log.Warn("Error loading system bundle: %v", key, err)
 		return nil, err
 	}
 
@@ -40,6 +41,7 @@ func buildHuddle(system *core.System, jujuApi *juju.Client) (*core.Huddle, error
 
 	info, err := systemBundle.Deploy(jujuApi)
 	if err != nil {
+		log.Warn("Error deploying system bundle", err)
 		return nil, err
 	}
 
@@ -110,6 +112,8 @@ func main() {
 	rest.WithInjector(injector)
 	rest.AddReader(rs.NewJsonMessageBodyReader())
 	rest.AddWriter(rs.NewJsonMessageBodyWriter())
+
+	log.Info("Ready!")
 
 	log.Fatal("Error serving HTTP", rest.ListenAndServe())
 }

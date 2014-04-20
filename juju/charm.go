@@ -16,6 +16,7 @@ func addCharmViaAPI(client *api.Client, curl *charm.URL, repo charm.Repository) 
 	if curl.Revision < 0 {
 		latest, err := charm.Latest(repo, curl)
 		if err != nil {
+			log.Info("Error find latest version for: %v", curl.String(), err)
 			return nil, err
 		}
 		curl = curl.WithRevision(latest)
@@ -82,6 +83,7 @@ func getCharmInfo(client *api.Client, charmName string, localRepoPath string, de
 
 	charmInfo, err := client.CharmInfo(curl.String())
 	if err != nil {
+		log.Info("Error getting charm info for: %v", curl.String(), err)
 		return nil, err
 	}
 	return charmInfo, nil
