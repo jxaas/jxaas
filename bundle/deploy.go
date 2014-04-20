@@ -3,6 +3,9 @@ package bundle
 import (
 	"fmt"
 	"reflect"
+	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
@@ -189,9 +192,40 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 			}
 		}
 
-		nUnits := len(status.Units)
-		if nUnits != self.NumberUnits {
-			log.Warn("NumberUnits mismatch")
+		actualUnits := len(status.Units)
+		wantUnits := self.NumberUnits
+		if actualUnits != wantUnits {
+			if actualUnits < wantUnits {
+				_, err = apiclient.AddServiceUnits(jujuServiceId, wantUnits-actualUnits)
+				if err != nil {
+					log.Warn("Error adding units", err)
+				}
+			} else {
+				keys := []string{}
+				for key, _ := range status.Units {
+					keys = append(keys, key)
+				}
+
+				sort.Strings(keys)
+
+				// TODO: Be more intelligent about which unit to kill?
+				victims := keys[wantUnits:len(keys)]
+
+				for _, victim := range victims {
+					slash := strings.Index(victim, "/")
+					unitId, err := strconv.Atoi(victim[slash+1:])
+					if err != nil {
+						log.Warn("Error parsing UnitId: %v", victim)
+						return nil, err
+					}
+
+					err = apiclient.DestroyUnit(jujuServiceId, unitId)
+					if err != nil {
+						log.Warn("Error removing unit: %v/%v", jujuServiceId, unitId, err)
+						return nil, err
+					}
+				}
+			}
 		}
 	}
 

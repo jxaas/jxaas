@@ -2,6 +2,7 @@ package juju
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/justinsb/gova/log"
@@ -259,4 +260,32 @@ func (self *Client) GetServiceAnnotations(serviceId string) (map[string]string, 
 
 	annotations, err := self.client.GetAnnotations(annotateTag)
 	return annotations, err
+}
+
+func (self *Client) AddServiceUnits(serviceId string, numUnits int) ([]string, error) {
+	if !self.canAccess(serviceId) {
+		return nil, fmt.Errorf("Unknown service: %v", serviceId)
+	}
+
+	machineSpecString := ""
+	units, err := self.client.AddServiceUnits(serviceId, numUnits, machineSpecString)
+	if err != nil {
+		return nil, err
+	}
+
+	return units, nil
+}
+
+func (self *Client) DestroyUnit(serviceId string, unitId int) error {
+	if !self.canAccess(serviceId) {
+		return fmt.Errorf("Unknown service: %v", serviceId)
+	}
+
+	unitName := serviceId + "/" + strconv.Itoa(unitId)
+	err := self.client.DestroyServiceUnits(unitName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
