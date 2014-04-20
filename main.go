@@ -3,6 +3,7 @@ package main
 import (
 	"net"
 	"os"
+	"time"
 
 	"github.com/justinsb/gova/log"
 
@@ -13,6 +14,16 @@ import (
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/rs"
 )
+
+func isHuddleReady(huddle *core.Huddle) bool {
+	for key, service := range huddle.SharedServices {
+		if service.PublicAddress == nil {
+			log.Info("Service not ready: %v", key)
+			return false
+		}
+	}
+	return true
+}
 
 func buildHuddle(system *core.System, jujuApi *juju.Client) (*core.Huddle, error) {
 	key := "shared"
@@ -77,14 +88,19 @@ func main() {
 	system := &core.System{}
 	system.BundleStore = bundleStore
 
-	huddle, err := buildHuddle(system, apiclient)
-	if err != nil {
-		log.Fatal("Error building huddle", err)
-		os.Exit(1)
+	for {
+		huddle, err := buildHuddle(system, apiclient)
+		if err != nil {
+			log.Fatal("Error building huddle", err)
+			os.Exit(1)
+		}
+		if isHuddleReady(huddle) {
+			log.Info("Huddle config is %v", huddle)
+			binder.AddSingleton(huddle)
+			break
+		}
+		time.Sleep(2 * time.Second)
 	}
-	binder.AddSingleton(huddle)
-
-	log.Info("Huddle config is %v", huddle)
 
 	injector := binder.CreateInjector()
 
