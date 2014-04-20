@@ -1,16 +1,16 @@
 mysql:
   services:
     mysql:
-      charm: "cs:~justin-fathomdb/trusty/mysql-0"
+      charm: "cs:~justin-fathomdb/trusty/mysql"
       num_units: <<
       exposed: true
       options:
         performance: <<
         slow-query-time: <<
     proxyclient:
-      charm: "cs:~justin-fathomdb/trusty/stub-client-0"
+      charm: "cs:~justin-fathomdb/trusty/stub-client"
     metrics:
-      charm: "cs:~justin-fathomdb/trusty/heka-collector-0"
+      charm: "cs:~justin-fathomdb/trusty/heka-collector"
   relations:
     - - "proxyclient:juju-info"
       - "mysql:juju-info"
