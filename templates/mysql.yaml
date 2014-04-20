@@ -7,16 +7,17 @@ mysql:
       options:
         performance: <<
         slow-query-time: <<
-    proxyclient:
+    stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
     metrics:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
   relations:
-    - - "proxyclient:juju-info"
+    - - "stubclient:juju-info"
       - "mysql:juju-info"
+    - - "stubclient:db"
+      - "mysql:db"
+
     - - "metrics:juju-info"
       - "mysql:juju-info"
-    - - "proxyclient:db"
-      - "mysql:db"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
