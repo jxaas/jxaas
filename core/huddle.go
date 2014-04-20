@@ -8,6 +8,7 @@ import (
 	"github.com/jxaas/jxaas/juju"
 )
 
+// System is the top-level object for storing system state
 type System struct {
 	BundleStore *bundle.BundleStore
 }
@@ -21,16 +22,20 @@ type Huddle struct {
 	JujuClient *juju.Client
 }
 
+// Implement fmt.Stringer
 func (self *Huddle) String() string {
 	return log.AsJson(self)
 }
 
+// A Juju service that is used by multiple JXaaS instances
+// Used, for example, for logging/monitoring services.
 type SharedService struct {
 	Key           string
 	JujuName      string
 	PublicAddress net.IP
 }
 
+// Implement fmt.Stringer
 func (self *SharedService) String() string {
 	return log.AsJson(self)
 }

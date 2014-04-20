@@ -24,10 +24,12 @@ type RelationConfig struct {
 	To   string
 }
 
+// Implement fmt.Stringer
 func (self *Bundle) String() string {
 	return log.AsJson(self)
 }
 
+// Implement fmt.Stringer
 func (self *RelationConfig) String() string {
 	return fmt.Sprintf("Relation: [%v -> %v]", self.From, self.To)
 }

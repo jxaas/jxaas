@@ -31,6 +31,7 @@ type RpcUpdateRelationPropertiesRequest struct {
 	Properties  map[string]string
 }
 
+// Implement fmt.Stringer
 func (self *RpcUpdateRelationPropertiesRequest) String() string {
 	return log.AsJson(self)
 }
