@@ -43,7 +43,7 @@ func (self *Instance) GetMetrics() (*model.Metrics, error) {
 	//	}
 
 	args := map[string]interface{}{}
-	args["size"] = "1000"
+	args["size"] = 1000
 
 	response, err := elastigo_core.SearchRequest("_all", "message", args, query)
 	if err != nil {
