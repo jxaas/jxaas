@@ -63,18 +63,6 @@ func (self *EndpointInstance) HttpGet() (*model.Instance, error) {
 	return model, err
 }
 
-func (self *EndpointInstance) HttpGetHealth() (*model.Health, error) {
-	instance := self.getInstance()
-	health, err := instance.RunHealthCheck()
-	if err != nil {
-		return nil, err
-	}
-	if health == nil {
-		return nil, rs.ErrNotFound()
-	}
-	return health, nil
-}
-
 func (self *EndpointInstance) HttpPut(request *model.Instance) (*model.Instance, error) {
 	err := self.getInstance().Configure(request)
 	if err != nil {
@@ -93,4 +81,26 @@ func (self *EndpointInstance) HttpDelete() (*rs.HttpResponse, error) {
 	// TODO: Wait for deletion
 	// TODO: Remove machines
 	return &rs.HttpResponse{Status: http.StatusAccepted}, nil
+}
+
+type EndpointHealth struct {
+	Parent *EndpointInstance
+}
+
+func (self *EndpointInstance) ItemHealth() *EndpointHealth {
+	child := &EndpointHealth{}
+	child.Parent = self
+	return child
+}
+
+func (self *EndpointHealth) HttpGet() (*model.Health, error) {
+	instance := self.Parent.getInstance()
+	health, err := instance.RunHealthCheck()
+	if err != nil {
+		return nil, err
+	}
+	if health == nil {
+		return nil, rs.ErrNotFound()
+	}
+	return health, nil
 }
