@@ -11,3 +11,20 @@ func (self *EndpointInstanceMetrics) HttpGet() (*model.Metrics, error) {
 
 	return instance.GetMetrics()
 }
+
+func (self *EndpointInstanceMetrics) Item(key string) *EndpointInstanceMetricDataset {
+	child := &EndpointInstanceMetricDataset{}
+	child.Parent = self
+	return child
+}
+
+type EndpointInstanceMetricDataset struct {
+	Parent *EndpointInstanceMetrics
+	Key    string
+}
+
+func (self *EndpointInstanceMetricDataset) HttpGet() (*model.MetricDataset, error) {
+	instance := self.Parent.Parent.getInstance()
+
+	return instance.GetMetricValues(self.Key)
+}
