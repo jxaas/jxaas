@@ -95,7 +95,9 @@ func (self *EndpointInstance) ItemHealth() *EndpointHealth {
 
 func (self *EndpointHealth) HttpGet() (*model.Health, error) {
 	instance := self.Parent.getInstance()
-	health, err := instance.RunHealthCheck()
+	repair := false
+
+	health, err := instance.RunHealthCheck(repair)
 	if err != nil {
 		return nil, err
 	}

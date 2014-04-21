@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/checks"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
@@ -403,7 +404,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 }
 
 // Runs a health check on the instance
-func (self *Instance) RunHealthCheck() (*model.Health, error) {
+func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	client := self.huddle.JujuClient
 
 	services, err := client.GetServiceStatusList(self.jujuPrefix)
@@ -419,9 +420,13 @@ func (self *Instance) RunHealthCheck() (*model.Health, error) {
 	health.Units = map[string]bool{}
 
 	for serviceId, _ := range services {
-		if !strings.HasSuffix(serviceId, "-mysql") {
-			log.Debug("Skipping service: %v", serviceId)
-			continue
+
+		healthChecks := []checks.HealthCheck{}
+
+		if strings.HasSuffix(serviceId, "-mysql") {
+			checkService := &checks.ServiceHealthCheck{}
+			checkService.ServiceName = "mysql"
+			healthChecks = append(healthChecks, checkService)
 		}
 
 		// TODO: We can't "juju run" on subordinate charms
@@ -431,41 +436,31 @@ func (self *Instance) RunHealthCheck() (*model.Health, error) {
 		//			continue
 		//		}
 
-		command := "service mysql status"
-		log.Info("Running command on %v: %v", serviceId, command)
+		for _, healthCheck := range healthChecks {
+			result, err := healthCheck.Run(client, serviceId, repair)
 
-		runResults, err := client.Run(serviceId, command, 5*time.Second)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, runResult := range runResults {
-			unitJujuId := runResult.UnitId
-
-			code := runResult.Code
-			stdout := string(runResult.Stdout)
-			stderr := string(runResult.Stderr)
-
-			log.Debug("Result: %v %v %v %v", unitJujuId, code, stdout, stderr)
-
-			healthy := true
-			if !strings.Contains(stdout, "start/running") {
-				log.Info("Service %v not running on %v", serviceId, unitJujuId)
-				healthy = false
-			}
-
-			_, _, _, _, unitId, err := ParseUnit(unitJujuId)
 			if err != nil {
+				log.Info("Health check failed on %v", serviceId, err)
 				return nil, err
 			}
 
-			health.Units[unitId] = healthy
+			for k, healthy := range result.Units {
+				overall, exists := health.Units[k]
+				if !exists {
+					overall = true
+				}
+				health.Units[k] = overall && healthy
+			}
 		}
-
-		//		for _, unit := range service.Units {
-		//			log.Info("\t%v", unit)
-		//		}
 	}
+
+	//	for unitJujuId, _ := range health {
+	//		_, _, _, _, unitId, err := core.ParseUnit(unitJujuId)
+	//		if err != nil {
+	//			return nil, err
+	//		}
+	//
+	//}
 
 	return health, nil
 }
