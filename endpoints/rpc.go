@@ -113,11 +113,6 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 
 	response := &RpcUpdateRelationPropertiesResponse{}
 
-	if request.Action == "broken" {
-		log.Info("Ignoring 'broken' action")
-		return response, nil
-	}
-
 	// Sanitize
 	if request.Properties == nil {
 		request.Properties = make(map[string]string)
@@ -148,7 +143,11 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 	//	unitId := request.UnitId
 	relationId := request.RelationId
 
-	err = instance.SetRelationInfo(unitId, relationId, request.Properties)
+	if request.Action == "broken" {
+		err = instance.DeleteRelationInfo(unitId, relationId)
+	} else {
+		err = instance.SetRelationInfo(unitId, relationId, request.Properties)
+	}
 
 	//	err := apiclient.SetRelationInfo(primaryServiceName, unitId, relationId, request.Properties)
 

@@ -252,6 +252,23 @@ func (self *Client) SetServiceAnnotations(serviceId string, pairs map[string]str
 	return self.client.SetAnnotations(annotateTag, pairs)
 }
 
+// Deletes annotations from the specified service
+func (self *Client) DeleteServiceAnnotations(serviceId string, keys []string) error {
+	if !self.canAccess(serviceId) {
+		return nil
+	}
+
+	annotateTag := "service-" + serviceId
+
+	pairs := map[string]string{}
+	for _, key := range keys {
+		pairs[key] = ""
+	}
+
+	return self.client.SetAnnotations(annotateTag, pairs)
+}
+
+// Retrieves all annotations on the service
 func (self *Client) GetServiceAnnotations(serviceId string) (map[string]string, error) {
 	if !self.canAccess(serviceId) {
 		return nil, nil
