@@ -241,6 +241,7 @@ func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, er
 	return results, nil
 }
 
+// Adds annotations on the specified service
 func (self *Client) SetServiceAnnotations(serviceId string, pairs map[string]string) error {
 	if !self.canAccess(serviceId) {
 		return nil

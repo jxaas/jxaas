@@ -18,6 +18,8 @@ const (
 	SYS_TIMESTAMP       = "timestamp"
 )
 
+// Builds an Instance object representing a particular JXaaS Instance.
+// This just builds the object, it does not e.g. check that the instance already exists.
 func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId string) *Instance {
 	s := &Instance{}
 	s.huddle = self
@@ -41,6 +43,7 @@ func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId str
 	return s
 }
 
+// A JXaaS instance
 type Instance struct {
 	huddle     *Huddle
 	tenant     string
@@ -51,6 +54,7 @@ type Instance struct {
 	primaryServiceId string
 }
 
+// Returns the current state of the instance
 func (self *Instance) GetState() (*model.Instance, error) {
 	client := self.huddle.JujuClient
 
@@ -132,6 +136,8 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	return instance, nil
 }
 
+// Deletes the instance.
+// This deletes all Juju services that make up the instance.
 func (self *Instance) Delete() error {
 	prefix := self.jujuPrefix
 	client := self.huddle.JujuClient
@@ -154,6 +160,7 @@ func (self *Instance) Delete() error {
 	return nil
 }
 
+// Gets any log entries for the instance
 func (self *Instance) GetLog() (*model.LogData, error) {
 	service := self.primaryServiceId
 
@@ -185,6 +192,7 @@ func (self *Instance) GetLog() (*model.LogData, error) {
 	return data, nil
 }
 
+// Store the relation properties, as set by a consuming unit.
 func (self *Instance) SetRelationInfo(unitId string, relationId string, properties map[string]string) error {
 	// Annotations on relations aren't supported, and it is tricky to get the relation id
 	// So tag it on the service instead
@@ -316,6 +324,8 @@ func (self *Instance) getBundleKeys() ([]string, error) {
 	return keys, nil
 }
 
+// Ensures the instance is created and has the specified configuration.
+// This method is (supposed to be) idempotent.
 func (self *Instance) Configure(request *model.Instance) error {
 	jujuClient := self.huddle.JujuClient
 

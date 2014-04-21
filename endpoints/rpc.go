@@ -8,17 +8,21 @@ import (
 	"github.com/jxaas/jxaas/core"
 )
 
+// The RPC endpoint is used by our own charms, and is not really RESTful (it is RPC)
 type EndpointRpc struct {
 }
 
+// update_relation_properties RPC call
 func (self *EndpointRpc) ItemUpdate_relation_properties() *EndpointRpcUpdateRelationProperties {
 	child := &EndpointRpcUpdateRelationProperties{}
 	return child
 }
 
+// update_relation_properties RPC call
 type EndpointRpcUpdateRelationProperties struct {
 }
 
+// update_relation_properties RPC request
 type RpcUpdateRelationPropertiesRequest struct {
 	Tenant      string
 	BundleType  string
@@ -36,6 +40,7 @@ func (self *RpcUpdateRelationPropertiesRequest) String() string {
 	return log.AsJson(self)
 }
 
+// update_relation_properties RPC response
 type RpcUpdateRelationPropertiesResponse struct {
 }
 
@@ -100,6 +105,7 @@ func parseUnit(s string) (tenant, serviceType, instanceId, module, unitId string
 //	return *p
 //}
 
+// update_relation_properties RPC handler
 func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, request *RpcUpdateRelationPropertiesRequest) (*RpcUpdateRelationPropertiesResponse, error) {
 	// TODO: Validate that this is coming from one of our machines?
 
