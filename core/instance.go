@@ -403,7 +403,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 }
 
 // Runs a health check on the instance
-func (self *Instance) RunHealthCheck() (*string, error) {
+func (self *Instance) RunHealthCheck() (*model.Health, error) {
 	client := self.huddle.JujuClient
 
 	services, err := client.GetServiceStatusList(self.jujuPrefix)
@@ -413,6 +413,12 @@ func (self *Instance) RunHealthCheck() (*string, error) {
 
 	if services == nil || len(services) == 0 {
 		return nil, rs.ErrNotFound()
+	}
+
+	health := &model.Health{}
+
+	for serviceId, service := range services {
+		log.Info("%v => %v", serviceId, service)
 	}
 
 	//	for key, service := range services {
@@ -455,5 +461,5 @@ func (self *Instance) RunHealthCheck() (*string, error) {
 	//	}
 	//
 	//	return instance, nil
-	return nil, nil
+	return health, nil
 }
