@@ -14,10 +14,10 @@ type ServiceHealthCheck struct {
 }
 
 func (self *ServiceHealthCheck) Run(client *juju.Client, serviceId string, repair bool) (*model.Health, error) {
-	command := "service mysql status"
+	command := "service " + self.ServiceName + " status"
 	log.Info("Running command on %v: %v", serviceId, command)
 
-	runResults, err := client.Run(serviceId, command, 5*time.Second)
+	runResults, err := client.Run(serviceId, nil, command, 5*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -26,21 +26,32 @@ func (self *ServiceHealthCheck) Run(client *juju.Client, serviceId string, repai
 	health.Units = map[string]bool{}
 
 	for _, runResult := range runResults {
-		unitJujuId := runResult.UnitId
+		unitId := juju.ParseUnit(runResult.UnitId)
 
 		code := runResult.Code
 		stdout := string(runResult.Stdout)
 		stderr := string(runResult.Stderr)
 
-		log.Debug("Result: %v %v %v %v", unitJujuId, code, stdout, stderr)
+		log.Debug("Result: %v %v %v %v", runResult.UnitId, code, stdout, stderr)
 
 		healthy := true
 		if !strings.Contains(stdout, "start/running") {
-			log.Info("Service %v not running on %v", serviceId, unitJujuId)
+			log.Info("Service %v not running on %v", serviceId, runResult.UnitId)
 			healthy = false
+
+			if repair {
+				command := "service " + self.ServiceName + " start"
+				log.Info("Running command on %v: %v", serviceId, command)
+
+				_, err := client.Run(serviceId, []string{unitId}, command, 5*time.Second)
+				if err != nil {
+					return nil, err
+				}
+
+			}
 		}
 
-		health.Units[unitJujuId] = healthy
+		health.Units[unitId] = healthy
 	}
 
 	return health, nil

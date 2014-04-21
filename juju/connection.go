@@ -309,7 +309,7 @@ func (self *Client) DestroyUnit(serviceId string, unitId int) error {
 	return nil
 }
 
-func (self *Client) Run(serviceId string, command string, timeout time.Duration) ([]params.RunResult, error) {
+func (self *Client) Run(serviceId string, unitIds []string, command string, timeout time.Duration) ([]params.RunResult, error) {
 	if !self.canAccess(serviceId) {
 		return nil, fmt.Errorf("Unknown service: %v", serviceId)
 	}
@@ -318,8 +318,17 @@ func (self *Client) Run(serviceId string, command string, timeout time.Duration)
 		Commands: command,
 		Timeout:  5 * time.Second,
 		Machines: nil,
-		Services: []string{serviceId},
+		Services: nil,
 		Units:    nil,
+	}
+
+	if unitIds == nil {
+		params.Services = []string{serviceId}
+	} else {
+		params.Units = []string{}
+		for _, unitId := range unitIds {
+			params.Units = append(params.Units, serviceId+"/"+unitId)
+		}
 	}
 
 	results, err := self.client.Run(params)
@@ -327,4 +336,9 @@ func (self *Client) Run(serviceId string, command string, timeout time.Duration)
 		return nil, err
 	}
 	return results, nil
+}
+
+func ParseUnit(unitId string) string {
+	slash := strings.Index(unitId, "/")
+	return unitId[slash+1:]
 }

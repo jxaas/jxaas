@@ -106,3 +106,17 @@ func (self *EndpointHealth) HttpGet() (*model.Health, error) {
 	}
 	return health, nil
 }
+
+func (self *EndpointHealth) HttpPost() (*model.Health, error) {
+	instance := self.Parent.getInstance()
+	repair := true
+
+	health, err := instance.RunHealthCheck(repair)
+	if err != nil {
+		return nil, err
+	}
+	if health == nil {
+		return nil, rs.ErrNotFound()
+	}
+	return health, nil
+}
