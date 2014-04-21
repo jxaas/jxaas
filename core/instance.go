@@ -416,50 +416,56 @@ func (self *Instance) RunHealthCheck() (*model.Health, error) {
 	}
 
 	health := &model.Health{}
+	health.Units = map[string]bool{}
 
-	for serviceId, service := range services {
-		log.Info("%v => %v", serviceId, service)
+	for serviceId, _ := range services {
+		if !strings.HasSuffix(serviceId, "-mysql") {
+			log.Debug("Skipping service: %v", serviceId)
+			continue
+		}
+
+		// TODO: We can't "juju run" on subordinate charms
+		//		charm := self.huddle.getCharmInfo(service.Charm)
+		//
+		//		if charm.Subordinate {
+		//			continue
+		//		}
+
+		command := "service mysql status"
+		log.Info("Running command on %v: %v", serviceId, command)
+
+		runResults, err := client.Run(serviceId, command, 5*time.Second)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, runResult := range runResults {
+			unitJujuId := runResult.UnitId
+
+			code := runResult.Code
+			stdout := string(runResult.Stdout)
+			stderr := string(runResult.Stderr)
+
+			log.Debug("Result: %v %v %v %v", unitJujuId, code, stdout, stderr)
+
+			healthy := true
+			if !strings.Contains(stdout, "start/running") {
+				log.Info("Service %v not running on %v", serviceId, unitJujuId)
+				healthy = false
+			}
+
+			_, _, _, _, unitId, err := ParseUnit(unitJujuId)
+			if err != nil {
+				return nil, err
+			}
+
+			health.Units[unitId] = healthy
+		}
+
+		//		for _, unit := range service.Units {
+		//			log.Info("\t%v", unit)
+		//		}
 	}
 
-	//	for key, service := range services {
-	//		status, err := client.GetServiceStatus(serviceName)
-	//		if err != nil {
-	//			log.Warn("Error while fetching status of service: %v", serviceName, err)
-	//			instance.Status = "pending"
-	//		} else if status == nil {
-	//			log.Warn("No status for service: %v", serviceName)
-	//			instance.Status = "pending"
-	//		} else {
-	//			log.Info("Got state of secondary service: %v => %v", serviceName, status)
-	//			for _, unitStatus := range status.Units {
-	//				model.MergeInstanceStatus(instance, &unitStatus)
-	//			}
-	//		}
-	//	}
-	//
-	//	// TODO: This is a bit of a hack also.  How should we wait for properties to be set?
-	//	annotations, err := client.GetServiceAnnotations(primaryServiceId)
-	//	if err != nil {
-	//		log.Warn("Error getting annotations", err)
-	//		// TODO: Mask error?
-	//		return nil, err
-	//	}
-	//
-	//	log.Info("Annotations on %v: %v", primaryServiceId, annotations)
-	//
-	//	// TODO: This is a total hack... need to figure out when annotations are 'ready' and when not.
-	//	// we probably should do this on set, either in the charms or in the SetAnnotations call
-	//	annotationsReady := false
-	//	for key, _ := range annotations {
-	//		if strings.HasSuffix(key, "__password") {
-	//			annotationsReady = true
-	//		}
-	//	}
-	//
-	//	if !annotationsReady {
-	//		instance.Status = "pending"
-	//	}
-	//
-	//	return instance, nil
 	return health, nil
 }

@@ -4,4 +4,6 @@ package model
 type Health struct {
 	// TODO: Include recent health history?
 	// Should this be part of status?
+
+	Units map[string]bool
 }

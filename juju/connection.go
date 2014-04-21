@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/justinsb/gova/log"
 
@@ -306,4 +307,24 @@ func (self *Client) DestroyUnit(serviceId string, unitId int) error {
 	}
 
 	return nil
+}
+
+func (self *Client) Run(serviceId string, command string, timeout time.Duration) ([]params.RunResult, error) {
+	if !self.canAccess(serviceId) {
+		return nil, fmt.Errorf("Unknown service: %v", serviceId)
+	}
+
+	params := params.RunParams{
+		Commands: command,
+		Timeout:  5 * time.Second,
+		Machines: nil,
+		Services: []string{serviceId},
+		Units:    nil,
+	}
+
+	results, err := self.client.Run(params)
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }
