@@ -62,7 +62,7 @@ func (self *Client) canAccessPrefix(serviceId string) bool {
 	return true
 }
 
-func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
+func (self *Client) GetServiceStatus(serviceId string) (*api.ServiceStatus, error) {
 	if !self.canAccess(serviceId) {
 		return nil, nil
 	}
@@ -91,7 +91,7 @@ func (self *Client) GetStatus(serviceId string) (*api.ServiceStatus, error) {
 	return &state, nil
 }
 
-func (self *Client) GetStatusList(prefix string) (map[string]api.ServiceStatus, error) {
+func (self *Client) GetServiceStatusList(prefix string) (map[string]api.ServiceStatus, error) {
 	if !self.canAccessPrefix(prefix) {
 		return nil, nil
 	}

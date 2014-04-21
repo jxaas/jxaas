@@ -59,7 +59,7 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	client := self.huddle.JujuClient
 
 	primaryServiceId := self.primaryServiceId
-	status, err := client.GetStatus(primaryServiceId)
+	status, err := client.GetServiceStatus(primaryServiceId)
 
 	config, err := client.FindConfig(primaryServiceId)
 	if err != nil {
@@ -74,30 +74,30 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	instance := model.MapToInstance(primaryServiceId, status, config)
 
-	serviceNames, err := self.getBundleKeys()
+	serviceKeys, err := self.getBundleKeys()
 	if err != nil {
 		return nil, err
 	}
 
-	if serviceNames == nil {
+	if serviceKeys == nil {
 		return nil, rs.ErrNotFound()
 	}
 
 	// TODO: This is pretty expensive... we could just check to see if properties have been set
-	for _, serviceName := range serviceNames {
-		if serviceName == primaryServiceId {
+	for serviceId, _ := range serviceKeys {
+		if serviceId == primaryServiceId {
 			continue
 		}
 
-		status, err := client.GetStatus(serviceName)
+		status, err := client.GetServiceStatus(serviceId)
 		if err != nil {
-			log.Warn("Error while fetching status of service: %v", serviceName, err)
+			log.Warn("Error while fetching status of service: %v", serviceId, err)
 			instance.Status = "pending"
 		} else if status == nil {
-			log.Warn("No status for service: %v", serviceName)
+			log.Warn("No status for service: %v", serviceId)
 			instance.Status = "pending"
 		} else {
-			log.Info("Got state of secondary service: %v => %v", serviceName, status)
+			log.Info("Got state of secondary service: %v => %v", serviceId, status)
 			for _, unitStatus := range status.Units {
 				model.MergeInstanceStatus(instance, &unitStatus)
 			}
@@ -142,7 +142,7 @@ func (self *Instance) Delete() error {
 	prefix := self.jujuPrefix
 	client := self.huddle.JujuClient
 
-	statuses, err := client.GetStatusList(prefix)
+	statuses, err := client.GetServiceStatusList(prefix)
 	if err != nil {
 		return err
 	}
@@ -336,7 +336,7 @@ func (self *Instance) getBundle(context *bundle.TemplateContext) (*bundle.Bundle
 	return b, nil
 }
 
-func (self *Instance) getBundleKeys() ([]string, error) {
+func (self *Instance) getBundleKeys() (map[string]string, error) {
 	// TODO: This is easy to optimize... we really don't need to run the full template...
 
 	context := self.buildSkeletonTemplateContext()
@@ -355,9 +355,9 @@ func (self *Instance) getBundleKeys() ([]string, error) {
 		return nil, nil
 	}
 
-	keys := []string{}
-	for key, _ := range bundle.Services {
-		keys = append(keys, key)
+	keys := map[string]string{}
+	for key, service := range bundle.Services {
+		keys[key] = service.Charm
 	}
 	return keys, nil
 }
@@ -400,4 +400,60 @@ func (self *Instance) Configure(request *model.Instance) error {
 	}
 
 	return nil
+}
+
+// Runs a health check on the instance
+func (self *Instance) RunHealthCheck() (*string, error) {
+	client := self.huddle.JujuClient
+
+	services, err := client.GetServiceStatusList(self.jujuPrefix)
+	if err != nil {
+		return nil, err
+	}
+
+	if services == nil || len(services) == 0 {
+		return nil, rs.ErrNotFound()
+	}
+
+	//	for key, service := range services {
+	//		status, err := client.GetServiceStatus(serviceName)
+	//		if err != nil {
+	//			log.Warn("Error while fetching status of service: %v", serviceName, err)
+	//			instance.Status = "pending"
+	//		} else if status == nil {
+	//			log.Warn("No status for service: %v", serviceName)
+	//			instance.Status = "pending"
+	//		} else {
+	//			log.Info("Got state of secondary service: %v => %v", serviceName, status)
+	//			for _, unitStatus := range status.Units {
+	//				model.MergeInstanceStatus(instance, &unitStatus)
+	//			}
+	//		}
+	//	}
+	//
+	//	// TODO: This is a bit of a hack also.  How should we wait for properties to be set?
+	//	annotations, err := client.GetServiceAnnotations(primaryServiceId)
+	//	if err != nil {
+	//		log.Warn("Error getting annotations", err)
+	//		// TODO: Mask error?
+	//		return nil, err
+	//	}
+	//
+	//	log.Info("Annotations on %v: %v", primaryServiceId, annotations)
+	//
+	//	// TODO: This is a total hack... need to figure out when annotations are 'ready' and when not.
+	//	// we probably should do this on set, either in the charms or in the SetAnnotations call
+	//	annotationsReady := false
+	//	for key, _ := range annotations {
+	//		if strings.HasSuffix(key, "__password") {
+	//			annotationsReady = true
+	//		}
+	//	}
+	//
+	//	if !annotationsReady {
+	//		instance.Status = "pending"
+	//	}
+	//
+	//	return instance, nil
+	return nil, nil
 }

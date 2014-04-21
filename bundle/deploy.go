@@ -174,7 +174,7 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 	}
 
 	if !charmInfo.Meta.Subordinate { // && self.Exposed != nil {
-		status, err := apiclient.GetStatus(jujuServiceId)
+		status, err := apiclient.GetServiceStatus(jujuServiceId)
 		if err != nil {
 			return nil, err
 		}

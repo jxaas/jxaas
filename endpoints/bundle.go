@@ -42,7 +42,7 @@ func (self *EndpointBundle) Item(key string, injector inject.Injector) *Endpoint
 func (self *EndpointBundle) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
 	prefix := self.jujuPrefix()
 
-	statuses, err := apiclient.GetStatusList(prefix)
+	statuses, err := apiclient.GetServiceStatusList(prefix)
 	if err != nil {
 		return nil, err
 	}
