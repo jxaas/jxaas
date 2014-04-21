@@ -219,6 +219,44 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	return nil
 }
 
+// Delete any relation properties relating to the specified unit; that unit is going away.
+func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error {
+	client := self.huddle.JujuClient
+
+	serviceId := self.primaryServiceId
+
+	prefix := PREFIX_RELATIONINFO + unitId + "_" + relationId + "_"
+
+	annotations, err := client.GetServiceAnnotations(serviceId)
+	if err != nil {
+		log.Warn("Error getting annotations", err)
+		// TODO: Mask error?
+		return err
+	}
+
+	deleteKeys := []string{}
+
+	for tagName, _ := range annotations {
+		if !strings.HasPrefix(tagName, prefix) {
+			continue
+		}
+		deleteKeys = append(deleteKeys, tagName)
+	}
+
+	if len(deleteKeys) != 0 {
+		log.Info("Deleting annotations on service %v: %v", serviceId, deleteKeys)
+
+		err = client.DeleteServiceAnnotations(serviceId, deleteKeys)
+		if err != nil {
+			log.Warn("Error deleting annotations", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Retrieve the stored relation properties.
 func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, error) {
 	serviceId := self.primaryServiceId
 
