@@ -348,6 +348,9 @@ func (self *Instance) getBundleKeys() (map[string]string, error) {
 	// TODO: Do we need the real config?
 	context.Options = map[string]string{}
 
+	context.Tenant = self.tenant
+	context.PrivateUrl = self.huddle.GetPrivateUrl()
+
 	bundle, err := self.getBundle(context)
 	if err != nil {
 		return nil, err
@@ -386,6 +389,9 @@ func (self *Instance) Configure(request *model.Instance) error {
 	}
 
 	context.Options = request.Config
+
+	context.Tenant = self.tenant
+	context.PrivateUrl = self.huddle.GetPrivateUrl()
 
 	b, err := self.getBundle(context)
 	if err != nil {

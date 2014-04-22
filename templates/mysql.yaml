@@ -7,14 +7,16 @@ mysql:
       options:
         performance: <<
         slow-query-time: <<
+
     stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
+
     metrics:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
   relations:
     - - "stubclient:juju-info"
       - "mysql:juju-info"
-    - - "stubclient:db"
+    - - "stubclient:mysql"
       - "mysql:db"
 
     - - "metrics:juju-info"

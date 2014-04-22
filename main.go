@@ -25,7 +25,7 @@ func isHuddleReady(huddle *core.Huddle) bool {
 	return true
 }
 
-func buildHuddle(system *core.System, jujuApi *juju.Client) (*core.Huddle, error) {
+func buildHuddle(system *core.System, jujuApi *juju.Client, privateUrl string) (*core.Huddle, error) {
 	key := "shared"
 
 	systemBundle, err := system.BundleStore.GetSystemBundle(key)
@@ -46,6 +46,7 @@ func buildHuddle(system *core.System, jujuApi *juju.Client) (*core.Huddle, error
 	}
 
 	huddle := &core.Huddle{}
+	huddle.PrivateUrl = privateUrl
 	huddle.SharedServices = map[string]*core.SharedService{}
 
 	for key, service := range info.Services {
@@ -90,8 +91,11 @@ func main() {
 	system := &core.System{}
 	system.BundleStore = bundleStore
 
+	// TODO: Use flag or autodetect
+	privateUrl := "http://10.0.3.1:8080/xaasprivate"
+
 	for {
-		huddle, err := buildHuddle(system, apiclient)
+		huddle, err := buildHuddle(system, apiclient, privateUrl)
 		if err != nil {
 			log.Fatal("Error building huddle", err)
 			os.Exit(1)

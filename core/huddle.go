@@ -16,6 +16,9 @@ type System struct {
 // A Huddle is a group of servers. For us, it is a Juju environment into which multiple tenants are deployed.
 // Some services are shared across the huddle.
 type Huddle struct {
+	// URL for the private API (the stub uses this to call private API functions)
+	PrivateUrl string
+
 	System         *System
 	SharedServices map[string]*SharedService
 
@@ -38,4 +41,9 @@ type SharedService struct {
 // Implement fmt.Stringer
 func (self *SharedService) String() string {
 	return log.AsJson(self)
+}
+
+// Returns the URL base for the private API server
+func (self *Huddle) GetPrivateUrl() string {
+	return self.PrivateUrl
 }

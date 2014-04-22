@@ -12,6 +12,9 @@ type TemplateContext struct {
 	Options        map[string]string
 
 	NumberUnits int
+
+	Tenant     string
+	PrivateUrl string
 }
 
 func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
@@ -57,7 +60,7 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 		return nil, err
 	}
 
-	bundle.ApplyImplicits(templateContext)
+	bundle.ApplyImplicits(&templateContextCopy)
 
 	bundle.ApplyPrefix(tenant, serviceType, name)
 
