@@ -5,6 +5,8 @@ shared:
       exposed: true
     kibana:
       charm: "cs:~justin-fathomdb/trusty/kibana"
+    mysql:
+      charm: "cs:~justin-fathomdb/trusty/mysql"
   relations:
     - - "kibana"
       - "elasticsearch:rest"

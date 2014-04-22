@@ -72,52 +72,45 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 		request.Properties = make(map[string]string)
 	}
 
-	//	tenant := request.Tenant
-	//	serviceType := request.ServiceType
-	//	name := request.Name
-	//	child := request.Child
-	//
-	//	primaryServiceName := buildQualifiedJujuName(tenant, serviceType, name, child)
-
-	remoteUnit := request.RemoteName
-
-	if remoteUnit == "" {
-		// We're a bit stuck here.  We do have the relationId and other info,
-		// we just don't have the remote relation, and we're storing the attributes on the remote relation
-		// TODO: Infer the remote relation? (-stubclient to -primary)?
-		log.Warn("No remote unit; can't remove relations")
-		return response, nil
+	localUnit := request.ServiceName
+	if localUnit == "" {
+		return nil, fmt.Errorf("ServiceName is required")
 	}
-
-	//	primaryServiceName := unitToService(remoteUnit)
-	tenant, bundleTypeName, instanceId, _, unitId, err := core.ParseUnit(remoteUnit)
+	tenant, bundleTypeName, instanceId, _, _, err := core.ParseUnit(localUnit)
 	if err != nil {
 		return nil, err
 	}
-
-	//	service := self.Service()
-
-	//	serviceName := service.PrimaryServiceName()
-	//	unitId := coalesce(request.UnitId, "")
-	//	relationId := coalesce(request.RelationId, "")
 
 	bundleType := huddle.System.GetBundleType(bundleTypeName)
 	if bundleType == nil {
 		return nil, fmt.Errorf("Unknown bundle type: %v", bundleTypeName)
 	}
 
+	primaryService := bundleType.PrimaryJujuService()
+
+	//	remoteUnit := request.RemoteName
+	//	if remoteUnit == "" {
+	//		// We're a bit stuck here.  We do have the relationId and other info,
+	//		// we just don't have the remote relation, and we're storing the attributes on the remote relation
+	//		// TODO: Infer the remote relation? (-stubclient to -primary)?
+	//		log.Warn("No remote unit; can't remove relations")
+	//		return response, nil
+	//	}
+	//
+	//	_, _, remoteInstanceId, _, remoteUnitId, err := core.ParseUnit(remoteUnit)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+
 	instance := huddle.GetInstance(tenant, bundleType, instanceId)
 
-	//	unitId := request.UnitId
 	relationId := request.RelationId
 
 	if request.Action == "broken" {
-		err = instance.DeleteRelationInfo(unitId, relationId)
+		err = instance.DeleteRelationInfo(primaryService, relationId)
 	} else {
-		err = instance.SetRelationInfo(unitId, relationId, request.Properties)
+		err = instance.SetRelationInfo(primaryService, relationId, request.Properties)
 	}
-
-	//	err := apiclient.SetRelationInfo(primaryServiceName, unitId, relationId, request.Properties)
 
 	if err != nil {
 		return nil, err

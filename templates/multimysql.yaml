@@ -1,0 +1,12 @@
+multimysql:
+  services:
+    multimysql:
+      charm: "cs:~justin-fathomdb/trusty/empty"
+    stubclient:
+      charm: "cs:~justin-fathomdb/trusty/stub-client"
+  relations:
+    - - "stubclient:juju-info"
+      - "multimysql:juju-info"
+    - - "stubclient:mysql"
+      - "{{.SystemServices.mysql}}:db"
+ 
