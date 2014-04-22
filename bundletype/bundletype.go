@@ -6,6 +6,7 @@ type BundleType interface {
 	Key() string
 	PrimaryJujuService() string
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
+	IsStarted(annotations map[string]string) bool
 }
 
 type baseBundleType struct {

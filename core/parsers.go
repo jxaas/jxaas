@@ -9,7 +9,7 @@ func parseService(s string) (tenant, serviceType, instanceId, module string, err
 	tokens := strings.SplitN(s, "-", 3)
 
 	if len(tokens) != 3 {
-		err = fmt.Errorf("Cannot parse service")
+		err = fmt.Errorf("Cannot parse service: %v", s)
 		return
 	}
 

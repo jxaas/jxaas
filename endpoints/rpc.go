@@ -80,6 +80,15 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 	//	primaryServiceName := buildQualifiedJujuName(tenant, serviceType, name, child)
 
 	remoteUnit := request.RemoteName
+
+	if remoteUnit == "" {
+		// We're a bit stuck here.  We do have the relationId and other info,
+		// we just don't have the remote relation, and we're storing the attributes on the remote relation
+		// TODO: Infer the remote relation? (-stubclient to -primary)?
+		log.Warn("No remote unit; can't remove relations")
+		return response, nil
+	}
+
 	//	primaryServiceName := unitToService(remoteUnit)
 	tenant, bundleTypeName, instanceId, _, unitId, err := core.ParseUnit(remoteUnit)
 	if err != nil {
