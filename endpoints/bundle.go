@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundletype"
+	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/inject"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
@@ -60,7 +61,13 @@ func (self *EndpointBundle) HttpGet(apiclient *juju.Client) ([]*model.Instance, 
 		}
 
 		//fmt.Printf("%v => %v\n\n", key, state)
-		instance := model.MapToInstance(key, &state, nil)
+
+		_, _, instanceId, _, _, err := core.ParseUnit(key)
+		if err != nil {
+			return nil, err
+		}
+
+		instance := model.MapToInstance(instanceId, &state, nil)
 
 		instances = append(instances, instance)
 	}

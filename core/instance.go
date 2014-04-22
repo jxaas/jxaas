@@ -73,7 +73,7 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	log.Debug("Service state: %v", status)
 
-	instance := model.MapToInstance(primaryServiceId, status, config)
+	instance := model.MapToInstance(self.instanceId, status, config)
 
 	serviceKeys, err := self.getBundleKeys()
 	if err != nil {
