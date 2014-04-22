@@ -27,3 +27,8 @@ func (self *ElasticsearchBundleType) IsStarted(annotations map[string]string) bo
 
 	return annotationsReady
 }
+
+
+func (self *ElasticsearchBundleType) GetRelationJujuInterface(relation string) string {
+	return "elasticsearch"
+}

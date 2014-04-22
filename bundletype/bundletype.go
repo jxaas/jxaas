@@ -7,6 +7,9 @@ type BundleType interface {
 	PrimaryJujuService() string
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
+
+	// For a given proxy relation, what is the contract we expect the stub to set?
+	GetRelationJujuInterface(relation string) string
 }
 
 type baseBundleType struct {

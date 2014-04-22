@@ -252,6 +252,9 @@ func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error
 func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, error) {
 	serviceId := self.primaryServiceId
 
+	relationInfo := &model.RelationInfo{}
+	relationInfo.Properties = make(map[string]string)
+
 	client := self.huddle.JujuClient
 
 	annotations, err := client.GetServiceAnnotations(serviceId)
@@ -261,10 +264,12 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		return nil, err
 	}
 
-	relationIdPrefix := relationKey + ":"
+	jujuInterface := self.bundleType.GetRelationJujuInterface(relationKey)
+	if jujuInterface == "" {
+		return relationInfo, nil
+	}
 
-	relationInfo := &model.RelationInfo{}
-	relationInfo.Properties = make(map[string]string)
+	relationIdPrefix := jujuInterface + ":"
 
 	sysInfo := map[string]string{}
 

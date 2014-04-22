@@ -35,3 +35,11 @@ func (self *MysqlBundleType) IsStarted(annotations map[string]string) bool {
 
 	return annotationsReady
 }
+
+func (self *MysqlBundleType) GetRelationJujuInterface(relation string) string {
+	switch relation {
+	case "db", "mysql":
+		return "mysql"
+	}
+	return ""
+}

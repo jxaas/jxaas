@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/justinsb/gova/files"
+	"github.com/justinsb/gova/log"
 )
 
 // For now, this uses direct filesystem access (and presumes it is local)
@@ -26,6 +27,7 @@ func (self *JujuLogStore) ReadLog(service string, unitId int) (*JujuLog, error) 
 		return nil, err
 	}
 	if !ok {
+		log.Debug("Log file not found: %v", path)
 		return nil, nil
 	}
 	log := &JujuLog{}
