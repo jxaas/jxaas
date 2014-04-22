@@ -12,13 +12,13 @@ The manifest template specifies the charms (and their relations) that are deploy
 
 The manifest is itself a Go template, which allows for some simple logic.
 
-In addition, the @ shortcut allows for the 'default mapping' for a field.  For example, if you specify:
+In addition, the << shortcut allows for the 'default mapping' for a field.  For example, if you specify:
 
 ```
 mysql:
-  num_units: @
+  num_units: <<
   options:
-    memory: @
+    memory: <<
 ```
 
 The memory option will be mapped to the option of the service.  num_units will be mapped to the number of units of the service.

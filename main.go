@@ -94,6 +94,7 @@ func main() {
 	system.BundleTypes["mysql"] = bundletype.NewMysqlBundleType(bundleStore)
 	system.BundleTypes["es"] = bundletype.NewElasticsearchBundleType(bundleStore)
 	system.BundleTypes["mongodb"] = bundletype.NewMongodbBundleType(bundleStore)
+	system.BundleTypes["pg"] = bundletype.NewPgBundleType(bundleStore)
 
 	// TODO: Use flag or autodetect
 	privateUrl := "http://10.0.3.1:8080/xaasprivate"

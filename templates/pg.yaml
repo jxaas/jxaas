@@ -1,22 +1,25 @@
-mongodb:
+pg:
   services:
-    mongodb:
-      charm: "cs:~justin-fathomdb/trusty/mongodb"
+    pg:
+      charm: "cs:~justin-fathomdb/trusty/postgresql"
       num_units: <<
       exposed: true
+      options:
+        performance: <<
+        slow-query-time: <<
 
     stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
-      
+
     metrics:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
   relations:
     - - "stubclient:juju-info"
-      - "mongodb:juju-info"
-    - - "stubclient:mongodb"
-      - "mongodb:database"
+      - "pg:juju-info"
+    - - "stubclient:pgsql"
+      - "pg:db"
 
     - - "metrics:juju-info"
-      - "mongodb:juju-info"
+      - "pg:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"

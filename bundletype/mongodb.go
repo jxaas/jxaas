@@ -12,7 +12,7 @@ type MongodbBundleType struct {
 
 func NewMongodbBundleType(bundleStore *bundle.BundleStore) *MongodbBundleType {
 	self := &MongodbBundleType{}
-	self.key = "es"
+	self.key = "mongodb"
 	self.bundleStore = bundleStore
 	return self
 }
@@ -20,7 +20,7 @@ func NewMongodbBundleType(bundleStore *bundle.BundleStore) *MongodbBundleType {
 func (self *MongodbBundleType) IsStarted(annotations map[string]string) bool {
 	annotationsReady := false
 	for key, _ := range annotations {
-		if strings.HasSuffix(key, "__mongodb") {
+		if strings.HasSuffix(key, "__hostname") {
 			annotationsReady = true
 		}
 	}
