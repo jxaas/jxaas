@@ -1,0 +1,22 @@
+es:
+  services:
+    es:
+      charm: "cs:~justin-fathomdb/trusty/elasticsearch"
+      num_units: <<
+      exposed: true
+
+    stubclient:
+      charm: "cs:~justin-fathomdb/trusty/stub-client"
+      
+    metrics:
+      charm: "cs:~justin-fathomdb/trusty/heka-collector"
+  relations:
+    - - "stubclient:juju-info"
+      - "elasticsearch:juju-info"
+    - - "stubclient:elasticsearch"
+      - "elasticsearch:rest"
+
+    - - "metrics:juju-info"
+      - "elasticsearch:juju-info"
+    - - "metrics:elasticsearch"
+      - "{{.SystemServices.elasticsearch}}:cluster"
