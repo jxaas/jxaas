@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/checks"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
@@ -21,7 +22,7 @@ const (
 
 // Builds an Instance object representing a particular JXaaS Instance.
 // This just builds the object, it does not e.g. check that the instance already exists.
-func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId string) *Instance {
+func (self *Huddle) GetInstance(tenant string, bundleType bundletype.BundleType, instanceId string) *Instance {
 	s := &Instance{}
 	s.huddle = self
 	s.tenant = tenant
@@ -31,14 +32,13 @@ func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId str
 	// The u prefix is for user.
 	// This is both a way to separate out user services from our services,
 	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + bundleType + "-"
+	prefix := "u" + tenant + "-" + bundleType.Key() + "-"
 
 	prefix = prefix + instanceId + "-"
 
 	s.jujuPrefix = prefix
 
-	primaryJujuService := bundleType
-	prefix = prefix + primaryJujuService
+	prefix = prefix + bundleType.PrimaryJujuService()
 	s.primaryServiceId = prefix
 
 	return s
@@ -48,7 +48,7 @@ func (self *Huddle) GetInstance(tenant string, bundleType string, instanceId str
 type Instance struct {
 	huddle     *Huddle
 	tenant     string
-	bundleType string
+	bundleType bundletype.BundleType
 	instanceId string
 
 	jujuPrefix       string
@@ -323,13 +323,11 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 }
 
 func (self *Instance) getBundle(context *bundle.TemplateContext) (*bundle.Bundle, error) {
-	bundleStore := self.huddle.System.BundleStore
-
 	tenant := self.tenant
 	bundleType := self.bundleType
 	name := self.instanceId
 
-	b, err := bundleStore.GetBundle(context, tenant, bundleType, name)
+	b, err := bundleType.GetBundle(context, tenant, name)
 	if err != nil {
 		return nil, err
 	}

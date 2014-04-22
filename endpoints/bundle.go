@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/inject"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
@@ -12,7 +13,7 @@ import (
 
 type EndpointBundle struct {
 	Parent     *EndpointBundles
-	BundleType string
+	BundleType bundletype.BundleType
 }
 
 func (self *EndpointBundle) jujuPrefix() string {
@@ -24,7 +25,7 @@ func (self *EndpointBundle) jujuPrefix() string {
 	// The u prefix is for user.
 	// This is both a way to separate out user services from our services,
 	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + bundleType + "-"
+	prefix := "u" + tenant + "-" + bundleType.Key() + "-"
 
 	return prefix
 }
@@ -54,7 +55,7 @@ func (self *EndpointBundle) HttpGet(apiclient *juju.Client) ([]*model.Instance, 
 	for key, state := range statuses {
 		// TODO: Make this better - actively match
 		// TODO: Reverse the config & shared logic with service get
-		if !strings.HasSuffix(key, "-"+self.BundleType) {
+		if !strings.HasSuffix(key, "-"+self.BundleType.PrimaryJujuService()) {
 			continue
 		}
 

@@ -1,6 +1,8 @@
 package endpoints
 
 import (
+	"fmt"
+
 	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas/core"
 )
@@ -79,7 +81,7 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 
 	remoteUnit := request.RemoteName
 	//	primaryServiceName := unitToService(remoteUnit)
-	tenant, serviceType, instanceId, _, unitId, err := core.ParseUnit(remoteUnit)
+	tenant, bundleTypeName, instanceId, _, unitId, err := core.ParseUnit(remoteUnit)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +92,12 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 	//	unitId := coalesce(request.UnitId, "")
 	//	relationId := coalesce(request.RelationId, "")
 
-	instance := huddle.GetInstance(tenant, serviceType, instanceId)
+	bundleType := huddle.System.GetBundleType(bundleTypeName)
+	if bundleType == nil {
+		return nil, fmt.Errorf("Unknown bundle type: %v", bundleTypeName)
+	}
+
+	instance := huddle.GetInstance(tenant, bundleType, instanceId)
 
 	//	unitId := request.UnitId
 	relationId := request.RelationId

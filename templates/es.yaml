@@ -12,11 +12,11 @@ es:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
   relations:
     - - "stubclient:juju-info"
-      - "elasticsearch:juju-info"
+      - "es:juju-info"
     - - "stubclient:elasticsearch"
-      - "elasticsearch:rest"
+      - "es:rest"
 
     - - "metrics:juju-info"
-      - "elasticsearch:juju-info"
+      - "es:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"

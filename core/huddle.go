@@ -4,13 +4,18 @@ import (
 	"net"
 
 	"github.com/justinsb/gova/log"
-	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
 )
 
 // System is the top-level object for storing system state
 type System struct {
-	BundleStore *bundle.BundleStore
+	BundleTypes map[string]bundletype.BundleType
+}
+
+// Gets the bundle type by key
+func (self *System) GetBundleType(key string) bundletype.BundleType {
+	return self.BundleTypes[key]
 }
 
 // A Huddle is a group of servers. For us, it is a Juju environment into which multiple tenants are deployed.

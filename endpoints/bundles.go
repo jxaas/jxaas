@@ -1,13 +1,21 @@
 package endpoints
 
+import "github.com/jxaas/jxaas/core"
+
 type EndpointBundles struct {
 	Parent *EndpointTenant
 }
 
-func (self *EndpointBundles) Item(key string) *EndpointBundle {
+func (self *EndpointBundles) Item(key string, huddle *core.Huddle) *EndpointBundle {
 	child := &EndpointBundle{}
 	child.Parent = self
-	child.BundleType = key
+
+	bundleType := huddle.System.GetBundleType(key)
+	if bundleType == nil {
+		return nil
+	}
+
+	child.BundleType = bundleType
 
 	return child
 }

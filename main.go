@@ -8,6 +8,7 @@ import (
 	"github.com/justinsb/gova/log"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/endpoints"
 	"github.com/jxaas/jxaas/inject"
@@ -25,10 +26,10 @@ func isHuddleReady(huddle *core.Huddle) bool {
 	return true
 }
 
-func buildHuddle(system *core.System, jujuApi *juju.Client, privateUrl string) (*core.Huddle, error) {
+func buildHuddle(system *core.System, bundleStore *bundle.BundleStore, jujuApi *juju.Client, privateUrl string) (*core.Huddle, error) {
 	key := "shared"
 
-	systemBundle, err := system.BundleStore.GetSystemBundle(key)
+	systemBundle, err := bundleStore.GetSystemBundle(key)
 	if err != nil {
 		log.Warn("Error loading system bundle: %v", key, err)
 		return nil, err
@@ -89,13 +90,15 @@ func main() {
 	}
 
 	system := &core.System{}
-	system.BundleStore = bundleStore
+	system.BundleTypes = map[string]bundletype.BundleType{}
+	system.BundleTypes["mysql"] = bundletype.NewMysqlBundleType(bundleStore)
+	system.BundleTypes["es"] = bundletype.NewElasticsearchBundleType(bundleStore)
 
 	// TODO: Use flag or autodetect
 	privateUrl := "http://10.0.3.1:8080/xaasprivate"
 
 	for {
-		huddle, err := buildHuddle(system, apiclient, privateUrl)
+		huddle, err := buildHuddle(system, bundleStore, apiclient, privateUrl)
 		if err != nil {
 			log.Fatal("Error building huddle", err)
 			os.Exit(1)

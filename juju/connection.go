@@ -234,7 +234,7 @@ func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, er
 			if strings.HasSuffix(jujuError.Message, "relation already exists") {
 				return nil, nil
 			}
-			log.Debug("Got juju error: Code=%v Message=%v", jujuError.Code, jujuError.Message)
+			log.Debug("Error while creating relation: Code=%v Message=%v", jujuError.Code, jujuError.Message)
 		}
 		return nil, err
 	}
