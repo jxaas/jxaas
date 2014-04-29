@@ -8,7 +8,7 @@ import (
 
 	"github.com/justinsb/gova/log"
 
-	"launchpad.net/juju-core/cmd/envcmd"
+	"launchpad.net/juju-core/cmd"
 	"launchpad.net/juju-core/constraints"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
@@ -35,7 +35,8 @@ type Client struct {
 }
 
 func ClientFactory() (*Client, error) {
-	envName := envcmd.ReadCurrentEnvironment()
+	// This has moved to envcmd in the latest juju-core code
+	envName := cmd.ReadCurrentEnvironment()
 
 	state, err := juju.NewAPIFromName(envName)
 	if err != nil {
