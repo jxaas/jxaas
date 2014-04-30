@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"net"
 	"os"
 	"time"
@@ -75,6 +76,8 @@ func buildHuddle(system *core.System, bundleStore *bundle.BundleStore, jujuApi *
 }
 
 func main() {
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	juju.Init()
 
 	binder := inject.NewBinder()

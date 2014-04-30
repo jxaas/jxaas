@@ -7,6 +7,8 @@ shared:
       charm: "cs:~justin-fathomdb/trusty/kibana"
     mysql:
       charm: "cs:~justin-fathomdb/trusty/mysql"
+    haproxy:
+      charm: "cs:~justin-fathomdb/trusty/haproxy"
   relations:
     - - "kibana"
       - "elasticsearch:rest"

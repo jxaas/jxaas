@@ -3,6 +3,7 @@ package bundle
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 
 	"github.com/justinsb/gova/log"
 )
@@ -15,6 +16,14 @@ type TemplateContext struct {
 
 	Tenant     string
 	PrivateUrl string
+}
+
+func (self *TemplateContext) AssignPublicPort() int {
+	log.Warn("TemplateContext AssignPublicPort is stub-implemented")
+	// TODO: Assign randomly, check not already used
+	port := 10000 + rand.Intn(10000)
+	log.Info("Assigned port: %v", port)
+	return port
 }
 
 func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
@@ -42,7 +51,7 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 	}
 
 	var buffer bytes.Buffer
-	err = template.Execute(&buffer, templateContextCopy)
+	err = template.Execute(&buffer, &templateContextCopy)
 	if err != nil {
 		return nil, err
 	}

@@ -10,6 +10,9 @@ mysql:
 
     stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
+      options:
+        private-port: 3306
+        public-port: {{.AssignPublicPort}}
 
     metrics:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
@@ -23,3 +26,6 @@ mysql:
       - "mysql:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
+
+    - - "stubclient:website"
+      - "{{.SystemServices.haproxy}}:reverseproxy"
