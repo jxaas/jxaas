@@ -10,6 +10,7 @@ import (
 
 	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
+	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
 )
@@ -42,6 +43,55 @@ type Huddle struct {
 	// Acts both as a cache and a staging area for ports that we assign, but
 	// where the service doesn't yet exist so we can't store the port
 	assignedPublicPorts map[string]int
+}
+
+func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Client, privateUrl string) (*Huddle, error) {
+	key := "shared"
+
+	systemBundle, err := bundleStore.GetSystemBundle(key)
+	if err != nil {
+		log.Warn("Error loading system bundle: %v", key, err)
+		return nil, err
+	}
+
+	if systemBundle == nil {
+		log.Warn("Cannot load system bundle: %v", key, err)
+		return nil, nil
+	}
+
+	info, err := systemBundle.Deploy(jujuApi)
+	if err != nil {
+		log.Warn("Error deploying system bundle", err)
+		return nil, err
+	}
+
+	huddle := &Huddle{}
+	huddle.PrivateUrl = privateUrl
+	huddle.SharedServices = map[string]*SharedService{}
+	huddle.assignedPublicPorts = map[string]int{}
+
+	for key, service := range info.Services {
+		sharedService := &SharedService{}
+		sharedService.JujuName = key
+		sharedService.Key = key
+
+		status := service.Status
+		if status != nil {
+			for _, unit := range status.Units {
+				if unit.PublicAddress != "" {
+					sharedService.PublicAddress = net.ParseIP(unit.PublicAddress)
+				}
+			}
+		}
+
+		huddle.SharedServices[key] = sharedService
+	}
+
+	huddle.JujuClient = jujuApi
+	huddle.System = system
+	// TODO: Wait until initialized or offer a separate 'bootstrap' command
+
+	return huddle, nil
 }
 
 // Implement fmt.Stringer
