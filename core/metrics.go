@@ -32,7 +32,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string) (*model.MetricDataset,
 
 	// TODO: Inject
 	// TODO: Use an ES client that isn't a singleton
-	elasticgo_api.Domain = es.PublicAddress.String()
+	elasticgo_api.Domain = es.PublicAddress
 	elasticgo_api.Port = "9200"
 
 	// TODO: We need to make sure that most fields are _not_ analyzed
@@ -154,7 +154,7 @@ func (self *Instance) GetMetrics() (*model.Metrics, error) {
 
 	// TODO: Inject
 	// TODO: Use an ES client that isn't a singleton
-	elasticgo_api.Domain = es.PublicAddress.String()
+	elasticgo_api.Domain = es.PublicAddress
 	elasticgo_api.Port = "9200"
 
 	// TODO: We need to make sure that most fields are _not_ analyzed

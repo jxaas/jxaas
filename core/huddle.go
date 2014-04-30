@@ -3,7 +3,6 @@ package core
 import (
 	"fmt"
 	"math/rand"
-	"net"
 	"strconv"
 	"strings"
 	"sync"
@@ -79,7 +78,7 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 		if status != nil {
 			for _, unit := range status.Units {
 				if unit.PublicAddress != "" {
-					sharedService.PublicAddress = net.ParseIP(unit.PublicAddress)
+					sharedService.PublicAddress = unit.PublicAddress
 				}
 			}
 		}
@@ -104,7 +103,7 @@ func (self *Huddle) String() string {
 type SharedService struct {
 	Key           string
 	JujuName      string
-	PublicAddress net.IP
+	PublicAddress string
 }
 
 // Implement fmt.Stringer
