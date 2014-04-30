@@ -24,7 +24,6 @@ type EndpointRpcUpdateRelationProperties struct {
 // update_relation_properties RPC request
 type RpcUpdateRelationPropertiesRequest struct {
 	Tenant      string
-	BundleType  string
 	ServiceName string
 	Relation    string
 	RelationId  string
