@@ -16,8 +16,10 @@ import (
 )
 
 const (
-	PREFIX_RELATIONINFO = "__jxaas_relinfo_"
-	SYS_TIMESTAMP       = "timestamp"
+	ANNOTATION_PREFIX_RELATIONINFO = "__jxaas_relinfo_"
+	ANNOTATION_PREFIX_SYSTEM       = "__jxaas_system_"
+	ANNOTATION_KEY_PUBLIC_PORT     = ANNOTATION_PREFIX_SYSTEM + "public_port"
+	SYS_TIMESTAMP                  = "timestamp"
 )
 
 // Builds an Instance object representing a particular JXaaS Instance.
@@ -189,13 +191,18 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	// Annotations on relations aren't supported, and it is tricky to get the relation id
 	// So tag it on the service instead
 
-	serviceId := self.primaryServiceId
-
 	pairs := make(map[string]string)
 	for k, v := range properties {
-		pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"__"+k] = v
+		pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"__"+k] = v
 	}
-	pairs[PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+SYS_TIMESTAMP] = strconv.Itoa(time.Now().Second())
+	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+SYS_TIMESTAMP] = strconv.Itoa(time.Now().Second())
+
+	return self.setServiceAnnotations(pairs)
+}
+
+// Sets annotations on the specified instance.
+func (self *Instance) setServiceAnnotations(pairs map[string]string) error {
+	serviceId := self.primaryServiceId
 
 	log.Info("Setting annotations on service %v: %v", serviceId, pairs)
 
@@ -211,13 +218,20 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	return nil
 }
 
+// Sets the annotation that stores the public port
+func (self *Instance) setPublicPort(port int) error {
+	pairs := map[string]string{ANNOTATION_KEY_PUBLIC_PORT: strconv.Itoa(port)}
+
+	return self.setServiceAnnotations(pairs)
+}
+
 // Delete any relation properties relating to the specified unit; that unit is going away.
 func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error {
 	client := self.huddle.JujuClient
 
 	serviceId := self.primaryServiceId
 
-	prefix := PREFIX_RELATIONINFO + unitId + "_" + relationId + "_"
+	prefix := ANNOTATION_PREFIX_RELATIONINFO + unitId + "_" + relationId + "_"
 
 	annotations, err := client.GetServiceAnnotations(serviceId)
 	if err != nil {
@@ -274,11 +288,11 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	sysInfo := map[string]string{}
 
 	for tagName, v := range annotations {
-		if !strings.HasPrefix(tagName, PREFIX_RELATIONINFO) {
+		if !strings.HasPrefix(tagName, ANNOTATION_PREFIX_RELATIONINFO) {
 			//log.Debug("Prefix mismatch: %v", tagName)
 			continue
 		}
-		suffix := tagName[len(PREFIX_RELATIONINFO):]
+		suffix := tagName[len(ANNOTATION_PREFIX_RELATIONINFO):]
 		tokens := strings.SplitN(suffix, "_", 3)
 		if len(tokens) < 3 {
 			log.Debug("Ignoring unparseable tag: %v", tagName)
@@ -314,6 +328,8 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	for key, service := range huddle.SharedServices {
 		context.SystemServices[key] = service.JujuName
 	}
+
+	context.PublicPortAssigner = &StubPortAssigner{}
 
 	return context
 }
@@ -387,6 +403,10 @@ func (self *Instance) Configure(request *model.Instance) error {
 	context.Tenant = self.tenant
 	context.PrivateUrl = self.huddle.GetPrivateUrl()
 
+	publicPortAssigner := &InstancePublicPortAssigner{}
+	publicPortAssigner.Instance = self
+	context.PublicPortAssigner = publicPortAssigner
+
 	b, err := self.getBundle(context)
 	if err != nil {
 		return err
@@ -398,6 +418,10 @@ func (self *Instance) Configure(request *model.Instance) error {
 	_, err = b.Deploy(jujuClient)
 	if err != nil {
 		return err
+	}
+
+	if publicPortAssigner.Port != 0 {
+		self.setPublicPort(publicPortAssigner.Port)
 	}
 
 	return nil

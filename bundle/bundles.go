@@ -3,10 +3,13 @@ package bundle
 import (
 	"bytes"
 	"fmt"
-	"math/rand"
 
 	"github.com/justinsb/gova/log"
 )
+
+type PortAssigner interface {
+	AssignPort() (int, error)
+}
 
 type TemplateContext struct {
 	SystemServices map[string]string
@@ -16,14 +19,16 @@ type TemplateContext struct {
 
 	Tenant     string
 	PrivateUrl string
+
+	PublicPortAssigner PortAssigner
 }
 
-func (self *TemplateContext) AssignPublicPort() int {
-	log.Warn("TemplateContext AssignPublicPort is stub-implemented")
-	// TODO: Assign randomly, check not already used
-	port := 10000 + rand.Intn(10000)
-	log.Info("Assigned port: %v", port)
-	return port
+func (self *TemplateContext) AssignPublicPort() (int, error) {
+	if self.PublicPortAssigner == nil {
+		return 0, fmt.Errorf("PublicPortAssigner not set")
+	}
+
+	return self.PublicPortAssigner.AssignPort()
 }
 
 func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
