@@ -18,8 +18,10 @@ import (
 const (
 	ANNOTATION_PREFIX_RELATIONINFO = "__jxaas_relinfo_"
 	ANNOTATION_PREFIX_SYSTEM       = "__jxaas_system_"
-	ANNOTATION_KEY_PUBLIC_PORT     = ANNOTATION_PREFIX_SYSTEM + "public_port"
-	SYS_TIMESTAMP                  = "timestamp"
+
+	// TODO: Should we just find the public-port annotation on the proxy?
+	ANNOTATION_KEY_PUBLIC_PORT = ANNOTATION_PREFIX_SYSTEM + "public_port"
+	SYS_TIMESTAMP              = "timestamp"
 )
 
 // Builds an Instance object representing a particular JXaaS Instance.
