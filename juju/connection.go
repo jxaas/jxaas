@@ -10,6 +10,8 @@ import (
 
 	"launchpad.net/juju-core/cmd"
 	"launchpad.net/juju-core/constraints"
+	"launchpad.net/juju-core/environs"
+	"launchpad.net/juju-core/environs/config"
 	"launchpad.net/juju-core/juju"
 	"launchpad.net/juju-core/state/api"
 	"launchpad.net/juju-core/state/api/params"
@@ -48,6 +50,25 @@ func ClientFactory() (*Client, error) {
 	wrapper := &Client{}
 	wrapper.client = client
 	wrapper.state = state
+	//defer apiclient.Close()
+	return wrapper, err
+}
+
+func DirectClientFactory(conf *config.Config) (*Client, error) {
+	env, err := environs.New(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	dialOpts := api.DefaultDialOpts()
+	conn, err := juju.NewAPIConn(env, dialOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	wrapper := &Client{}
+	wrapper.client = conn.State.Client()
+	wrapper.state = conn.State
 	//defer apiclient.Close()
 	return wrapper, err
 }

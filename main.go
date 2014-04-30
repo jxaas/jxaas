@@ -38,6 +38,30 @@ func main() {
 	binder.AddSingleton(bundleStore)
 
 	apiclient, err := juju.ClientFactory()
+
+	// TODO: How would we get the full config "from afar"?
+	//confParams := map[string]interface{}{}
+	////	confParams["name"] = "jxaas"
+	////	confParams["firewall-mode"] = "instance"
+	////	confParams["development"] = false
+	////
+	////	confParams["type"] = "ec2"
+	////
+	////	confParams["ssl-hostname-verification"] = true
+	////	confParams["authorized-keys"] = ""
+	////
+	//	//		"state-port":                DefaultStatePort,
+	//	//		"api-port":                  DefaultAPIPort,
+	//	//		"syslog-port":               DefaultSyslogPort,
+	//	//		"bootstrap-timeout":         DefaultBootstrapSSHTimeout,
+	//	//		"bootstrap-retry-delay":     DefaultBootstrapSSHRetryDelay,
+	//	//		"bootstrap-addresses-delay": DefaultBootstrapSSHAddressesDelay,
+	//	conf, err := config.New(config.NoDefaults, confParams)
+	//	if err != nil {
+	//		log.Fatal("Error building Juju config", err)
+	//		os.Exit(1)
+	//	}
+	//	apiclient, err := juju.DirectClientFactory(conf)
 	if err != nil {
 		log.Fatal("Error building Juju client", err)
 		os.Exit(1)
