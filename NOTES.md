@@ -44,3 +44,24 @@ JUJU_HOME=${BASE}/.juju ${BASE}/bin/juju bootstrap
 # /home/justinsb/juju/.juju/local/tools/machine-0/jujud machine --data-dir /home/justinsb/juju/.juju/local --machine-id 0 --debug
 # /usr/lib/juju/bin/mongod --auth --dbpath=/home/justinsb/juju/.juju/local/db --sslOnNormalPorts --sslPEMKeyFile /home/justinsb/juju/.juju/local/server.pem --sslPEMKeyPassword xxxxxxx --bind_ip 0.0.0.0 --port 37017 --noprealloc --syslog --smallfiles
 # We might need to restart this manually on reboot?
+
+
+
+
+Tips:
+
+* You may need to raise the limits of open files & nprocs
+
+/etc/security/limits.conf
+```
+*	soft     nproc          65535
+*	hard     nproc          65535
+*       soft     nofile         65535
+*       hard     nofile         65535
+```
+
+/etc/sysctl.conf
+
+```
+fs.file-max = 65536
+```

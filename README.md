@@ -1,11 +1,3 @@
 # JXAAS
 
-
-Getting started:
-
-```
-# Let's use local (LXC)
-juju generate-config
-juju switch local
-
-juju bootstrap
+Please see the notes in docs/tutorial
