@@ -77,6 +77,25 @@ func getStringMap(config map[interface{}]interface{}, key string) map[string]str
 	return out
 }
 
+func getStringArray(config map[interface{}]interface{}, key string) []string {
+	v, found := config[key]
+	if !found {
+		return []string{}
+	}
+
+	vList, ok := v.([]interface{})
+	if !ok {
+		log.Warn("Expected generic array, found %T", v)
+		return nil
+	}
+
+	out := []string{}
+	for _, v := range vList {
+		out = append(out, asString(v))
+	}
+	return out
+}
+
 func parseServiceConfig(config interface{}) (*ServiceConfig, error) {
 	var err error
 
@@ -99,6 +118,7 @@ func parseServiceConfig(config interface{}) (*ServiceConfig, error) {
 		return nil, err
 	}
 
+	//	self.OpenPorts = getStringArray(configMap, "open_ports")
 	self.Options = getStringMap(configMap, "options")
 	return self, nil
 }

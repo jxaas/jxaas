@@ -17,6 +17,7 @@ type ServiceConfig struct {
 	NumberUnits int
 	Options     map[string]string
 	Exposed     bool
+	//OpenPorts   []string
 }
 
 type RelationConfig struct {

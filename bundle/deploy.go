@@ -229,5 +229,15 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		}
 	}
 
+	//	for _, openPort := range self.OpenPorts {
+	//	apiclient.Run(jujuServiceId, nil, ["open-port", openPort])
+	//
+	////		err = apiclient.OpenPort(jujuServiceId, openPort)
+	//		if err != nil {
+	//			log.Warn("Error opening port: %v/%v", jujuServiceId, openPort, err)
+	//			return nil, err
+	//		}
+	//	}
+
 	return serviceInfo, nil
 }
