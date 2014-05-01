@@ -32,11 +32,27 @@ func Init() error {
 // It is responsible for enforcing multi-tenancy security,
 // and other additional concerns we have.
 type Client struct {
-	state  *api.State
-	client *api.Client
+	apiState *api.State
+	client   *api.Client
 }
 
-func ClientFactory() (*Client, error) {
+func SimpleClientFactory(info *api.Info) (*Client, error) {
+	dialOpts := api.DialOpts{}
+	state, err := api.Open(info, dialOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	client := state.Client()
+
+	wrapper := &Client{}
+	wrapper.client = client
+	wrapper.apiState = state
+	//defer apiclient.Close()
+	return wrapper, err
+}
+
+func EnvClientFactory() (*Client, error) {
 	// This has moved to envcmd in the latest juju-core code
 	envName := cmd.ReadCurrentEnvironment()
 
@@ -49,7 +65,7 @@ func ClientFactory() (*Client, error) {
 
 	wrapper := &Client{}
 	wrapper.client = client
-	wrapper.state = state
+	wrapper.apiState = state
 	//defer apiclient.Close()
 	return wrapper, err
 }
@@ -68,7 +84,7 @@ func DirectClientFactory(conf *config.Config) (*Client, error) {
 
 	wrapper := &Client{}
 	wrapper.client = conn.State.Client()
-	wrapper.state = conn.State
+	wrapper.apiState = conn.State
 	//defer apiclient.Close()
 	return wrapper, err
 }
@@ -190,7 +206,7 @@ func (self *Client) ServiceDestroy(serviceId string) error {
 }
 
 func (c *Client) call(method string, params, result interface{}) error {
-	return c.state.Call("Client", "", method, params, result)
+	return c.apiState.Call("Client", "", method, params, result)
 }
 
 // Fixed so that we can omit numUnits (by passing -1)

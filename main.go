@@ -1,9 +1,13 @@
 package main
 
 import (
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"time"
+
+	"launchpad.net/goyaml"
+	"launchpad.net/juju-core/state/api"
 
 	"github.com/justinsb/gova/log"
 
@@ -29,15 +33,56 @@ func isHuddleReady(huddle *core.Huddle) bool {
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	options := GetOptions()
+	if options == nil {
+		log.Fatal("Error reading options")
+		os.Exit(1)
+	}
+
 	juju.Init()
 
 	binder := inject.NewBinder()
-	binder.AddProvider(juju.ClientFactory)
+
+	clientFactory := juju.EnvClientFactory
+
+	if options.AgentConf != "" {
+		yaml, err := ioutil.ReadFile(options.AgentConf)
+		if err != nil {
+			log.Error("Error reading config file: %v", options.AgentConf, err)
+			os.Exit(1)
+		}
+		agentConf := map[string]interface{}{}
+		err = goyaml.Unmarshal([]byte(yaml), &agentConf)
+		if err != nil {
+			log.Error("Error reading config file: %v", options.AgentConf, err)
+			os.Exit(1)
+		}
+
+		clientFactory = func() (*juju.Client, error) {
+			password := agentConf["apipassword"].(string)
+			servers := []string{}
+			for _, apiaddress := range agentConf["apiaddresses"].([]interface{}) {
+				servers = append(servers, apiaddress.(string))
+			}
+
+			ca := agentConf["cacert"].(string)
+			info := api.Info{
+				Addrs:    servers,
+				Password: password,
+				CACert:   []byte(ca),
+				Tag:      "user-admin",
+			}
+
+			return juju.SimpleClientFactory(&info)
+		}
+	}
+
+	binder.AddProvider(clientFactory)
 
 	bundleStore := bundle.NewBundleStore("templates")
 	binder.AddSingleton(bundleStore)
 
-	apiclient, err := juju.ClientFactory()
+	apiclient, err := clientFactory()
 
 	// TODO: How would we get the full config "from afar"?
 	//confParams := map[string]interface{}{}
