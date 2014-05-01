@@ -35,7 +35,10 @@ popd
 # Make sure it is installed
 go install -v github.com/jxaas/jxaas
 
+rm -rf ${WORKDIR}/templates/
+cp -r templates/ ${WORKDIR}/templates/
+
 # Build archive
 pushd ${WORKDIR}
-tar czvf jxaas.tar.gz bin/*
+tar czvf jxaas.tar.gz bin/* templates/*
 popd
