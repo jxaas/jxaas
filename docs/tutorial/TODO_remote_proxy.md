@@ -1,15 +1,22 @@
 ## 2 - Proxy Charms
 
+Go to EC2, and open up port 8080 from your IP only. (JXaaS isn't yet secure,
+so we need the IP restriction!)
+
+In step #1, we forwarded the API port.  So, if you have the Python client
+installed, you can run JXaaS commands locally.
+
+```
+export JXAAS_URL=http://54.204.195.171:8080/xaas
+jxaas list-instances mysql
+```
+
 
 Now, let's demonstrate the proxy charm.  This allows you to consume JXaaS services easily
 from within Juju.
-
-For now, we'll run everything within one Juju instance.  To fix this properly requires
-exposing everything and getting port forwarding working.  (This more or less works, but is
-still a work in progress).
    
 ```
-export JXAAS_URL=http://10.0.3.1:8080/xaas
+export JXAAS_URL=http://54.204.195.171:8080/xaas
 cat > /tmp/config <<EOF
 mp1:
   jxaas-url: ${JXAAS_URL}
