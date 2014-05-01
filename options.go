@@ -3,13 +3,13 @@ package main
 import "flag"
 
 var (
-	flagAgentConf   = flag.String("c", "", "Agent conf file")
-	flagApiPassword = flag.String("p", "", "API password")
+	flagAgentConf       = flag.String("c", "", "Agent conf file")
+	flagApiPasswordPath = flag.String("p", "", "File containing API password")
 )
 
 type Options struct {
-	AgentConf   string
-	ApiPassword string
+	AgentConf       string
+	ApiPasswordPath string
 }
 
 func GetOptions() *Options {
@@ -18,6 +18,6 @@ func GetOptions() *Options {
 	self := &Options{}
 
 	self.AgentConf = *flagAgentConf
-	self.ApiPassword = *flagApiPassword
+	self.ApiPasswordPath = *flagApiPasswordPath
 	return self
 }

@@ -45,12 +45,19 @@ func main() {
 
 	clientFactory := juju.EnvClientFactory
 
-	if options.AgentConf != "" && options.ApiPassword != "" {
+	if options.AgentConf != "" && options.ApiPasswordPath != "" {
 		yaml, err := ioutil.ReadFile(options.AgentConf)
 		if err != nil {
 			log.Error("Error reading config file: %v", options.AgentConf, err)
 			os.Exit(1)
 		}
+
+		apiPassword, err := ioutil.ReadFile(options.ApiPasswordPath)
+		if err != nil {
+			log.Error("Error reading api password file: %v", options.ApiPasswordPath, err)
+			os.Exit(1)
+		}
+
 		agentConf := map[string]interface{}{}
 		err = goyaml.Unmarshal([]byte(yaml), &agentConf)
 		if err != nil {
@@ -63,7 +70,7 @@ func main() {
 			//			tag := agentConf["tag"].(string)
 			//			nonce := agentConf["nonce"].(string)
 
-			password := options.ApiPassword
+			password := string(apiPassword)
 			tag := "user-admin"
 			nonce := ""
 
