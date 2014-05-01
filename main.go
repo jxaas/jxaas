@@ -137,8 +137,7 @@ func main() {
 	system.BundleTypes["pg"] = bundletype.NewPgBundleType(bundleStore)
 	system.BundleTypes["multimysql"] = bundletype.NewMultitenantMysqlBundleType(bundleStore)
 
-	// TODO: Use flag or autodetect
-	privateUrl := "http://10.0.3.1:8080/xaasprivate"
+	privateUrl := options.PrivateUrl
 
 	for {
 		huddle, err := core.NewHuddle(system, bundleStore, apiclient, privateUrl)
