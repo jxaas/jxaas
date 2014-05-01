@@ -273,6 +273,21 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 
 	client := self.huddle.JujuClient
 
+	status, err := client.GetServiceStatus(serviceId)
+	if err != nil {
+		log.Warn("Error while fetching status of service: %v", serviceId, err)
+		return nil, err
+	}
+
+	log.Info("unitStatus: %v", log.AsJson(status))
+	relationInfo.PublicAddresses = []string{}
+	for _, unitStatus := range status.Units {
+		if unitStatus.PublicAddress == "" {
+			continue
+		}
+		relationInfo.PublicAddresses = append(relationInfo.PublicAddresses, unitStatus.PublicAddress)
+	}
+
 	annotations, err := client.GetServiceAnnotations(serviceId)
 	if err != nil {
 		log.Warn("Error getting annotations", err)

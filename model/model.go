@@ -10,8 +10,9 @@ import (
 )
 
 type RelationInfo struct {
-	Properties map[string]string
-	Timestamp  string
+	Properties      map[string]string
+	Timestamp       string
+	PublicAddresses []string
 }
 
 type Instance struct {

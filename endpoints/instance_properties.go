@@ -4,9 +4,9 @@ type EndpointInstanceProperties struct {
 	Parent *EndpointInstance
 }
 
-type Properties struct {
-	Properties map[string]string
-}
+//type Properties struct {
+//	Properties map[string]string
+//}
 
 //func (self *EndpointInstanceProperties) HttpGet(apiclient *juju.Client) (*Properties, error) {
 //	service := self.Parent.ServiceName()
