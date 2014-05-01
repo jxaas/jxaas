@@ -10,6 +10,7 @@ mysql:
 
     stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
+      exposed: true
       options:
         private-port: 3306
         public-port: {{.AssignPublicPort}}
