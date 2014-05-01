@@ -45,7 +45,7 @@ func main() {
 
 	clientFactory := juju.EnvClientFactory
 
-	if options.AgentConf != "" {
+	if options.AgentConf != "" && options.ApiPassword != "" {
 		yaml, err := ioutil.ReadFile(options.AgentConf)
 		if err != nil {
 			log.Error("Error reading config file: %v", options.AgentConf, err)
@@ -59,7 +59,14 @@ func main() {
 		}
 
 		clientFactory = func() (*juju.Client, error) {
-			password := agentConf["apipassword"].(string)
+			//			password := agentConf["apipassword"].(string)
+			//			tag := agentConf["tag"].(string)
+			//			nonce := agentConf["nonce"].(string)
+
+			password := options.ApiPassword
+			tag := "user-admin"
+			nonce := ""
+
 			servers := []string{}
 			for _, apiaddress := range agentConf["apiaddresses"].([]interface{}) {
 				servers = append(servers, apiaddress.(string))
@@ -70,8 +77,11 @@ func main() {
 				Addrs:    servers,
 				Password: password,
 				CACert:   []byte(ca),
-				Tag:      "user-admin",
+				Tag:      tag,
+				Nonce:    nonce,
 			}
+
+			log.Info("%v", log.AsJson(info))
 
 			return juju.SimpleClientFactory(&info)
 		}
