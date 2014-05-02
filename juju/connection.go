@@ -380,3 +380,8 @@ func ParseUnit(unitId string) string {
 	slash := strings.Index(unitId, "/")
 	return unitId[slash+1:]
 }
+
+func (self *Client) GetLogDir() string {
+	// TODO: Fix for LXC, which looks like /var/log/juju-<username>-local/ ?
+	return "/var/log/juju/"
+}

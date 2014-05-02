@@ -162,7 +162,11 @@ func (self *Instance) GetLog() (*model.LogData, error) {
 
 	// TODO: Inject
 	logStore := &juju.JujuLogStore{}
-	logStore.BaseDir = "/var/log/juju-justinsb-local/"
+
+	client := self.huddle.JujuClient
+	logStore.BaseDir = client.GetLogDir()
+
+	// TODO: SSH?
 
 	// TODO: Expose units?
 	unitId := 0
