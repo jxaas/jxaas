@@ -279,13 +279,19 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		return nil, err
 	}
 
-	log.Info("unitStatus: %v", log.AsJson(status))
 	relationInfo.PublicAddresses = []string{}
-	for _, unitStatus := range status.Units {
-		if unitStatus.PublicAddress == "" {
-			continue
+
+	if status != nil {
+		log.Info("unitStatus: %v", log.AsJson(status))
+		for _, unitStatus := range status.Units {
+			if unitStatus.PublicAddress == "" {
+				continue
+			}
+			relationInfo.PublicAddresses = append(relationInfo.PublicAddresses, unitStatus.PublicAddress)
 		}
-		relationInfo.PublicAddresses = append(relationInfo.PublicAddresses, unitStatus.PublicAddress)
+	} else {
+		log.Warn("No status found for service: %v", serviceId)
+		return nil, nil
 	}
 
 	annotations, err := client.GetServiceAnnotations(serviceId)

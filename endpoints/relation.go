@@ -4,6 +4,7 @@ import (
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
+	"github.com/jxaas/jxaas/rs"
 )
 
 type EndpointRelation struct {
@@ -19,5 +20,15 @@ func (self *EndpointRelation) HttpGet(apiclient *juju.Client) (*model.RelationIn
 	instance := self.getInstance()
 
 	relationKey := self.RelationKey
-	return instance.GetRelationInfo(relationKey)
+	relationInfo, err := instance.GetRelationInfo(relationKey)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if relationInfo == nil {
+		return nil, rs.ErrNotFound()
+	}
+
+	return relationInfo, err
 }
