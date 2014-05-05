@@ -58,6 +58,7 @@ func EnvClientFactory() (*Client, error) {
 
 	state, err := juju.NewAPIFromName(envName)
 	if err != nil {
+		log.Warn("Got error building API from name: %v", envName, err)
 		return nil, fmt.Errorf(connectionError, envName, err)
 	}
 
