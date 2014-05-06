@@ -37,15 +37,15 @@ func (self *MysqlBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
-	switch relation {
+func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+	switch data.Relation {
 	case "db", "mysql":
-		relation = "mysql"
+		data.Relation = "mysql"
 	default:
-		relation = ""
+		data.Relation = ""
 	}
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
+	self.baseBundleType.BuildRelationInfo(relationInfo, data)
 
 	// To override the IP / port
 	//	publicAddress := "10.0.3.54"

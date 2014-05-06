@@ -307,6 +307,7 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	}
 
 	sysInfo := map[string]string{}
+
 	relationProperties := []model.RelationProperty{}
 
 	for tagName, v := range annotations {
@@ -345,10 +346,14 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		relationProperties = append(relationProperties, relationProperty)
 	}
 
+	builder := &bundletype.RelationBuilder{}
+	builder.Relation = relationKey
+	builder.Properties = relationProperties
+
 	log.Debug("RelationProperties: %v", relationProperties)
 
 	relationInfo.Timestamp = sysInfo[SYS_TIMESTAMP]
-	self.bundleType.BuildRelationInfo(relationInfo, relationKey, relationProperties)
+	self.bundleType.BuildRelationInfo(relationInfo, builder)
 
 	return relationInfo, nil
 }
@@ -477,7 +482,6 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	health.Units = map[string]bool{}
 
 	for serviceId, _ := range services {
-
 		healthChecks := []checks.HealthCheck{}
 
 		if strings.HasSuffix(serviceId, "-mysql") {

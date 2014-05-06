@@ -1,6 +1,8 @@
 package bundletype
 
 import (
+	"net"
+
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/model"
 )
@@ -11,7 +13,15 @@ type BundleType interface {
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
-	BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty)
+	BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder)
+}
+
+// RelationProperties passes the parameters for BuildRelationInfo
+// Allows extensibility and avoids a huge parameter list
+type RelationBuilder struct {
+	Relation     string
+	Properties   []model.RelationProperty
+	ProxyAddress *net.TCPAddr
 }
 
 type baseBundleType struct {
@@ -32,16 +42,14 @@ func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, t
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
 }
 
-func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) *model.RelationInfo {
-	if relation != "" {
-		for _, property := range properties {
-			if property.RelationType != relation {
+func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+	if data.Relation != "" {
+		for _, property := range data.Properties {
+			if property.RelationType != data.Relation {
 				continue
 			}
 
 			relationInfo.Properties[property.Key] = property.Value
 		}
 	}
-
-	return relationInfo
 }

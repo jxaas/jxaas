@@ -29,13 +29,13 @@ func (self *MultitenantMysqlBundleType) IsStarted(annotations map[string]string)
 	return annotationsReady
 }
 
-func (self *MultitenantMysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
-	switch relation {
+func (self *MultitenantMysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+	switch data.Relation {
 	case "db", "mysql":
-		relation = "mysql"
+		data.Relation = "mysql"
 	default:
-		relation = ""
+		data.Relation = ""
 	}
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
+	self.baseBundleType.BuildRelationInfo(relationInfo, data)
 }

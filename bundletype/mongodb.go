@@ -29,8 +29,8 @@ func (self *MongodbBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *MongodbBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
-	relation = "mongodb"
+func (self *MongodbBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+	data.Relation = "mongodb"
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
+	self.baseBundleType.BuildRelationInfo(relationInfo, data)
 }
