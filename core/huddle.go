@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -123,6 +124,18 @@ func contains(s []int, e int) bool {
 		}
 	}
 	return false
+}
+
+// Returns the IP address of the proxy
+func (self *Huddle) getProxyHost() (string, error) {
+	proxyServiceKey := "haproxy"
+	proxyService := self.SharedServices[proxyServiceKey]
+	if proxyService == nil {
+		log.Warn("Unable to find proxy service: %v", proxyServiceKey)
+		return "", errors.New("Unable to find proxy service")
+	}
+
+	return proxyService.PublicAddress, nil
 }
 
 // Assigns a public port to the serviceId

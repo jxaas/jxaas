@@ -1,6 +1,7 @@
 package bundletype
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
@@ -48,9 +49,11 @@ func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo,
 	self.baseBundleType.BuildRelationInfo(relationInfo, data)
 
 	// To override the IP / port
-	//	publicAddress := "10.0.3.54"
-	//	relationInfo.Properties["host"] = publicAddress
-	//	relationInfo.Properties["private-address"] = publicAddress
-	//	relationInfo.Properties["port"] = "12325"
-	//	relationInfo.PublicAddresses = []string{publicAddress}
+	if data.ProxyHost != "" {
+		proxyHost := data.ProxyHost
+		relationInfo.Properties["host"] = proxyHost
+		relationInfo.Properties["private-address"] = proxyHost
+		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
+		relationInfo.PublicAddresses = []string{proxyHost}
+	}
 }

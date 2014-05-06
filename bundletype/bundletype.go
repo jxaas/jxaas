@@ -1,8 +1,6 @@
 package bundletype
 
 import (
-	"net"
-
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/model"
 )
@@ -19,9 +17,10 @@ type BundleType interface {
 // RelationProperties passes the parameters for BuildRelationInfo
 // Allows extensibility and avoids a huge parameter list
 type RelationBuilder struct {
-	Relation     string
-	Properties   []model.RelationProperty
-	ProxyAddress *net.TCPAddr
+	Relation   string
+	Properties []model.RelationProperty
+	ProxyHost  string
+	ProxyPort  int
 }
 
 type baseBundleType struct {

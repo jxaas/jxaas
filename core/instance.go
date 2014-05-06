@@ -17,12 +17,15 @@ import (
 )
 
 const (
-	ANNOTATION_PREFIX_RELATIONINFO = "__jxaas_relinfo_"
-	ANNOTATION_PREFIX_SYSTEM       = "__jxaas_system_"
+	ANNOTATION_PREFIX_RELATIONINFO  = "__jxaas_relinfo_"
+	RELATIONINFO_METADATA_TIMESTAMP = "timestamp"
+
+	ANNOTATION_PREFIX_SYSTEM = "__jxaas_system_"
 
 	// TODO: Should we just find the public-port annotation on the proxy?
-	ANNOTATION_KEY_PUBLIC_PORT = ANNOTATION_PREFIX_SYSTEM + "public_port"
-	SYS_TIMESTAMP              = "timestamp"
+	SYSTEM_KEY_PUBLIC_PORT = "public_port"
+
+	ANNOTATION_KEY_PUBLIC_PORT = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_PUBLIC_PORT
 )
 
 // Builds an Instance object representing a particular JXaaS Instance.
@@ -202,7 +205,7 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	for k, v := range properties {
 		pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"__"+k] = v
 	}
-	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+SYS_TIMESTAMP] = strconv.Itoa(time.Now().Second())
+	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+RELATIONINFO_METADATA_TIMESTAMP] = strconv.Itoa(time.Now().Second())
 
 	return self.setServiceAnnotations(pairs)
 }
@@ -227,7 +230,8 @@ func (self *Instance) setServiceAnnotations(pairs map[string]string) error {
 
 // Sets the annotation that stores the public port
 func (self *Instance) setPublicPort(port int) error {
-	pairs := map[string]string{ANNOTATION_KEY_PUBLIC_PORT: strconv.Itoa(port)}
+	pairs := map[string]string{}
+	pairs[ANNOTATION_KEY_PUBLIC_PORT] = strconv.Itoa(port)
 
 	return self.setServiceAnnotations(pairs)
 }
@@ -306,11 +310,20 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		return nil, err
 	}
 
-	sysInfo := map[string]string{}
+	//log.Debug("Service annotations: %v", annotations)
+
+	systemProperties := map[string]string{}
+	relationMetadata := map[string]string{}
 
 	relationProperties := []model.RelationProperty{}
 
 	for tagName, v := range annotations {
+		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_SYSTEM) {
+			key := tagName[len(ANNOTATION_PREFIX_SYSTEM):]
+			systemProperties[key] = v
+			continue
+		}
+
 		if !strings.HasPrefix(tagName, ANNOTATION_PREFIX_RELATIONINFO) {
 			//log.Debug("Prefix mismatch: %v", tagName)
 			continue
@@ -326,7 +339,7 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		relationId := tokens[1]
 		key := tokens[2]
 		if key[0] != '_' {
-			sysInfo[key] = v
+			relationMetadata[key] = v
 			continue
 		}
 
@@ -350,9 +363,31 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	builder.Relation = relationKey
 	builder.Properties = relationProperties
 
-	log.Debug("RelationProperties: %v", relationProperties)
+	// TODO: Skip proxy host on EC2?
+	useProxyHost := true
 
-	relationInfo.Timestamp = sysInfo[SYS_TIMESTAMP]
+	if useProxyHost && systemProperties[SYSTEM_KEY_PUBLIC_PORT] != "" {
+		publicPortString := systemProperties[SYSTEM_KEY_PUBLIC_PORT]
+		publicPort, err := strconv.Atoi(publicPortString)
+		if err != nil {
+			log.Warn("Error parsing public port: %v", publicPortString, err)
+			return nil, err
+		}
+
+		proxyHost, err := self.huddle.getProxyHost()
+		if err != nil {
+			log.Warn("Error fetching proxy host", err)
+			return nil, err
+		}
+
+		builder.ProxyHost = proxyHost
+		builder.ProxyPort = publicPort
+	}
+
+	//	log.Debug("relationProperties: %v", relationProperties)
+	//	log.Debug("relationMetadata: %v", relationMetadata)
+
+	relationInfo.Timestamp = relationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
 	self.bundleType.BuildRelationInfo(relationInfo, builder)
 
 	return relationInfo, nil
