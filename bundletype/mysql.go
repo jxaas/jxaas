@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/model"
 )
 
 type MysqlBundleType struct {
@@ -36,10 +37,20 @@ func (self *MysqlBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *MysqlBundleType) GetRelationJujuInterface(relation string) string {
+func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
 	switch relation {
 	case "db", "mysql":
-		return "mysql"
+		relation = "mysql"
+	default:
+		relation = ""
 	}
-	return ""
+
+	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
+
+	// To override the IP / port
+	//	publicAddress := "10.0.3.54"
+	//	relationInfo.Properties["host"] = publicAddress
+	//	relationInfo.Properties["private-address"] = publicAddress
+	//	relationInfo.Properties["port"] = "12325"
+	//	relationInfo.PublicAddresses = []string{publicAddress}
 }

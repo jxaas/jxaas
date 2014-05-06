@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/model"
 )
 
 type MultitenantMysqlBundleType struct {
@@ -28,10 +29,13 @@ func (self *MultitenantMysqlBundleType) IsStarted(annotations map[string]string)
 	return annotationsReady
 }
 
-func (self *MultitenantMysqlBundleType) GetRelationJujuInterface(relation string) string {
+func (self *MultitenantMysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
 	switch relation {
 	case "db", "mysql":
-		return "mysql"
+		relation = "mysql"
+	default:
+		relation = ""
 	}
-	return ""
+
+	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
 }

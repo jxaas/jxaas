@@ -12,6 +12,7 @@ import (
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
 
+	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
 )
 
@@ -305,14 +306,8 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		return nil, err
 	}
 
-	jujuInterface := self.bundleType.GetRelationJujuInterface(relationKey)
-	if jujuInterface == "" {
-		return relationInfo, nil
-	}
-
-	relationIdPrefix := jujuInterface + ":"
-
 	sysInfo := map[string]string{}
+	relationProperties := []model.RelationProperty{}
 
 	for tagName, v := range annotations {
 		if !strings.HasPrefix(tagName, ANNOTATION_PREFIX_RELATIONINFO) {
@@ -326,23 +321,34 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 			continue
 		}
 
-		// unitId = tokens[0]
+		unitId := tokens[0]
 		relationId := tokens[1]
-		if !strings.HasPrefix(relationId, relationIdPrefix) {
-			//log.Debug("Relation prefix mismatch: %v", relationId)
+		key := tokens[2]
+		if key[0] != '_' {
+			sysInfo[key] = v
 			continue
 		}
 
-		key := tokens[2]
-
-		if key[0] == '_' {
-			relationInfo.Properties[key[1:]] = v
-		} else {
-			sysInfo[key] = v
+		relationTokens := strings.SplitN(relationId, ":", 2)
+		if len(relationTokens) != 2 {
+			log.Debug("Ignoring unparseable relation id in tag: %v", tagName)
+			continue
 		}
+
+		relationProperty := model.RelationProperty{}
+		relationProperty.UnitId = unitId
+		assert.That(key[0] == '_')
+		relationProperty.Key = key[1:]
+		relationProperty.Value = v
+		relationProperty.RelationType = relationTokens[0]
+		relationProperty.RelationKey = relationTokens[1]
+		relationProperties = append(relationProperties, relationProperty)
 	}
 
+	log.Debug("RelationProperties: %v", relationProperties)
+
 	relationInfo.Timestamp = sysInfo[SYS_TIMESTAMP]
+	self.bundleType.BuildRelationInfo(relationInfo, relationKey, relationProperties)
 
 	return relationInfo, nil
 }

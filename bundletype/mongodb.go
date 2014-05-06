@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/model"
 )
 
 type MongodbBundleType struct {
@@ -28,6 +29,8 @@ func (self *MongodbBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *MongodbBundleType) GetRelationJujuInterface(relation string) string {
-	return "mongodb"
+func (self *MongodbBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
+	relation = "mongodb"
+
+	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
 }

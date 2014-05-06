@@ -1,6 +1,9 @@
 package bundletype
 
-import "github.com/jxaas/jxaas/bundle"
+import (
+	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/model"
+)
 
 type BundleType interface {
 	Key() string
@@ -8,8 +11,7 @@ type BundleType interface {
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
-	// For a given proxy relation, what is the contract we expect the stub to set?
-	GetRelationJujuInterface(relation string) string
+	BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty)
 }
 
 type baseBundleType struct {
@@ -28,4 +30,18 @@ func (self *baseBundleType) PrimaryJujuService() string {
 func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error) {
 	bundleKey := self.Key()
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
+}
+
+func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) *model.RelationInfo {
+	if relation != "" {
+		for _, property := range properties {
+			if property.RelationType != relation {
+				continue
+			}
+
+			relationInfo.Properties[property.Key] = property.Value
+		}
+	}
+
+	return relationInfo
 }

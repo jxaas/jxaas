@@ -158,3 +158,17 @@ func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetR
 
 	return instance
 }
+
+type RelationProperty struct {
+	UnitId string
+
+	RelationType string
+	RelationKey  string
+
+	Key   string
+	Value string
+}
+
+func (self *RelationProperty) String() string {
+	return log.AsJson(self)
+}

@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/model"
 )
 
 type PgBundleType struct {
@@ -28,6 +29,8 @@ func (self *PgBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *PgBundleType) GetRelationJujuInterface(relation string) string {
-	return "pgsql"
+func (self *PgBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, relation string, properties []model.RelationProperty) {
+	relation = "pgsql"
+
+	self.baseBundleType.BuildRelationInfo(relationInfo, relation, properties)
 }
