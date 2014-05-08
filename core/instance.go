@@ -8,7 +8,6 @@ import (
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/checks"
-	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
 
@@ -164,13 +163,12 @@ func (self *Instance) Delete() error {
 func (self *Instance) GetLog() (*model.LogData, error) {
 	service := self.primaryServiceId
 
-	// TODO: Inject
-	logStore := &juju.JujuLogStore{}
-
 	client := self.huddle.JujuClient
-	logStore.BaseDir = client.GetLogDir()
-
-	// TODO: SSH?
+	logStore, err := client.GetLogStore()
+	if err != nil {
+		log.Warn("Error fetching Juju log store", err)
+		return nil, err
+	}
 
 	// TODO: Expose units?
 	unitId := 0

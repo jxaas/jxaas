@@ -1,11 +1,15 @@
 package juju
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/justinsb/gova/files"
 	"github.com/justinsb/gova/log"
 
 	"launchpad.net/juju-core/cmd"
@@ -382,7 +386,43 @@ func ParseUnit(unitId string) string {
 	return unitId[slash+1:]
 }
 
-func (self *Client) GetLogDir() string {
-	// TODO: Fix for LXC, which looks like /var/log/juju-<username>-local/ ?
-	return "/var/log/juju/"
+func (self *Client) GetLogStore() (*JujuLogStore, error) {
+	// TODO: Cache?
+	// TODO: SSH?
+
+	baseDir := "/var/log/juju/"
+	exists, err := files.Exists(baseDir)
+	if err != nil {
+		log.Warn("Error checking if /var/log/juju exists", err)
+		return nil, err
+	}
+
+	logStore := &JujuLogStore{}
+
+	if exists {
+		logStore.BaseDir = baseDir
+		return logStore, nil
+	}
+
+	// LXC looks like /var/log/juju-<username>-local/
+
+	dirs, err := ioutil.ReadDir("/var/log")
+	if err != nil {
+		log.Warn("Error listing contents of /var/log", err)
+		return nil, err
+	}
+
+	for _, dir := range dirs {
+		if !dir.IsDir() {
+			continue
+		}
+
+		name := dir.Name()
+		if strings.HasPrefix(name, "juju-") && strings.HasSuffix(name, "-local") {
+			logStore.BaseDir = filepath.Join("/var/log", name)
+			return logStore, nil
+		}
+	}
+
+	return nil, errors.New("Unable to find juju log store")
 }
