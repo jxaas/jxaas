@@ -9,12 +9,13 @@ type EndpointInstanceMetrics struct {
 func (self *EndpointInstanceMetrics) HttpGet() (*model.Metrics, error) {
 	instance := self.Parent.getInstance()
 
-	return instance.GetMetrics()
+	return instance.GetMetricInfo()
 }
 
 func (self *EndpointInstanceMetrics) Item(key string) *EndpointInstanceMetricDataset {
 	child := &EndpointInstanceMetricDataset{}
 	child.Parent = self
+	child.Key = key
 	return child
 }
 

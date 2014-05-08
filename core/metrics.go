@@ -17,10 +17,10 @@ import (
 	elastigo_core "github.com/mattbaird/elastigo/core"
 )
 
-func (self *Instance) readMetrics(jujuUnitNames []string) (*model.MetricDataset, error) {
+func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*model.MetricDataset, error) {
 	instance := self
 
-	keyValue := "Load1Min"
+	keyValue := metricId
 	keyTimestamp := "Timestamp"
 
 	huddle := instance.huddle
@@ -87,6 +87,8 @@ func (self *Instance) readMetrics(jujuUnitNames []string) (*model.MetricDataset,
 			return nil, fmt.Errorf("Error searching elasticsearch")
 		}
 
+		//log.Info("Found metric: %v", string(jsonBytes))
+
 		var value map[string]interface{}
 		err = json.Unmarshal(jsonBytes, &value)
 		if err != nil {
@@ -115,7 +117,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string) (*model.MetricDataset,
 
 		y, found := value[keyValue]
 		if !found {
-			log.Debug("No value in %v", string(jsonBytes))
+			log.Debug("No value (%v) in %v", keyValue, string(jsonBytes))
 			continue
 		}
 
@@ -142,7 +144,19 @@ func (self *Instance) readMetrics(jujuUnitNames []string) (*model.MetricDataset,
 }
 
 // Retrieves metrics that apply to the instance
-func (self *Instance) GetMetrics() (*model.Metrics, error) {
+func (self *Instance) GetMetricInfo() (*model.Metrics, error) {
+	metrics := &model.Metrics{}
+
+	// TODO: Store in metadata file?
+	metrics.Metric = append(metrics.Metric, "Load1Min")
+	metrics.Metric = append(metrics.Metric, "Load5Min")
+	metrics.Metric = append(metrics.Metric, "Load15Min")
+
+	return metrics, nil
+}
+
+// Retrieves metrics that apply to the instance
+func (self *Instance) GetAllMetrics() (*model.Metrics, error) {
 	huddle := self.huddle
 
 	jujuUnitName := self.jujuPrefix + "metrics"
@@ -239,5 +253,5 @@ func (self *Instance) GetMetricValues(key string) (*model.MetricDataset, error) 
 
 	log.Debug("Searching with names: %v", jujuUnitNames)
 
-	return self.readMetrics(jujuUnitNames)
+	return self.readMetrics(jujuUnitNames, key)
 }
