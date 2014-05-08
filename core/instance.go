@@ -402,6 +402,13 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 		context.SystemServices[key] = service.JujuName
 	}
 
+	context.SystemImplicits = map[string]string{}
+	context.SystemImplicits["jxaas-privateurl"] = huddle.GetPrivateUrl()
+	context.SystemImplicits["jxaas-tenant"] = self.tenant
+	// TODO: Real credentials here
+	context.SystemImplicits["jxaas-user"] = "rpcuser"
+	context.SystemImplicits["jxaas-secret"] = "rpcsecret"
+
 	context.PublicPortAssigner = &StubPortAssigner{}
 
 	return context
@@ -430,9 +437,6 @@ func (self *Instance) getBundleKeys() (map[string]string, error) {
 
 	// TODO: Do we need the real config?
 	context.Options = map[string]string{}
-
-	context.Tenant = self.tenant
-	context.PrivateUrl = self.huddle.GetPrivateUrl()
 
 	bundle, err := self.getBundle(context)
 	if err != nil {
@@ -472,9 +476,6 @@ func (self *Instance) Configure(request *model.Instance) error {
 	}
 
 	context.Options = request.Config
-
-	context.Tenant = self.tenant
-	context.PrivateUrl = self.huddle.GetPrivateUrl()
 
 	publicPortAssigner := &InstancePublicPortAssigner{}
 	publicPortAssigner.Instance = self

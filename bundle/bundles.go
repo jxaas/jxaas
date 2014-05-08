@@ -12,13 +12,11 @@ type PortAssigner interface {
 }
 
 type TemplateContext struct {
-	SystemServices map[string]string
-	Options        map[string]string
+	SystemServices  map[string]string
+	SystemImplicits map[string]string
+	Options         map[string]string
 
 	NumberUnits int
-
-	Tenant     string
-	PrivateUrl string
 
 	PublicPortAssigner PortAssigner
 }

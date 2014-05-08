@@ -14,10 +14,17 @@ func (self *ServiceConfig) applyImplicits(templateContext *TemplateContext) {
 			option, found := templateContext.Options[k]
 			if found {
 				self.Options[k] = option
-			} else {
-				// Rely on the Juju default value
-				delete(self.Options, k)
+				continue
 			}
+
+			option, found = templateContext.SystemImplicits[k]
+			if found {
+				self.Options[k] = option
+				continue
+			}
+
+			// Rely on the Juju default value
+			delete(self.Options, k)
 		}
 	}
 
@@ -55,9 +62,7 @@ func (self *Bundle) configureStub(templateContext *TemplateContext, stub *Servic
 		stub.Options = map[string]string{}
 	}
 
-	stub.Options["jxaas-privateurl"] = templateContext.PrivateUrl
-	stub.Options["jxaas-tenant"] = templateContext.Tenant
-	// TODO: Real credentials here
-	stub.Options["jxaas-user"] = "rpcuser"
-	stub.Options["jxaas-secret"] = "rpcsecret"
+	for _, key := range []string{"jxaas-privateurl", "jxaas-tenant", "jxaas-user", "jxaas-secret"} {
+		stub.Options[key] = templateContext.SystemImplicits[key]
+	}
 }

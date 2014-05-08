@@ -2,11 +2,23 @@ multimysql:
   services:
     multimysql:
       charm: "cs:~justin-fathomdb/trusty/empty"
+    # We could dump the 'empty' charm,
+    # have multimysql be the stubclient,
+    # and have stubclient be subordinate to mysql
+    # But our code doesn't yet cope well with a master subordinate charm!
     stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
+      exposed: true
+      options:
+        private-port: 3306
+        public-port: {{.AssignPublicPort}}
+        open-ports: 3306
   relations:
     - - "stubclient:juju-info"
       - "multimysql:juju-info"
     - - "stubclient:mysql"
       - "{{.SystemServices.mysql}}:db"
+  
+    - - "stubclient:website"
+      - "{{.SystemServices.haproxy}}:reverseproxy"
  
