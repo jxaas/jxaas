@@ -499,7 +499,8 @@ func (self *Instance) Configure(request *model.Instance) error {
 	return nil
 }
 
-// Runs a command on one of the instance services
+// Gets the Juju client
+// TODO: Should we expose this?
 func (self *Instance) GetJujuClient() *juju.Client {
 	client := self.huddle.JujuClient
 	return client
@@ -521,41 +522,31 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	health := &model.Health{}
 	health.Units = map[string]bool{}
 
-	for serviceId, _ := range services {
-		healthChecks := self.bundleType.GetHealthChecks()
+	healthChecks := self.bundleType.GetHealthChecks()
 
-		// TODO: We can't "juju run" on subordinate charms
-		//		charm := self.huddle.getCharmInfo(service.Charm)
-		//
-		//		if charm.Subordinate {
-		//			continue
-		//		}
+	// TODO: We can't "juju run" on subordinate charms
+	//		charm := self.huddle.getCharmInfo(service.Charm)
+	//
+	//		if charm.Subordinate {
+	//			continue
+	//		}
 
-		for _, healthCheck := range healthChecks {
-			result, err := healthCheck.Run(self, repair)
+	for _, healthCheck := range healthChecks {
+		result, err := healthCheck.Run(self, services, repair)
 
-			if err != nil {
-				log.Info("Health check failed on %v", serviceId, err)
-				return nil, err
+		if err != nil {
+			log.Info("Health check failed: %v", healthCheck, err)
+			return nil, err
+		}
+
+		for k, healthy := range result.Units {
+			overall, exists := health.Units[k]
+			if !exists {
+				overall = true
 			}
-
-			for k, healthy := range result.Units {
-				overall, exists := health.Units[k]
-				if !exists {
-					overall = true
-				}
-				health.Units[k] = overall && healthy
-			}
+			health.Units[k] = overall && healthy
 		}
 	}
-
-	//	for unitJujuId, _ := range health {
-	//		_, _, _, _, unitId, err := core.ParseUnit(unitJujuId)
-	//		if err != nil {
-	//			return nil, err
-	//		}
-	//
-	//}
 
 	return health, nil
 }

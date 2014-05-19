@@ -4,7 +4,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/checks"
 	"github.com/jxaas/jxaas/model"
 )
 
@@ -58,10 +60,12 @@ func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo,
 	}
 }
 
-//		healthChecks := []HealthCheck{}
-//
-//		if strings.HasSuffix(serviceId, "-mysql") {
-//			checkService := &jxaas.ServiceHealthCheck{}
-//			checkService.ServiceName = "mysql"
-//			healthChecks = append(healthChecks, checkService)
-//		}
+func (self *MysqlBundleType) GetHealthChecks() []jxaas.HealthCheck {
+	healthChecks := self.baseBundleType.GetHealthChecks()
+
+	checkService := &checks.ServiceHealthCheck{}
+	checkService.ServiceName = "mysql"
+	healthChecks = append(healthChecks, checkService)
+
+	return healthChecks
+}

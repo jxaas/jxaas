@@ -4,6 +4,8 @@ import (
 	"strings"
 	"time"
 
+	"launchpad.net/juju-core/state/api"
+
 	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/juju"
@@ -14,7 +16,18 @@ type ServiceHealthCheck struct {
 	ServiceName string
 }
 
-func (self *ServiceHealthCheck) Run(instance jxaas.Instance, serviceId string, repair bool) (*model.Health, error) {
+func (self *ServiceHealthCheck) Run(instance jxaas.Instance, jujuState map[string]api.ServiceStatus, repair bool) (*model.Health, error) {
+	health := &model.Health{}
+	health.Units = map[string]bool{}
+
+	for serviceId, _ := range jujuState {
+		self.checkService(instance, serviceId, repair, health)
+	}
+
+	return health, nil
+}
+
+func (self *ServiceHealthCheck) checkService(instance jxaas.Instance, serviceId string, repair bool, dest *model.Health) error {
 	client := instance.GetJujuClient()
 
 	command := "service " + self.ServiceName + " status"
@@ -22,11 +35,8 @@ func (self *ServiceHealthCheck) Run(instance jxaas.Instance, serviceId string, r
 
 	runResults, err := client.Run(serviceId, nil, command, 5*time.Second)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	health := &model.Health{}
-	health.Units = map[string]bool{}
 
 	for _, runResult := range runResults {
 		unitId := juju.ParseUnit(runResult.UnitId)
@@ -48,14 +58,14 @@ func (self *ServiceHealthCheck) Run(instance jxaas.Instance, serviceId string, r
 
 				_, err := client.Run(serviceId, []string{unitId}, command, 5*time.Second)
 				if err != nil {
-					return nil, err
+					return err
 				}
 
 			}
 		}
 
-		health.Units[unitId] = healthy
+		dest.Units[unitId] = healthy
 	}
 
-	return health, nil
+	return nil
 }
