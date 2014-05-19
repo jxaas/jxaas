@@ -1,12 +1,11 @@
-package scheduler
+package core
 
 import (
 	"github.com/justinsb/gova/log"
-	"github.com/jxaas/jxaas/core"
 )
 
 type HealthCheckAllInstances struct {
-	huddle core.Huddle
+	huddle Huddle
 	repair bool
 }
 

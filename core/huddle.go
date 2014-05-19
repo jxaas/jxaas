@@ -17,16 +17,6 @@ import (
 	"github.com/jxaas/jxaas/rs"
 )
 
-// System is the top-level object for storing system state
-type System struct {
-	BundleTypes map[string]bundletype.BundleType
-}
-
-// Gets the bundle type by key
-func (self *System) GetBundleType(key string) bundletype.BundleType {
-	return self.BundleTypes[key]
-}
-
 // A Huddle is a group of servers. For us, it is a Juju environment into which multiple tenants are deployed.
 // Some services are shared across the huddle.
 type Huddle struct {

@@ -129,8 +129,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	system := &core.System{}
-	system.BundleTypes = map[string]bundletype.BundleType{}
+	system := core.NewSystem()
 	system.BundleTypes["mysql"] = bundletype.NewMysqlBundleType(bundleStore)
 	system.BundleTypes["es"] = bundletype.NewElasticsearchBundleType(bundleStore)
 	system.BundleTypes["mongodb"] = bundletype.NewMongodbBundleType(bundleStore)
