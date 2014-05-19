@@ -7,7 +7,7 @@ import (
 
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
-	"github.com/jxaas/jxaas/checks"
+	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 	"github.com/jxaas/jxaas/rs"
 
@@ -499,6 +499,12 @@ func (self *Instance) Configure(request *model.Instance) error {
 	return nil
 }
 
+// Runs a command on one of the instance services
+func (self *Instance) GetJujuClient() *juju.Client {
+	client := self.huddle.JujuClient
+	return client
+}
+
 // Runs a health check on the instance
 func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	client := self.huddle.JujuClient
@@ -516,13 +522,7 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	health.Units = map[string]bool{}
 
 	for serviceId, _ := range services {
-		healthChecks := []checks.HealthCheck{}
-
-		if strings.HasSuffix(serviceId, "-mysql") {
-			checkService := &checks.ServiceHealthCheck{}
-			checkService.ServiceName = "mysql"
-			healthChecks = append(healthChecks, checkService)
-		}
+		healthChecks := self.bundleType.GetHealthChecks()
 
 		// TODO: We can't "juju run" on subordinate charms
 		//		charm := self.huddle.getCharmInfo(service.Charm)
@@ -532,7 +532,7 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 		//		}
 
 		for _, healthCheck := range healthChecks {
-			result, err := healthCheck.Run(client, serviceId, repair)
+			result, err := healthCheck.Run(self, repair)
 
 			if err != nil {
 				log.Info("Health check failed on %v", serviceId, err)

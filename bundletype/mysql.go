@@ -57,3 +57,11 @@ func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo,
 		relationInfo.PublicAddresses = []string{proxyHost}
 	}
 }
+
+//		healthChecks := []HealthCheck{}
+//
+//		if strings.HasSuffix(serviceId, "-mysql") {
+//			checkService := &jxaas.ServiceHealthCheck{}
+//			checkService.ServiceName = "mysql"
+//			healthChecks = append(healthChecks, checkService)
+//		}

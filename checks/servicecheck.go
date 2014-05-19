@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/justinsb/gova/log"
+	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 )
@@ -13,7 +14,9 @@ type ServiceHealthCheck struct {
 	ServiceName string
 }
 
-func (self *ServiceHealthCheck) Run(client *juju.Client, serviceId string, repair bool) (*model.Health, error) {
+func (self *ServiceHealthCheck) Run(instance jxaas.Instance, serviceId string, repair bool) (*model.Health, error) {
+	client := instance.GetJujuClient()
+
 	command := "service " + self.ServiceName + " status"
 	log.Info("Running command on %v: %v", serviceId, command)
 

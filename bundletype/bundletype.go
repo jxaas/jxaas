@@ -1,6 +1,7 @@
 package bundletype
 
 import (
+	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/model"
 )
@@ -12,6 +13,7 @@ type BundleType interface {
 	IsStarted(annotations map[string]string) bool
 
 	BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder)
+	GetHealthChecks() []jxaas.HealthCheck
 }
 
 // RelationProperties passes the parameters for BuildRelationInfo
@@ -51,4 +53,8 @@ func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, 
 			relationInfo.Properties[property.Key] = property.Value
 		}
 	}
+}
+
+func (self *baseBundleType) GetHealthChecks() []jxaas.HealthCheck {
+	return []jxaas.HealthCheck{}
 }
