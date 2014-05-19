@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func parseService(s string) (tenant, serviceType, instanceId, module string, err error) {
+func parseService(s string) (tenant, bundleType, instanceId, module string, err error) {
 	tokens := strings.SplitN(s, "-", 3)
 
 	if len(tokens) != 3 {
@@ -19,7 +19,7 @@ func parseService(s string) (tenant, serviceType, instanceId, module string, err
 	}
 
 	tenant = tokens[0][1:]
-	serviceType = tokens[1]
+	bundleType = tokens[1]
 
 	tail := tokens[2]
 	lastDash := strings.LastIndex(tail, "-")
@@ -34,7 +34,7 @@ func parseService(s string) (tenant, serviceType, instanceId, module string, err
 	return
 }
 
-func ParseUnit(s string) (tenant, serviceType, instanceId, module, unitId string, err error) {
+func ParseUnit(s string) (tenant, bundleType, instanceId, module, unitId string, err error) {
 	lastSlash := strings.LastIndex(s, "/")
 
 	var serviceSpec string
@@ -46,6 +46,6 @@ func ParseUnit(s string) (tenant, serviceType, instanceId, module, unitId string
 		serviceSpec = s
 	}
 
-	tenant, serviceType, instanceId, module, err = parseService(serviceSpec)
+	tenant, bundleType, instanceId, module, err = parseService(serviceSpec)
 	return
 }

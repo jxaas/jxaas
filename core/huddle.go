@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
+	"github.com/jxaas/jxaas/rs"
 )
 
 // System is the top-level object for storing system state
@@ -220,4 +222,87 @@ func (self *Huddle) assignPublicPort(serviceId string) (int, bool, error) {
 	self.assignedPublicPorts[serviceId] = port
 
 	return port, true, nil
+}
+
+func (self *Huddle) ListAllInstances() ([]*Instance, error) {
+	prefix := "u"
+
+	statuses, err := self.JujuClient.GetServiceStatusList(prefix)
+	if err != nil {
+		return nil, err
+	}
+	if statuses == nil {
+		return nil, rs.HttpError(http.StatusNotFound)
+	}
+
+	instances := []*Instance{}
+	for key, state := range statuses {
+		tenant, bundleTypeId, instanceId, _, module, err := ParseUnit(key)
+		if err != nil {
+			log.Debug("Ignoring unparseable service: %v", key)
+			continue
+		}
+
+		bundleType := self.System.GetBundleType(bundleTypeId)
+		if bundleType == nil {
+			log.Debug("Ignoring unknown bundle type: %v", bundleTypeId)
+			continue
+		}
+
+		if module != bundleType.PrimaryJujuService() {
+			continue
+		}
+
+		i := self.NewInstance(tenant, bundleType, instanceId)
+		i.cacheState(&state)
+
+		instances = append(instances, i)
+	}
+
+	return instances, nil
+}
+
+func (self *Huddle) ListInstances(tenant string, bundleType bundletype.BundleType) ([]*Instance, error) {
+	prefix := self.jujuPrefix(tenant, bundleType)
+
+	statuses, err := self.JujuClient.GetServiceStatusList(prefix)
+	if err != nil {
+		return nil, err
+	}
+	if statuses == nil {
+		return nil, rs.HttpError(http.StatusNotFound)
+	}
+
+	instances := []*Instance{}
+	for key, state := range statuses {
+		_, bundleTypeId, instanceId, _, module, err := ParseUnit(key)
+		if err != nil {
+			log.Debug("Ignoring unparseable service: %v", key)
+			continue
+		}
+
+		assert.That(bundleTypeId == bundleType.Key())
+
+		if module != bundleType.PrimaryJujuService() {
+			continue
+		}
+
+		i := self.NewInstance(tenant, bundleType, instanceId)
+		i.cacheState(&state)
+
+		instances = append(instances, i)
+	}
+
+	return instances, nil
+}
+
+func (self *Huddle) jujuPrefix(tenant string, bundleType bundletype.BundleType) string {
+	tenant = strings.Replace(tenant, "-", "", -1)
+
+	// The u prefix is for user.
+	// This is both a way to separate out user services from our services,
+	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
+	prefix := "u" + tenant + "-" + bundleType.Key() + "-"
+
+	return prefix
 }

@@ -1,34 +1,15 @@
 package endpoints
 
 import (
-	"net/http"
-	"strings"
-
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/inject"
-	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
-	"github.com/jxaas/jxaas/rs"
 )
 
 type EndpointBundle struct {
 	Parent     *EndpointBundles
 	BundleType bundletype.BundleType
-}
-
-func (self *EndpointBundle) jujuPrefix() string {
-	tenant := self.Parent.Parent.Tenant
-	tenant = strings.Replace(tenant, "-", "", -1)
-
-	bundleType := self.BundleType
-
-	// The u prefix is for user.
-	// This is both a way to separate out user services from our services,
-	// and a way to make sure the service name is valid (is not purely numeric / does not start with a number)
-	prefix := "u" + tenant + "-" + bundleType.Key() + "-"
-
-	return prefix
 }
 
 func (self *EndpointBundle) Item(key string, injector inject.Injector) *EndpointInstance {
@@ -41,38 +22,27 @@ func (self *EndpointBundle) Item(key string, injector inject.Injector) *Endpoint
 	return child
 }
 
-func (self *EndpointBundle) HttpGet(apiclient *juju.Client) ([]*model.Instance, error) {
-	prefix := self.jujuPrefix()
+func (self *EndpointBundle) HttpGet(huddle *core.Huddle) ([]*model.Instance, error) {
+	tenant := self.Parent.Parent.Tenant
+	bundleType := self.BundleType
 
-	statuses, err := apiclient.GetServiceStatusList(prefix)
+	instances, err := huddle.ListInstances(tenant, bundleType)
 	if err != nil {
 		return nil, err
 	}
-	if statuses == nil {
-		return nil, rs.HttpError(http.StatusNotFound)
+	if instances == nil {
+		return nil, nil
 	}
 
-	instances := make([]*model.Instance, 0)
-	for key, state := range statuses {
-		// TODO: Make this better - actively match
-		// TODO: Reverse the config & shared logic with service get
-		if !strings.HasSuffix(key, "-"+self.BundleType.PrimaryJujuService()) {
-			continue
-		}
-
-		//fmt.Printf("%v => %v\n\n", key, state)
-
-		_, _, instanceId, _, _, err := core.ParseUnit(key)
+	models := []*model.Instance{}
+	for _, instance := range instances {
+		model, err := instance.GetState()
 		if err != nil {
 			return nil, err
 		}
 
-		instance := model.MapToInstance(instanceId, &state, nil)
-
-		instances = append(instances, instance)
+		models = append(models, model)
 	}
 
-	//fmt.Printf("%v", status)
-
-	return instances, nil
+	return models, nil
 }

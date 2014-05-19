@@ -101,7 +101,7 @@ func (self *EndpointRpcUpdateRelationProperties) HttpPost(huddle *core.Huddle, r
 	//		return nil, err
 	//	}
 
-	instance := huddle.GetInstance(tenant, bundleType, instanceId)
+	instance := huddle.NewInstance(tenant, bundleType, instanceId)
 
 	relationId := request.RelationId
 

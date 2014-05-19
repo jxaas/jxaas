@@ -41,7 +41,7 @@ func (self *EndpointInstance) getHuddle() *core.Huddle {
 func (self *EndpointInstance) getInstance() *core.Instance {
 	if self.instance == nil {
 		huddle := self.getHuddle()
-		self.instance = huddle.GetInstance(self.Parent.Parent.Parent.Tenant, self.Parent.BundleType, self.InstanceId)
+		self.instance = huddle.NewInstance(self.Parent.Parent.Parent.Tenant, self.Parent.BundleType, self.InstanceId)
 	}
 	return self.instance
 }

@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"launchpad.net/juju-core/state/api"
+
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
@@ -29,7 +31,7 @@ const (
 
 // Builds an Instance object representing a particular JXaaS Instance.
 // This just builds the object, it does not e.g. check that the instance already exists.
-func (self *Huddle) GetInstance(tenant string, bundleType bundletype.BundleType, instanceId string) *Instance {
+func (self *Huddle) NewInstance(tenant string, bundleType bundletype.BundleType, instanceId string) *Instance {
 	s := &Instance{}
 	s.huddle = self
 	s.tenant = tenant
@@ -549,4 +551,8 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	}
 
 	return health, nil
+}
+
+func (self *Instance) cacheState(state *api.ServiceStatus) {
+	// TODO: Implement!
 }
