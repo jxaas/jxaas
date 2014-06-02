@@ -12,7 +12,7 @@ import (
 	"github.com/justinsb/gova/files"
 	"github.com/justinsb/gova/log"
 
-	"launchpad.net/juju-core/cmd"
+	"launchpad.net/juju-core/cmd/envcmd"
 	"launchpad.net/juju-core/constraints"
 	"launchpad.net/juju-core/environs"
 	"launchpad.net/juju-core/environs/config"
@@ -57,8 +57,7 @@ func SimpleClientFactory(info *api.Info) (*Client, error) {
 }
 
 func EnvClientFactory() (*Client, error) {
-	// This has moved to envcmd in the latest juju-core code
-	envName := cmd.ReadCurrentEnvironment()
+	envName := envcmd.ReadCurrentEnvironment()
 
 	state, err := juju.NewAPIFromName(envName)
 	if err != nil {
