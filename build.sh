@@ -1,4 +1,7 @@
-#!/bin/bash -e
+#!/bin/bash
+
+set -e
+set -x
 
 WORKDIR=${PWD}/.build/
 export GOBIN=${WORKDIR}/bin
@@ -23,7 +26,7 @@ if [ ! -d ${GOPATH}/src/launchpad.net/juju-core ]; then
 fi
 
 # More dependencies
-go get -v -d github.com/jxaas/jxaas
+go get -v -d github.com/jxaas/jxaas/cmd/jxaasd
 go get -v -d launchpad.net/juju-core
 
 # Get the trusty version of go.crypto
@@ -33,7 +36,7 @@ popd
 
 
 # Make sure it is installed
-go install -v github.com/jxaas/jxaas/...
+go install -v github.com/jxaas/jxaas/cmd/jxaasd
 
 rm -rf ${WORKDIR}/templates/
 cp -r templates/ ${WORKDIR}/templates/
