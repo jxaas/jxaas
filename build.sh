@@ -33,7 +33,7 @@ popd
 
 
 # Make sure it is installed
-go install -v github.com/jxaas/jxaas
+go install -v github.com/jxaas/jxaas/...
 
 rm -rf ${WORKDIR}/templates/
 cp -r templates/ ${WORKDIR}/templates/
