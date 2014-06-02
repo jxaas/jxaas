@@ -227,7 +227,7 @@ func (self *Huddle) ListAllInstances() ([]*Instance, error) {
 
 	instances := []*Instance{}
 	for key, state := range statuses {
-		tenant, bundleTypeId, instanceId, _, module, err := ParseUnit(key)
+		tenant, bundleTypeId, instanceId, module, _, err := ParseUnit(key)
 		if err != nil {
 			log.Debug("Ignoring unparseable service: %v", key)
 			continue
@@ -265,7 +265,7 @@ func (self *Huddle) ListInstances(tenant string, bundleType bundletype.BundleTyp
 
 	instances := []*Instance{}
 	for key, state := range statuses {
-		_, bundleTypeId, instanceId, _, module, err := ParseUnit(key)
+		_, bundleTypeId, instanceId, module, _, err := ParseUnit(key)
 		if err != nil {
 			log.Debug("Ignoring unparseable service: %v", key)
 			continue
