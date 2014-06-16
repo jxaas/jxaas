@@ -11,10 +11,11 @@ import (
 
 	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
+	"github.com/justinsb/gova/rs"
+
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
-	"github.com/jxaas/jxaas/rs"
 )
 
 // A Huddle is a group of servers. For us, it is a Juju environment into which multiple tenants are deployed.

@@ -7,14 +7,14 @@ import (
 
 	"launchpad.net/juju-core/state/api"
 
+	"github.com/justinsb/gova/assert"
+	"github.com/justinsb/gova/log"
+	"github.com/justinsb/gova/rs"
+
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
-	"github.com/jxaas/jxaas/rs"
-
-	"github.com/justinsb/gova/assert"
-	"github.com/justinsb/gova/log"
 )
 
 const (

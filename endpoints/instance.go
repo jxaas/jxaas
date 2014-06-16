@@ -3,9 +3,10 @@ package endpoints
 import (
 	"net/http"
 
+	"github.com/justinsb/gova/rs"
+
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/model"
-	"github.com/jxaas/jxaas/rs"
 )
 
 type EndpointInstance struct {

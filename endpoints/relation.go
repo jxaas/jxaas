@@ -1,10 +1,11 @@
 package endpoints
 
 import (
+	"github.com/justinsb/gova/rs"
+
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
-	"github.com/jxaas/jxaas/rs"
 )
 
 type EndpointRelation struct {

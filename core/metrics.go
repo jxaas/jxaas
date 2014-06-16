@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/justinsb/gova/log"
+	"github.com/justinsb/gova/rs"
+
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
-	"github.com/jxaas/jxaas/rs"
-
-	"github.com/justinsb/gova/log"
 
 	elasticgo_api "github.com/mattbaird/elastigo/api"
 	elastigo_core "github.com/mattbaird/elastigo/core"
