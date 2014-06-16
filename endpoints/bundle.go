@@ -1,9 +1,10 @@
 package endpoints
 
 import (
+	"github.com/justinsb/gova/inject"
+
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
-	"github.com/jxaas/jxaas/inject"
 	"github.com/jxaas/jxaas/model"
 )
 

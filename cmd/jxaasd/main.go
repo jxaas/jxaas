@@ -9,15 +9,15 @@ import (
 	"launchpad.net/goyaml"
 	"launchpad.net/juju-core/state/api"
 
+	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/log"
+	"github.com/justinsb/gova/rs"
 
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/endpoints"
-	"github.com/jxaas/jxaas/inject"
 	"github.com/jxaas/jxaas/juju"
-	"github.com/jxaas/jxaas/rs"
 )
 
 func isHuddleReady(huddle *core.Huddle) bool {
