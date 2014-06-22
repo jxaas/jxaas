@@ -1,6 +1,9 @@
 package endpoints
 
-import "github.com/jxaas/jxaas/core"
+import (
+	"github.com/jxaas/jxaas/core"
+	"github.com/jxaas/jxaas/model"
+)
 
 type EndpointBundles struct {
 	Parent *EndpointTenant
@@ -18,4 +21,9 @@ func (self *EndpointBundles) Item(key string, huddle *core.Huddle) *EndpointBund
 	child.BundleType = bundleType
 
 	return child
+}
+
+func (self *EndpointBundles) HttpGet(huddle *core.Huddle) (*model.Bundles, error) {
+	bundles := huddle.System.ListBundleTypes()
+	return bundles, nil
 }
