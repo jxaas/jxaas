@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
@@ -84,6 +85,12 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 	huddle.System = system
 	// TODO: Wait until initialized or offer a separate 'bootstrap' command
 
+	{
+		check := &HealthCheckAllInstances{}
+		check.huddle = huddle
+		check.repair = true
+		system.Scheduler.AddTask(check, time.Minute*1)
+	}
 	return huddle, nil
 }
 

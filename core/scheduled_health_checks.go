@@ -5,7 +5,7 @@ import (
 )
 
 type HealthCheckAllInstances struct {
-	huddle Huddle
+	huddle *Huddle
 	repair bool
 }
 
