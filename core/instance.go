@@ -159,6 +159,7 @@ func (self *Instance) getState0() (*model.Instance, error) {
 	}
 
 	if status == nil {
+		log.Warn("No state found for %v", primaryServiceId)
 		return nil, nil
 	}
 

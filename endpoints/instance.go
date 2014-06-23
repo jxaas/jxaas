@@ -2,7 +2,9 @@ package endpoints
 
 import (
 	"net/http"
+	"time"
 
+	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
 
 	"github.com/jxaas/jxaas/core"
@@ -70,7 +72,19 @@ func (self *EndpointInstance) HttpPut(request *model.Instance) (*model.Instance,
 		return nil, err
 	}
 
-	return self.HttpGet()
+	// TODO: Juju issue? - state does not appear immediately (on subordinate charms)?
+	for i := 1; i <= 10; i++ {
+		model, err := self.getInstance().GetState()
+		if err == nil && model == nil {
+			time.Sleep(time.Second * 1)
+			continue
+		} else {
+			return model, err
+		}
+	}
+
+	log.Warn("Unable to retrieve instance state, even after retries")
+	return nil, rs.ErrNotFound()
 }
 
 func (self *EndpointInstance) HttpDelete() (*rs.HttpResponse, error) {
