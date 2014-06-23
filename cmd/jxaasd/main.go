@@ -130,11 +130,12 @@ func main() {
 	}
 
 	system := core.NewSystem()
-	system.BundleTypes["mysql"] = bundletype.NewMysqlBundleType(bundleStore)
-	system.BundleTypes["es"] = bundletype.NewElasticsearchBundleType(bundleStore)
-	system.BundleTypes["mongodb"] = bundletype.NewMongodbBundleType(bundleStore)
-	system.BundleTypes["pg"] = bundletype.NewPgBundleType(bundleStore)
-	system.BundleTypes["multimysql"] = bundletype.NewMultitenantMysqlBundleType(bundleStore)
+
+	system.AddBundleType(bundletype.NewMysqlBundleType(bundleStore))
+	system.AddBundleType(bundletype.NewElasticsearchBundleType(bundleStore))
+	system.AddBundleType(bundletype.NewMongodbBundleType(bundleStore))
+	system.AddBundleType(bundletype.NewPgBundleType(bundleStore))
+	system.AddBundleType(bundletype.NewMultitenantMysqlBundleType(bundleStore))
 
 	privateUrl := options.PrivateUrl
 

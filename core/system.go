@@ -34,6 +34,11 @@ func (self *System) ListBundleTypes() *model.Bundles {
 	return bundles
 }
 
+// Adds a bundletype to the system
+func (self *System) AddBundleType(bundleType bundletype.BundleType) {
+	self.BundleTypes[bundleType.Key()] = bundleType
+}
+
 func NewSystem() *System {
 	self := &System{}
 	self.BundleTypes = map[string]bundletype.BundleType{}
