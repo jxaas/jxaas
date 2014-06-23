@@ -205,7 +205,7 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	for k, v := range properties {
 		pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"__"+k] = v
 	}
-	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+RELATIONINFO_METADATA_TIMESTAMP] = strconv.Itoa(time.Now().Second())
+	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+RELATIONINFO_METADATA_TIMESTAMP] = strconv.FormatInt(time.Now().Unix(), 10)
 
 	return self.setServiceAnnotations(pairs)
 }
