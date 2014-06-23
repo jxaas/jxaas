@@ -80,6 +80,10 @@ func (self *Instance) GetState() (*model.Instance, error) {
 		return nil, err
 	}
 
+	if state == nil {
+		return state, nil
+	}
+
 	// We inject an artificial pause of 10 seconds between Juju telling us the service is ready,
 	// and us marking the service ready.  This is because we normally have a relation to a load balancer like nginx
 	// But there is no way to know whether that relation is ready: juju can't tell us the status of a relation
@@ -105,7 +109,6 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	now := time.Now().Unix()
 
 	if state.Status == "started" && lastState != "started" {
-
 		if lastStateTimestamp == "" {
 			shouldUpdate = true
 			delay = true
