@@ -24,9 +24,17 @@ const (
 	ANNOTATION_PREFIX_SYSTEM = "__jxaas_system_"
 
 	// TODO: Should we just find the public-port annotation on the proxy?
-	SYSTEM_KEY_PUBLIC_PORT = "public_port"
-
+	SYSTEM_KEY_PUBLIC_PORT     = "public_port"
 	ANNOTATION_KEY_PUBLIC_PORT = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_PUBLIC_PORT
+
+	SYSTEM_KEY_LAST_STATE     = "last_state"
+	ANNOTATION_KEY_LAST_STATE = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_LAST_STATE
+
+	SYSTEM_KEY_LAST_STATE_TIMESTAMP     = "last_state_timestamp"
+	ANNOTATION_KEY_LAST_STATE_TIMESTAMP = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_LAST_STATE_TIMESTAMP
+
+	// Artificial delay before marking a service as started (in seconds)
+	DELAY_STARTED = 15
 )
 
 // Builds an Instance object representing a particular JXaaS Instance.
@@ -66,6 +74,77 @@ type Instance struct {
 
 // Returns the current state of the instance
 func (self *Instance) GetState() (*model.Instance, error) {
+	state, err := self.getState0()
+
+	if err != nil {
+		return nil, err
+	}
+
+	// We inject an artificial pause of 10 seconds between Juju telling us the service is ready,
+	// and us marking the service ready.  This is because we normally have a relation to a load balancer like nginx
+	// But there is no way to know whether that relation is ready: juju can't tell us the status of a relation
+
+	// TODO: Get the relation state instead.  This is a crazy hack.
+	// TODO: I'm not even sure this is actually needed... it may have just been other problems!
+	client := self.huddle.JujuClient
+	primaryServiceId := self.primaryServiceId
+
+	annotations, err := client.GetServiceAnnotations(primaryServiceId)
+	if err != nil {
+		log.Warn("Error getting annotations", err)
+		// TODO: Ignore?
+		return nil, err
+	}
+
+	lastState := annotations[ANNOTATION_KEY_LAST_STATE]
+	lastStateTimestamp := annotations[ANNOTATION_KEY_LAST_STATE_TIMESTAMP]
+
+	shouldUpdate := true
+	delay := false
+
+	now := time.Now().Unix()
+
+	if state.Status == "started" && lastState != "started" {
+
+		if lastStateTimestamp == "" {
+			shouldUpdate = true
+			delay = true
+		} else {
+			t, err := strconv.ParseInt(lastStateTimestamp, 10, 64)
+			if err != nil {
+				log.Warn("Error parsing ANNOTATION_KEY_LAST_STATE_TIMESTAMP: %v", lastStateTimestamp, err)
+				// Bypass the delay...
+				t = 0
+			}
+
+			if (now - t) < DELAY_STARTED {
+				delay = true
+				shouldUpdate = false
+			} else {
+				delay = false
+				shouldUpdate = true
+			}
+		}
+	}
+
+	if shouldUpdate {
+		pairs := make(map[string]string)
+		pairs[ANNOTATION_KEY_LAST_STATE] = state.Status
+		pairs[ANNOTATION_KEY_LAST_STATE_TIMESTAMP] = strconv.FormatInt(now, 10)
+
+		client.SetServiceAnnotations(primaryServiceId, pairs)
+	}
+
+	if delay {
+		log.Warn("Delaying service ready for %v", primaryServiceId)
+		state.Status = "pending"
+	}
+
+	return state, nil
+}
+
+// Returns the current state of the instance
+func (self *Instance) getState0() (*model.Instance, error) {
 	client := self.huddle.JujuClient
 
 	primaryServiceId := self.primaryServiceId
