@@ -9,5 +9,7 @@ import (
 type Instance interface {
 	RunHealthCheck(repair bool) (*model.Health, error)
 
+	RunScaling(autoscale bool, policy *model.ScalingPolicy) (*model.Scaling, error)
+
 	GetJujuClient() *juju.Client
 }

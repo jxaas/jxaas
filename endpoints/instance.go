@@ -43,6 +43,12 @@ func (self *EndpointInstance) ItemHealth() *EndpointInstanceHealth {
 	return child
 }
 
+func (self *EndpointInstance) ItemScaling() *EndpointInstanceScaling {
+	child := &EndpointInstanceScaling{}
+	child.Parent = self
+	return child
+}
+
 func (self *EndpointInstance) getHuddle() *core.Huddle {
 	return self.Huddle
 }

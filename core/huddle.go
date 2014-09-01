@@ -91,6 +91,13 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 		check.repair = true
 		system.Scheduler.AddTask(check, time.Minute*1)
 	}
+
+	{
+		scaling := &AutoScaleAllInstances{}
+		scaling.huddle = huddle
+		system.Scheduler.AddTask(scaling, time.Minute*1)
+	}
+
 	return huddle, nil
 }
 

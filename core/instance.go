@@ -146,6 +146,16 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	return state, nil
 }
 
+// Like GetState, but only returns true/false if it exists; may be much faster
+func (self *Instance) Exists() (bool, error) {
+	// TOOD: Optimize
+	info, err := self.GetState()
+	if err != nil {
+		return false, err
+	}
+	return (info != nil), nil
+}
+
 // Returns the current state of the instance
 func (self *Instance) getState0() (*model.Instance, error) {
 	client := self.huddle.JujuClient
@@ -632,6 +642,70 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 			health.Units[k] = overall && healthy
 		}
 	}
+
+	return health, nil
+}
+
+// Runs a scaling query and/or change on the instance
+// policyUpdate may be non-nil to apply changes to scaling policy
+func (self *Instance) RunScaling(autoscale bool, policyUpdate *model.ScalingPolicy) (*model.Scaling, error) {
+	// XXX: Hard-coded
+	metricKey := "Load1Min"
+
+	// XXX: Time window
+	metricData, err := self.GetMetricValues(metricKey)
+	if err != nil {
+		log.Warn("Error retrieving metrics for scaling", err)
+		return nil, err
+	}
+
+	// XXX: Hard-coded
+	duration := -300 * time.Second
+
+	now := time.Now()
+	maxTime := now.Unix()
+	minTime := now.Add(duration).Unix()
+
+	matches := &model.MetricDataset{}
+	for _, point := range metricData.Points {
+		t := point.T
+
+		if t < minTime {
+			continue
+		}
+
+		if t > maxTime {
+			continue
+		}
+
+		matches.Points = append(matches.Points, point)
+	}
+
+	matches.SortPointsByTime()
+
+	lastTime := minTime
+	var total float64
+	for _, point := range matches.Points {
+		t := point.T
+
+		assert.That(t >= lastTime)
+
+		total += float64(float32(t-lastTime) * point.V)
+
+		lastTime = t
+	}
+
+	averageV := total / float64(lastTime-minTime)
+
+	log.Info("Average of metric: %v", averageV)
+
+	// XXX: Non hard-coded scaling policy
+	// XXX: Support policy update
+	policy := &model.ScalingPolicy{}
+
+	health := &model.Scaling{}
+	health.Policy = *policy
+	health.CurrentMetric = float32(averageV)
 
 	return health, nil
 }

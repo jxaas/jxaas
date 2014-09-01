@@ -48,7 +48,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 	}
 
 	{
-
+		// XXX: Hard-coded
 		match := map[string]string{}
 		match["Type"] = "LoadAverage"
 		filter := map[string]interface{}{"query": map[string]interface{}{"match": match}}
@@ -147,6 +147,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 func (self *Instance) GetMetricInfo() (*model.Metrics, error) {
 	metrics := &model.Metrics{}
 
+	// XXX: Hard-coded
 	// TODO: Store in metadata file?
 	metrics.Metric = append(metrics.Metric, "Load1Min")
 	metrics.Metric = append(metrics.Metric, "Load5Min")
@@ -239,6 +240,7 @@ func (self *Instance) GetMetricValues(key string) (*model.MetricDataset, error) 
 	jujuUnitNames := []string{}
 
 	for serviceId, service := range services {
+		// XXX: hard-coded?
 		if strings.HasSuffix(serviceId, "-mysql") {
 			for jujuUnitName, _ := range service.Units {
 				unitId := juju.ParseUnit(jujuUnitName)
