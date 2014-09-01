@@ -27,7 +27,7 @@ func (self *EndpointInstanceScaling) HttpGet() (*model.Scaling, error) {
 	return results, nil
 }
 
-func (self *EndpointInstanceScaling) HttpPost(scaling *model.ScalingPolicy) (*model.Scaling, error) {
+func (self *EndpointInstanceScaling) HttpPut(scaling *model.ScalingPolicy) (*model.Scaling, error) {
 	instance := self.Parent.getInstance()
 
 	exists, err := instance.Exists()
