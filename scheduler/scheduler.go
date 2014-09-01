@@ -28,6 +28,8 @@ func (self *Scheduler) AddTask(task Runnable, interval time.Duration) *Scheduled
 
 	go scheduledTask.run()
 
+	log.Debug("Scheduled task: %v for interval %v", task, interval)
+
 	return scheduledTask
 }
 
