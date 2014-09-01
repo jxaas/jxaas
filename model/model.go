@@ -156,6 +156,9 @@ func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetR
 		instance.ConfigParameters = MapToConfigParameters(config)
 	}
 
+	instance.NumberUnits = new(int)
+	*instance.NumberUnits = len(api.Units)
+
 	return instance
 }
 

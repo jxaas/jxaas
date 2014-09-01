@@ -648,19 +648,32 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 
 // Runs a scaling query and/or change on the instance
 // policyUpdate may be non-nil to apply changes to scaling policy
-func (self *Instance) RunScaling(autoscale bool, policyUpdate *model.ScalingPolicy) (*model.Scaling, error) {
-	// XXX: Hard-coded
-	metricKey := "Load1Min"
+func (self *Instance) RunScaling(changeScale bool, policyUpdate *model.ScalingPolicy) (*model.Scaling, error) {
+	instanceState, err := self.GetState()
+	if err != nil {
+		log.Warn("Error getting instance state", err)
+		return nil, err
+	}
 
-	// XXX: Time window
-	metricData, err := self.GetMetricValues(metricKey)
+	// XXX: Non hard-coded scaling policy
+	// XXX: Support policy update
+	policy := &model.ScalingPolicy{}
+	policy.MetricName = "Load1Min"
+	policy.Window = 300
+	// TODO: This is a pretty stupid policy; better to have a 'target' value and a model
+	policy.MetricMin = 0.2
+	policy.MetricMax = 0.8
+	policy.ScaleMin = 1
+	policy.ScaleMax = 4
+
+	// XXX: Filter by time window
+	metricData, err := self.GetMetricValues(policy.MetricName)
 	if err != nil {
 		log.Warn("Error retrieving metrics for scaling", err)
 		return nil, err
 	}
 
-	// XXX: Hard-coded
-	duration := -300 * time.Second
+	duration := time.Duration(-policy.Window) * time.Second
 
 	now := time.Now()
 	maxTime := now.Unix()
@@ -695,17 +708,47 @@ func (self *Instance) RunScaling(autoscale bool, policyUpdate *model.ScalingPoli
 		lastTime = t
 	}
 
-	averageV := total / float64(lastTime-minTime)
-
-	log.Info("Average of metric: %v", averageV)
-
-	// XXX: Non hard-coded scaling policy
-	// XXX: Support policy update
-	policy := &model.ScalingPolicy{}
+	metricCurrent := float32(total / float64(lastTime-minTime))
+	log.Info("Average of metric: %v", metricCurrent)
 
 	health := &model.Scaling{}
 	health.Policy = *policy
-	health.CurrentMetric = float32(averageV)
+	health.MetricCurrent = metricCurrent
+
+	assert.That(instanceState.NumberUnits != nil)
+	scaleCurrent := *instanceState.NumberUnits
+	health.ScaleCurrent = scaleCurrent
+
+	// TODO: Smart 'target-based' scaling
+	scaleDelta := 0
+	if metricCurrent < policy.MetricMin {
+		scaleDelta = -1
+	} else if metricCurrent > policy.MetricMax {
+		scaleDelta = +1
+	}
+
+	scaleTarget := scaleCurrent + scaleDelta
+	if scaleTarget > policy.ScaleMax {
+		scaleTarget = policy.ScaleMax
+	} else if scaleTarget < policy.ScaleMin {
+		scaleTarget = policy.ScaleMin
+	}
+
+	health.ScaleTarget = scaleTarget
+
+	if changeScale && scaleTarget != scaleCurrent {
+		log.Info("Changing scale from %v to %v for %v", scaleCurrent, scaleTarget, self)
+
+		rescale := &model.Instance{}
+		rescale.NumberUnits = new(int)
+		*rescale.NumberUnits = scaleTarget
+
+		err := self.Configure(rescale)
+		if err != nil {
+			log.Warn("Error changing scale", err)
+			return nil, err
+		}
+	}
 
 	return health, nil
 }
