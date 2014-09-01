@@ -16,7 +16,7 @@ func (self *AutoScaleAllInstances) Run() error {
 	}
 
 	for _, instance := range instances {
-		scaling, err := instance.RunScaling(true, nil)
+		scaling, err := instance.RunScaling(true)
 		if err != nil {
 			log.Warn("Error running scaling on instance: %v", instance, err)
 			continue

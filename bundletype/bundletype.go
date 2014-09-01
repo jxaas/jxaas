@@ -14,6 +14,8 @@ type BundleType interface {
 
 	BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder)
 	GetHealthChecks() []jxaas.HealthCheck
+
+	GetDefaultScalingPolicy() *model.ScalingPolicy
 }
 
 // RelationProperties passes the parameters for BuildRelationInfo
@@ -57,4 +59,9 @@ func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, 
 
 func (self *baseBundleType) GetHealthChecks() []jxaas.HealthCheck {
 	return []jxaas.HealthCheck{}
+}
+
+func (self *baseBundleType) GetDefaultScalingPolicy() *model.ScalingPolicy {
+	policy := &model.ScalingPolicy{}
+	return policy
 }

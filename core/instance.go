@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 	"time"
@@ -26,6 +27,9 @@ const (
 	// TODO: Should we just find the public-port annotation on the proxy?
 	SYSTEM_KEY_PUBLIC_PORT     = "public_port"
 	ANNOTATION_KEY_PUBLIC_PORT = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_PUBLIC_PORT
+
+	SYSTEM_KEY_SCALING_POLICY     = "scaling_policy"
+	ANNOTATION_KEY_SCALING_POLICY = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_SCALING_POLICY
 
 	SYSTEM_KEY_LAST_STATE     = "last_state"
 	ANNOTATION_KEY_LAST_STATE = ANNOTATION_PREFIX_SYSTEM + SYSTEM_KEY_LAST_STATE
@@ -646,102 +650,180 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	return health, nil
 }
 
+func (self *Instance) getScalingPolicy() (*model.ScalingPolicy, error) {
+	client := self.huddle.JujuClient
+	primaryServiceId := self.primaryServiceId
+
+	annotations, err := client.GetServiceAnnotations(primaryServiceId)
+	if err != nil {
+		log.Warn("Error getting annotations", err)
+		// TODO: Ignore?
+		return nil, err
+	}
+
+	var policy *model.ScalingPolicy
+	scalingPolicyJson := annotations[ANNOTATION_KEY_SCALING_POLICY]
+	if scalingPolicyJson == "" {
+		policy = self.bundleType.GetDefaultScalingPolicy()
+	} else {
+		policy = &model.ScalingPolicy{}
+		err = json.Unmarshal([]byte(scalingPolicyJson), policy)
+		if err != nil {
+			log.Warn("Error deserializing scaling policy (%v)", scalingPolicyJson, err)
+			// TODO: Ignore / go with default?
+			return nil, err
+		}
+	}
+
+	return policy, nil
+}
+
+func (self *Instance) setScalingPolicy(policy *model.ScalingPolicy) (*model.ScalingPolicy, error) {
+	policyJson, err := json.Marshal(policy)
+	if err != nil {
+		log.Warn("Error serializing scaling policy", err)
+		return nil, err
+	}
+
+	pairs := map[string]string{}
+	pairs[ANNOTATION_KEY_SCALING_POLICY] = string(policyJson)
+
+	err = self.setServiceAnnotations(pairs)
+	if err != nil {
+		log.Warn("Error saving scaling policy", err)
+		return nil, err
+	}
+
+	return policy, nil
+}
+
+func (self *Instance) UpdateScalingPolicy(updatePolicy *model.ScalingPolicy) (*model.ScalingPolicy, error) {
+	policy, err := self.getScalingPolicy()
+	if err != nil {
+		return nil, err
+	}
+
+	assert.That(updatePolicy != nil)
+	if updatePolicy.MetricMin != nil {
+		policy.MetricMin = updatePolicy.MetricMin
+	}
+	if updatePolicy.MetricMax != nil {
+		policy.MetricMax = updatePolicy.MetricMax
+	}
+	if updatePolicy.ScaleMin != nil {
+		policy.ScaleMin = updatePolicy.ScaleMin
+	}
+	if updatePolicy.ScaleMax != nil {
+		policy.ScaleMax = updatePolicy.ScaleMax
+	}
+	if updatePolicy.MetricName != nil {
+		policy.MetricName = updatePolicy.MetricName
+	}
+	if updatePolicy.Window != nil {
+		policy.Window = updatePolicy.Window
+	}
+	return self.setScalingPolicy(policy)
+}
+
 // Runs a scaling query and/or change on the instance
-// policyUpdate may be non-nil to apply changes to scaling policy
-func (self *Instance) RunScaling(changeScale bool, policyUpdate *model.ScalingPolicy) (*model.Scaling, error) {
+func (self *Instance) RunScaling(changeScale bool) (*model.Scaling, error) {
+	health := &model.Scaling{}
+
 	instanceState, err := self.GetState()
 	if err != nil {
 		log.Warn("Error getting instance state", err)
 		return nil, err
 	}
 
-	// XXX: Non hard-coded scaling policy
-	// XXX: Support policy update
-	policy := &model.ScalingPolicy{}
-	policy.MetricName = "Load1Min"
-	policy.Window = 300
-	// TODO: This is a pretty stupid policy; better to have a 'target' value and a model
-	policy.MetricMin = 0.2
-	policy.MetricMax = 0.8
-	policy.ScaleMin = 1
-	policy.ScaleMax = 4
-
-	// XXX: Filter by time window
-	metricData, err := self.GetMetricValues(policy.MetricName)
-	if err != nil {
-		log.Warn("Error retrieving metrics for scaling", err)
-		return nil, err
-	}
-
-	duration := time.Duration(-policy.Window) * time.Second
-
-	now := time.Now()
-	maxTime := now.Unix()
-	minTime := now.Add(duration).Unix()
-
-	matches := &model.MetricDataset{}
-	for _, point := range metricData.Points {
-		t := point.T
-
-		if t < minTime {
-			continue
-		}
-
-		if t > maxTime {
-			continue
-		}
-
-		matches.Points = append(matches.Points, point)
-	}
-
-	matches.SortPointsByTime()
-
-	lastTime := minTime
-	var total float64
-	for _, point := range matches.Points {
-		t := point.T
-
-		assert.That(t >= lastTime)
-
-		total += float64(float32(t-lastTime) * point.V)
-
-		lastTime = t
-	}
-
-	metricCurrent := float32(total / float64(lastTime-minTime))
-	log.Info("Average of metric: %v", metricCurrent)
-
-	health := &model.Scaling{}
-	health.Policy = *policy
-	health.MetricCurrent = metricCurrent
-
 	assert.That(instanceState.NumberUnits != nil)
 	scaleCurrent := *instanceState.NumberUnits
 	health.ScaleCurrent = scaleCurrent
+	health.ScaleTarget = scaleCurrent
 
-	// TODO: Smart 'target-based' scaling
-	scaleDelta := 0
-	if metricCurrent < policy.MetricMin {
-		scaleDelta = -1
-	} else if metricCurrent > policy.MetricMax {
-		scaleDelta = +1
+	policy, err := self.getScalingPolicy()
+	if err != nil {
+		log.Warn("Error fetching scaling policy", err)
+		return nil, err
 	}
 
-	scaleTarget := scaleCurrent + scaleDelta
-	if scaleTarget > policy.ScaleMax {
-		scaleTarget = policy.ScaleMax
-	} else if scaleTarget < policy.ScaleMin {
-		scaleTarget = policy.ScaleMin
+	health.Policy = *policy
+
+	if policy.MetricName != nil {
+		// XXX: Filter by time window
+		metricData, err := self.GetMetricValues(*policy.MetricName)
+		if err != nil {
+			log.Warn("Error retrieving metrics for scaling", err)
+			return nil, err
+		}
+
+		window := 300
+		if policy.Window != nil {
+			window = *policy.Window
+		}
+		duration := time.Duration(-window) * time.Second
+
+		now := time.Now()
+		maxTime := now.Unix()
+		minTime := now.Add(duration).Unix()
+
+		matches := &model.MetricDataset{}
+		for _, point := range metricData.Points {
+			t := point.T
+
+			if t < minTime {
+				continue
+			}
+
+			if t > maxTime {
+				continue
+			}
+
+			matches.Points = append(matches.Points, point)
+		}
+
+		matches.SortPointsByTime()
+
+		lastTime := minTime
+		var total float64
+		for _, point := range matches.Points {
+			t := point.T
+
+			assert.That(t >= lastTime)
+
+			total += float64(float32(t-lastTime) * point.V)
+
+			lastTime = t
+		}
+
+		metricCurrent := float32(total / float64(lastTime-minTime))
+		log.Info("Average of metric: %v", metricCurrent)
+
+		health.MetricCurrent = metricCurrent
+
+		// TODO: Smart 'target-based' scaling
+		scaleDelta := 0
+		if policy.MetricMin != nil && metricCurrent < *policy.MetricMin {
+			scaleDelta = -1
+		} else if policy.MetricMax != nil && metricCurrent > *policy.MetricMax {
+			scaleDelta = +1
+		}
+
+		scaleTarget := scaleCurrent + scaleDelta
+		if policy.ScaleMax != nil && scaleTarget > *policy.ScaleMax {
+			scaleTarget = *policy.ScaleMax
+		} else if policy.ScaleMin != nil && scaleTarget < *policy.ScaleMin {
+			scaleTarget = *policy.ScaleMin
+		}
+
+		health.ScaleTarget = scaleTarget
 	}
 
-	health.ScaleTarget = scaleTarget
-
-	if changeScale && scaleTarget != scaleCurrent {
-		log.Info("Changing scale from %v to %v for %v", scaleCurrent, scaleTarget, self)
+	if changeScale && health.ScaleTarget != scaleCurrent {
+		log.Info("Changing scale from %v to %v for %v", scaleCurrent, health.ScaleTarget, self)
 
 		rescale := &model.Instance{}
 		rescale.NumberUnits = new(int)
-		*rescale.NumberUnits = scaleTarget
+		*rescale.NumberUnits = health.ScaleTarget
 
 		err := self.Configure(rescale)
 		if err != nil {
