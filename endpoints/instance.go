@@ -37,6 +37,12 @@ func (self *EndpointInstance) ItemRelations() *EndpointRelations {
 	return child
 }
 
+func (self *EndpointInstance) ItemHealth() *EndpointRelations {
+	child := &EndpointHealth{}
+	child.Parent = self
+	return child
+}
+
 func (self *EndpointInstance) getHuddle() *core.Huddle {
 	return self.Huddle
 }
