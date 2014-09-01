@@ -37,8 +37,8 @@ func (self *EndpointInstance) ItemRelations() *EndpointRelations {
 	return child
 }
 
-func (self *EndpointInstance) ItemHealth() *EndpointRelations {
-	child := &EndpointHealth{}
+func (self *EndpointInstance) ItemHealth() *EndpointInstanceHealth {
+	child := &EndpointInstanceHealth{}
 	child.Parent = self
 	return child
 }
