@@ -28,7 +28,7 @@ func (self *EndpointInstanceHealth) HttpGet() (*model.Health, error) {
 	return health, nil
 }
 
-func (self *EndpointInstanceHealth) HttpPost() (*model.Health, error) {
+func (self *EndpointInstanceHealth) HttpPut() (*model.Health, error) {
 	instance := self.Parent.getInstance()
 	repair := true
 
