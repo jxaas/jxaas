@@ -748,6 +748,8 @@ func (self *Instance) RunScaling(changeScale bool) (*model.Scaling, error) {
 
 	health.Policy = *policy
 
+	var scaleTarget int
+
 	if policy.MetricName != nil {
 		// XXX: Filter by time window
 		metricData, err := self.GetMetricValues(*policy.MetricName)
@@ -808,15 +810,18 @@ func (self *Instance) RunScaling(changeScale bool) (*model.Scaling, error) {
 			scaleDelta = +1
 		}
 
-		scaleTarget := scaleCurrent + scaleDelta
-		if policy.ScaleMax != nil && scaleTarget > *policy.ScaleMax {
-			scaleTarget = *policy.ScaleMax
-		} else if policy.ScaleMin != nil && scaleTarget < *policy.ScaleMin {
-			scaleTarget = *policy.ScaleMin
-		}
-
-		health.ScaleTarget = scaleTarget
+		scaleTarget = scaleCurrent + scaleDelta
+	} else {
+		scaleTarget = scaleCurrent
 	}
+
+	if policy.ScaleMax != nil && scaleTarget > *policy.ScaleMax {
+		scaleTarget = *policy.ScaleMax
+	} else if policy.ScaleMin != nil && scaleTarget < *policy.ScaleMin {
+		scaleTarget = *policy.ScaleMin
+	}
+
+	health.ScaleTarget = scaleTarget
 
 	if changeScale && health.ScaleTarget != scaleCurrent {
 		log.Info("Changing scale from %v to %v for %v", scaleCurrent, health.ScaleTarget, self)
