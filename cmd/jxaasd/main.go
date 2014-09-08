@@ -136,6 +136,7 @@ func main() {
 	system.AddBundleType(bundletype.NewMongodbBundleType(bundleStore))
 	system.AddBundleType(bundletype.NewPgBundleType(bundleStore))
 	system.AddBundleType(bundletype.NewMultitenantMysqlBundleType(bundleStore))
+	system.AddBundleType(bundletype.NewCassandraBundleType(bundleStore))
 
 	privateUrl := options.PrivateUrl
 
