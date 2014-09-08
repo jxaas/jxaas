@@ -26,7 +26,7 @@ func (self *CassandraBundleType) IsStarted(annotations map[string]string) bool {
 	// we probably should do this on set, either in the charms or in the SetAnnotations call
 	annotationsReady := false
 	for key, _ := range annotations {
-		if strings.HasSuffix(key, "__password") {
+		if strings.HasSuffix(key, "private-address") {
 			annotationsReady = true
 		}
 	}
