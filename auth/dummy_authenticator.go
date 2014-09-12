@@ -10,7 +10,7 @@ type DummyAuthenticator struct {
 	Authenticator
 }
 
-func NewDummyAuthenticator(keystoneEndpoint string) *DummyAuthenticator {
+func NewDummyAuthenticator() *DummyAuthenticator {
 	self := &DummyAuthenticator{}
 	return self
 }

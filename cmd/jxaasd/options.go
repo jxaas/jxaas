@@ -5,20 +5,25 @@ import (
 	"flag"
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/justinsb/gova/log"
+	"github.com/jxaas/jxaas/auth"
 )
 
 var (
 	flagAgentConf       = flag.String("c", "", "Agent conf file")
 	flagApiPasswordPath = flag.String("p", "", "File containing API password")
 	flagPrivateUrl      = flag.String("private", "", "Private URL")
+	flagKeystoneUrl     = flag.String("openstack", "http://127.0.0.1:5000/v2.0", "URL for OpenStack Identity service")
+	flagAuth            = flag.String("auth", "openstack", "Authentication plugin to use")
 )
 
 type Options struct {
 	AgentConf       string
 	ApiPasswordPath string
 	PrivateUrl      string
+	Authenticator   auth.Authenticator
 }
 
 func localIP() (net.IP, error) {
@@ -66,8 +71,20 @@ func GetOptions() *Options {
 		privateUrl = fmt.Sprintf("http://%v:8080/xaasprivate", ip)
 		log.Info("Chose private url: %v", privateUrl)
 	}
-
 	self.PrivateUrl = privateUrl
+
+	authMode := *flagAuth
+	authMode = strings.TrimSpace(authMode)
+	authMode = strings.ToLower(authMode)
+	if authMode == "openstack" {
+		keystoneUrl := *flagKeystoneUrl
+		self.Authenticator = auth.NewOpenstackTokenAuthenticator(keystoneUrl)
+	} else if authMode == "dummy" {
+		self.Authenticator = auth.NewDummyAuthenticator()
+	} else {
+		log.Warn("Unknown authentication mode: %v", authMode)
+		return nil
+	}
 
 	return self
 }

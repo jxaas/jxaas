@@ -12,8 +12,6 @@ import (
 	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
-
-	"github.com/jxaas/jxaas/auth"
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
@@ -100,9 +98,7 @@ func main() {
 	bundleStore := bundle.NewBundleStore("templates")
 	binder.AddSingleton(bundleStore)
 
-	//authenticator := auth.NewDummyAuthenticator()
-	keystoneUrl := "http://127.0.0.1:5000/v2.0"
-	authenticator := auth.NewOpenstackTokenAuthenticator(keystoneUrl)
+	authenticator := options.Authenticator
 	binder.AddSingleton(authenticator)
 
 	apiclient, err := clientFactory()
