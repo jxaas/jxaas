@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/rs"
 	"github.com/jxaas/jxaas/auth"
 )
@@ -17,8 +18,13 @@ type Authorization struct {
 	TenantName string
 }
 
-func (self *EndpointXaas) Item(key string, req *http.Request) (*EndpointTenant, error) {
+func (self *EndpointXaas) Item(key string, injector inject.Injector, req *http.Request) (*EndpointTenant, error) {
 	child := &EndpointTenant{}
+
+	// TODO: Support automatic field injection
+	if self.Authenticator == nil {
+		injector.Inject(&self.Authenticator)
+	}
 
 	tenantId := key
 	tenantName := strings.Replace(key, "-", "", -1)
