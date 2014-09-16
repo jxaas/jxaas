@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-type DummyAuthenticator struct {
+type DevelopmentAuthenticator struct {
 	Authenticator
 }
 
-func NewDummyAuthenticator() *DummyAuthenticator {
-	self := &DummyAuthenticator{}
+func NewDevelopmentAuthenticator() *DevelopmentAuthenticator {
+	self := &DevelopmentAuthenticator{}
 	return self
 }
 
-func (self *DummyAuthenticator) Authenticate(tenantId string, req *http.Request) *Authentication {
+func (self *DevelopmentAuthenticator) Authenticate(tenantId string, req *http.Request) *Authentication {
 	var authorization *Authentication
 
 	authorizationHeaders := req.Header["Authorization"]

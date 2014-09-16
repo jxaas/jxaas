@@ -16,7 +16,7 @@ var (
 	flagApiPasswordPath = flag.String("p", "", "File containing API password")
 	flagPrivateUrl      = flag.String("private", "", "Private URL")
 	flagKeystoneUrl     = flag.String("openstack", "http://127.0.0.1:5000/v2.0", "URL for OpenStack Identity service")
-	flagAuth            = flag.String("auth", "openstack", "Authentication plugin to use")
+	flagAuth            = flag.String("auth", "development", "Authentication plugin to use")
 )
 
 type Options struct {
@@ -79,8 +79,8 @@ func GetOptions() *Options {
 	if authMode == "openstack" {
 		keystoneUrl := *flagKeystoneUrl
 		self.Authenticator = auth.NewOpenstackTokenAuthenticator(keystoneUrl)
-	} else if authMode == "dummy" {
-		self.Authenticator = auth.NewDummyAuthenticator()
+	} else if authMode == "development" {
+		self.Authenticator = auth.NewDevelomentAuthenticator()
 	} else {
 		log.Warn("Unknown authentication mode: %v", authMode)
 		return nil
