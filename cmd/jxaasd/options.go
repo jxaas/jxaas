@@ -80,7 +80,7 @@ func GetOptions() *Options {
 		keystoneUrl := *flagKeystoneUrl
 		self.Authenticator = auth.NewOpenstackTokenAuthenticator(keystoneUrl)
 	} else if authMode == "development" {
-		self.Authenticator = auth.NewDevelomentAuthenticator()
+		self.Authenticator = auth.NewDevelopmentAuthenticator()
 	} else {
 		log.Warn("Unknown authentication mode: %v", authMode)
 		return nil

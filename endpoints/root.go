@@ -4,13 +4,14 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/rs"
 	"github.com/jxaas/jxaas/auth"
 )
 
 type EndpointXaas struct {
-	Authenticator auth.Authenticator
+	Authenticator auth.Authenticator `inject:"y"`
 }
 
 type Authorization struct {
@@ -21,15 +22,11 @@ type Authorization struct {
 func (self *EndpointXaas) Item(key string, injector inject.Injector, req *http.Request) (*EndpointTenant, error) {
 	child := &EndpointTenant{}
 
-	// TODO: Support automatic field injection
-	if self.Authenticator == nil {
-		injector.Inject(&self.Authenticator)
-	}
-
 	tenantId := key
 	tenantName := strings.Replace(key, "-", "", -1)
 
 	// TODO: Implement authz
+	assert.That(self.Authenticator != nil)
 	authentication := self.Authenticator.Authenticate(tenantId, req)
 
 	if authentication == nil {

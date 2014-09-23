@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"reflect"
 	"time"
 
 	"launchpad.net/goyaml"
@@ -12,6 +13,7 @@ import (
 	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
+	"github.com/jxaas/jxaas/auth"
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
@@ -100,6 +102,7 @@ func main() {
 
 	authenticator := options.Authenticator
 	binder.AddSingleton(authenticator)
+	binder.BindType(reflect.TypeOf((*auth.Authenticator)(nil)).Elem()).ToInstance(authenticator)
 
 	apiclient, err := clientFactory()
 
@@ -156,12 +159,19 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	injector := binder.CreateInjector()
-
 	rest := rs.NewRestServer()
-	rest.AddEndpoint("/xaas/", (*endpoints.EndpointXaas)(nil))
-	rest.AddEndpoint("/xaasprivate/", (*endpoints.EndpointXaasPrivate)(nil))
+
+	typeEndpointXaas := reflect.TypeOf((*endpoints.EndpointXaas)(nil)).Elem()
+	binder.AddDefaultBinding(typeEndpointXaas)
+	rest.AddEndpoint("/xaas/", reflect.TypeOf((*endpoints.EndpointXaas)(nil)).Elem())
+
+	typeEndpointXaasPrivate := reflect.TypeOf((*endpoints.EndpointXaasPrivate)(nil)).Elem()
+	binder.AddDefaultBinding(typeEndpointXaasPrivate)
+	rest.AddEndpoint("/xaasprivate/", typeEndpointXaasPrivate)
+
+	injector := binder.CreateInjector()
 	rest.WithInjector(injector)
+
 	rest.AddReader(rs.NewJsonMessageBodyReader())
 	rest.AddWriter(rs.NewJsonMessageBodyWriter())
 
