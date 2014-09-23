@@ -10,6 +10,11 @@ shared:
     haproxy:
       charm: "cs:~justin-fathomdb/trusty/haproxy"
       exposed: true
+      options:
+        enable_monitoring: true
+        monitoring_port: 81
+        monitoring_host: 127.0.0.1
+        force_ssl: true
   relations:
     - - "kibana"
       - "elasticsearch:rest"
