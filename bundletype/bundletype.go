@@ -1,6 +1,9 @@
 package bundletype
 
 import (
+	"strconv"
+
+	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/model"
@@ -12,7 +15,8 @@ type BundleType interface {
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
-	BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder)
+	// Lets the bundle modify the relations that are returned
+	BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error
 	GetHealthChecks() []jxaas.HealthCheck
 
 	GetDefaultScalingPolicy() *model.ScalingPolicy
@@ -21,10 +25,10 @@ type BundleType interface {
 // RelationProperties passes the parameters for BuildRelationInfo
 // Allows extensibility and avoids a huge parameter list
 type RelationBuilder struct {
-	Relation   string
-	Properties []model.RelationProperty
-	ProxyHost  string
-	ProxyPort  int
+	Relation      string
+	Properties    []model.RelationProperty
+	ProxyHost     string
+	ProxyPort     int
 }
 
 type baseBundleType struct {
@@ -45,7 +49,8 @@ func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, t
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
 }
 
-func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
+	// TODO: Unclear if we should expose other properties... probably not
 	if data.Relation != "" {
 		for _, property := range data.Properties {
 			if property.RelationType != data.Relation {
@@ -55,6 +60,45 @@ func (self *baseBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, 
 			relationInfo.Properties[property.Key] = property.Value
 		}
 	}
+
+	log.Info("BuildRelationInfo with %v", bundle.Properties)
+
+	properties := bundle.Properties
+	for k, v := range properties {
+		propertyValue := relationInfo.Properties[k]
+
+		if v == "<<" {
+			if k == "host" || k == "private-address" {
+				// Use proxy address
+				if data.ProxyHost != "" {
+					propertyValue = data.ProxyHost
+				}
+			}
+			if k == "port" {
+				// Use proxy port
+				if data.ProxyHost != "" {
+					propertyValue = strconv.Itoa(data.ProxyPort)
+				}
+			}
+			if k == "protocol" {
+				// Proxy changes protocol to tls
+				if data.ProxyHost != "" {
+					propertyValue = "tls"
+				}
+			}
+
+		} else {
+			propertyValue = v
+		}
+
+		relationInfo.Properties[k] = propertyValue
+	}
+
+	if data.ProxyHost != "" {
+		relationInfo.PublicAddresses = []string{data.ProxyHost}
+	}
+
+	return nil
 }
 
 func (self *baseBundleType) GetHealthChecks() []jxaas.HealthCheck {

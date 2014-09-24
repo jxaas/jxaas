@@ -1,7 +1,6 @@
 package bundletype
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/jxaas/jxaas"
@@ -40,7 +39,7 @@ func (self *MysqlBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+func (self *MysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
 	switch data.Relation {
 	case "db", "mysql":
 		data.Relation = "mysql"
@@ -48,16 +47,16 @@ func (self *MysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo,
 		data.Relation = ""
 	}
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, data)
-
-	// To override the IP / port
-	if data.ProxyHost != "" {
-		proxyHost := data.ProxyHost
-		relationInfo.Properties["host"] = proxyHost
-		relationInfo.Properties["private-address"] = proxyHost
-		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
-		relationInfo.PublicAddresses = []string{proxyHost}
-	}
+	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
+	//
+	//	// To override the IP / port
+	//	if data.ProxyHost != "" {
+	//		proxyHost := data.ProxyHost
+	//		relationInfo.Properties["host"] = proxyHost
+	//		relationInfo.Properties["private-address"] = proxyHost
+	//		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
+	//		relationInfo.PublicAddresses = []string{proxyHost}
+	//	}
 }
 
 func (self *MysqlBundleType) GetHealthChecks() []jxaas.HealthCheck {

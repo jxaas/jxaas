@@ -484,8 +484,18 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	//	log.Debug("relationProperties: %v", relationProperties)
 	//	log.Debug("relationMetadata: %v", relationMetadata)
 
+	// TODO: Can we refactor a lot of the above into the current state?
+	context := self.buildCurrentTemplateContext()
+	bundle, err := self.getBundle(context)
+	if err != nil {
+		return nil, err
+	}
+
 	relationInfo.Timestamp = relationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
-	self.bundleType.BuildRelationInfo(relationInfo, builder)
+	err = self.bundleType.BuildRelationInfo(bundle, relationInfo, builder)
+	if err != nil {
+		return nil, err
+	}
 
 	return relationInfo, nil
 }
@@ -507,6 +517,15 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	context.SystemImplicits["jxaas-secret"] = "rpcsecret"
 
 	context.PublicPortAssigner = &StubPortAssigner{}
+
+	return context
+}
+
+func (self *Instance) buildCurrentTemplateContext() *bundle.TemplateContext {
+	context := self.buildSkeletonTemplateContext()
+
+	// TODO: Add current configuration
+	log.Warn("buildCurrentTemplateContext is stub-implemented")
 
 	return context
 }
@@ -591,6 +610,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 		return err
 	}
 
+	// TODO: Is this idempotent?
 	if publicPortAssigner.Port != 0 {
 		self.setPublicPort(publicPortAssigner.Port)
 	}

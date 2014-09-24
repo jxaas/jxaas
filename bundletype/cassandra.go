@@ -34,17 +34,22 @@ func (self *CassandraBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *CassandraBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
-	self.baseBundleType.BuildRelationInfo(relationInfo, data)
+func (self *CassandraBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
+	err := self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
+	if err != nil {
+		return err
+	}
 
 	// To override the IP / port
 	if data.ProxyHost != "" {
 		proxyHost := data.ProxyHost
 		relationInfo.Properties["host"] = proxyHost
-		relationInfo.Properties["private-address"] = proxyHost
 		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
+		relationInfo.Properties["private-address"] = proxyHost
 		relationInfo.PublicAddresses = []string{proxyHost}
 	}
+
+	return nil
 }
 
 func (self *CassandraBundleType) GetHealthChecks() []jxaas.HealthCheck {

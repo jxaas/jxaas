@@ -1,4 +1,9 @@
 mysql:
+  properties:
+    protocol: <<
+    host: <<
+    private-address: <<
+    port: <<
   services:
     mysql:
       charm: "cs:~justin-fathomdb/trusty/mysql"
@@ -18,6 +23,7 @@ mysql:
 
     metrics:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
+
   relations:
     - - "stubclient:juju-info"
       - "mysql:juju-info"
