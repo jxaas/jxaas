@@ -20,6 +20,7 @@ mysql:
         private-port: 3306
         public-port: {{.AssignPublicPort}}
         open-ports: 3306
+        protocol: <<
 
     metrics:
       charm: "cs:~justin-fathomdb/trusty/heka-collector"
