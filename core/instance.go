@@ -19,9 +19,14 @@ import (
 )
 
 const (
+	// Used to store the (user-set) instance config
+	ANNOTATION_PREFIX_INSTANCECONFIG = "__jxaas_config_"
+
+	// Used to store relation properties
 	ANNOTATION_PREFIX_RELATIONINFO  = "__jxaas_relinfo_"
 	RELATIONINFO_METADATA_TIMESTAMP = "timestamp"
 
+	// Used to store a few system housekeeping items
 	ANNOTATION_PREFIX_SYSTEM = "__jxaas_system_"
 
 	// TODO: Should we just find the public-port annotation on the proxy?
@@ -111,6 +116,12 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	delay := false
 
 	now := time.Now().Unix()
+
+	state.Config, err = self.buildInstanceConfig(annotations)
+	if err != nil {
+		log.Warn("Error getting instance config", err)
+		return nil, err
+	}
 
 	if state.Status == "started" && lastState != "started" {
 		if lastStateTimestamp == "" {
@@ -305,6 +316,32 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+RELATIONINFO_METADATA_TIMESTAMP] = strconv.FormatInt(time.Now().Unix(), 10)
 
 	return self.setServiceAnnotations(pairs)
+}
+
+// Store the instance configuration, as set by the user
+func (self *Instance) setInstanceConfig(properties map[string]string) error {
+	pairs := make(map[string]string)
+	for k, v := range properties {
+		pairs[ANNOTATION_PREFIX_INSTANCECONFIG+k] = v
+	}
+	return self.setServiceAnnotations(pairs)
+}
+
+// Retrieve the instance configuration, as set by the user.
+func (self *Instance) buildInstanceConfig(annotations map[string]string) (map[string]string, error) {
+	properties := map[string]string{}
+
+	for tagName, v := range annotations {
+		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
+			key := tagName[len(ANNOTATION_PREFIX_INSTANCECONFIG):]
+			properties[key] = v
+		}
+	}
+
+	// TODO: Fetch inherited properties from primary service and merge
+	// TODO: Do we always need this?
+
+	return properties, nil
 }
 
 // Sets annotations on the specified instance.
@@ -572,14 +609,36 @@ func (self *Instance) getBundleKeys() (map[string]string, error) {
 // Ensures the instance is created and has the specified configuration.
 // This method is (supposed to be) idempotent.
 func (self *Instance) Configure(request *model.Instance) error {
+	var err error
+
 	jujuClient := self.huddle.JujuClient
+	primaryServiceId := self.primaryServiceId
 
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
-	if request.Config == nil {
-		request.Config = make(map[string]string)
+
+	// Record the (changed) configuration options
+	instanceConfigChanges := request.Config
+
+	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
+	if err != nil {
+		log.Warn("Error getting annotations", err)
+		// TODO: Mask error?
+		return err
 	}
+
+	// Merge the new configuration options with the existing ones
+	mergedConfig, err := self.buildInstanceConfig(annotations)
+	if err != nil {
+		log.Warn("Error getting instance config", err)
+		return err
+	}
+	for k, v := range request.Config {
+		mergedConfig[k] = v
+	}
+	request.Config = mergedConfig
+
 	request.ConfigParameters = nil
 
 	context := self.buildSkeletonTemplateContext()
@@ -608,6 +667,11 @@ func (self *Instance) Configure(request *model.Instance) error {
 	_, err = b.Deploy(jujuClient)
 	if err != nil {
 		return err
+	}
+
+	// Save changed config
+	if instanceConfigChanges != nil {
+		self.setInstanceConfig(instanceConfigChanges)
 	}
 
 	// TODO: Is this idempotent?
