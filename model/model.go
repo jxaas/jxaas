@@ -28,6 +28,9 @@ type Instance struct {
 
 	Units map[string]*Unit
 
+	// The configuration, as set by the user.
+	// Some of these values will map directly to Juju instance config,
+	// some will be jxaas-specified or transformed.
 	Config map[string]string
 
 	ConfigParameters map[string]ConfigParameter
