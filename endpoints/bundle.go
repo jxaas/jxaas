@@ -2,6 +2,7 @@ package endpoints
 
 import (
 	"github.com/justinsb/gova/inject"
+	"github.com/justinsb/gova/log"
 
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
@@ -40,6 +41,11 @@ func (self *EndpointBundle) HttpGet(huddle *core.Huddle) ([]*model.Instance, err
 		model, err := instance.GetState()
 		if err != nil {
 			return nil, err
+		}
+
+		if model == nil {
+			log.Debug("Ignoring concurrently deleted (?) instance: %v", instance)
+			continue
 		}
 
 		models = append(models, model)
