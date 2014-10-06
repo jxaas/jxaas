@@ -117,12 +117,6 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	now := time.Now().Unix()
 
-	state.Config, err = self.buildInstanceConfig(annotations)
-	if err != nil {
-		log.Warn("Error getting instance config", err)
-		return nil, err
-	}
-
 	if state.Status == "started" && lastState != "started" {
 		if lastStateTimestamp == "" {
 			shouldUpdate = true
@@ -190,7 +184,7 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	log.Debug("Service state: %v", status)
 
-	instance := model.MapToInstance(self.instanceId, status, config)
+	state := model.MapToInstance(self.instanceId, status, config)
 
 	serviceKeys, err := self.getBundleKeys()
 	if err != nil {
@@ -210,14 +204,14 @@ func (self *Instance) getState0() (*model.Instance, error) {
 		status, err := client.GetServiceStatus(serviceId)
 		if err != nil {
 			log.Warn("Error while fetching status of service: %v", serviceId, err)
-			instance.Status = "pending"
+			state.Status = "pending"
 		} else if status == nil {
 			log.Warn("No status for service: %v", serviceId)
-			instance.Status = "pending"
+			state.Status = "pending"
 		} else {
 			log.Info("Got state of secondary service: %v => %v", serviceId, status)
 			for _, unitStatus := range status.Units {
-				model.MergeInstanceStatus(instance, &unitStatus)
+				model.MergeInstanceStatus(state, &unitStatus)
 			}
 		}
 	}
@@ -237,12 +231,23 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	if !annotationsReady {
 		log.Info("Instance not started (per annotations): %v", annotations)
-		instance.Status = "pending"
+		state.Status = "pending"
 	}
 
-	log.Info("Status of %v: %v", primaryServiceId, instance.Status)
+	log.Info("Status of %v: %v", primaryServiceId, state.Status)
 
-	return instance, nil
+	state.Config = map[string]string{}
+
+	for tagName, v := range annotations {
+		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
+			key := tagName[len(ANNOTATION_PREFIX_INSTANCECONFIG):]
+			state.Config[key] = v
+		}
+	}
+
+	// TODO: Fetch inherited properties from primary service and merge
+
+	return state, nil
 }
 
 // Deletes the instance.
@@ -325,23 +330,6 @@ func (self *Instance) setInstanceConfig(properties map[string]string) error {
 		pairs[ANNOTATION_PREFIX_INSTANCECONFIG+k] = v
 	}
 	return self.setServiceAnnotations(pairs)
-}
-
-// Retrieve the instance configuration, as set by the user.
-func (self *Instance) buildInstanceConfig(annotations map[string]string) (map[string]string, error) {
-	properties := map[string]string{}
-
-	for tagName, v := range annotations {
-		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
-			key := tagName[len(ANNOTATION_PREFIX_INSTANCECONFIG):]
-			properties[key] = v
-		}
-	}
-
-	// TODO: Fetch inherited properties from primary service and merge
-	// TODO: Do we always need this?
-
-	return properties, nil
 }
 
 // Sets annotations on the specified instance.
@@ -497,6 +485,13 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	builder.Relation = relationKey
 	builder.Properties = relationProperties
 
+	// Can we rationalize all this?  We repeat a lot of calls right now...
+	builder.InstanceConfig, err = self.getState0()
+	if err != nil {
+		log.Warn("Error getting instance state", err)
+		return nil, err
+	}
+
 	// TODO: Skip proxy host on EC2?
 	useProxyHost := true
 
@@ -612,27 +607,26 @@ func (self *Instance) Configure(request *model.Instance) error {
 	var err error
 
 	jujuClient := self.huddle.JujuClient
-	primaryServiceId := self.primaryServiceId
 
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
 
-	// Record the (changed) configuration options
-	instanceConfigChanges := request.Config
-
-	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
+	state, err := self.getState0()
 	if err != nil {
-		log.Warn("Error getting annotations", err)
-		// TODO: Mask error?
+		log.Warn("Error getting instance state", err)
 		return err
 	}
 
+	// Record the (requested) configuration options
+	instanceConfigChanges := request.Config
+
 	// Merge the new configuration options with the existing ones
-	mergedConfig, err := self.buildInstanceConfig(annotations)
-	if err != nil {
-		log.Warn("Error getting instance config", err)
-		return err
+	mergedConfig := make(map[string]string)
+	if state != nil {
+		for k, v := range state.Config {
+			mergedConfig[k] = v
+		}
 	}
 	for k, v := range request.Config {
 		mergedConfig[k] = v

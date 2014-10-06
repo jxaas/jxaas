@@ -25,10 +25,11 @@ type BundleType interface {
 // RelationProperties passes the parameters for BuildRelationInfo
 // Allows extensibility and avoids a huge parameter list
 type RelationBuilder struct {
-	Relation      string
-	Properties    []model.RelationProperty
-	ProxyHost     string
-	ProxyPort     int
+	Relation       string
+	Properties     []model.RelationProperty
+	ProxyHost      string
+	ProxyPort      int
+	InstanceConfig *model.Instance
 }
 
 type baseBundleType struct {
@@ -81,12 +82,11 @@ func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInf
 				}
 			}
 			if k == "protocol" {
-				// Proxy changes protocol to tls
-				if data.ProxyHost != "" {
-					propertyValue = "tls"
+				instanceValue := data.InstanceConfig.Config["protocol"]
+				if instanceValue != "" {
+					propertyValue = instanceValue
 				}
 			}
-
 		} else {
 			propertyValue = v
 		}
