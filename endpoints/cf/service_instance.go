@@ -72,8 +72,9 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfDeleteInstanceResponse, error) {
 	helper := self.getHelper()
 
-	serviceId := httpRequest.getQueryParameter("service_id")
-	planId := httpRequest.getQueryParameter("plan_id")
+	queryValues := httpRequest.URL.Query()
+	serviceId := queryValues.Get("service_id")
+	planId := queryValues.Get("plan_id")
 
 	instance := helper.getInstance(planId, self.getInstanceId())
 	if instance == nil {
