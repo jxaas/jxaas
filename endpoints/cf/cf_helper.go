@@ -63,6 +63,8 @@ func (self *CfHelper) getInstance(serviceId string, instanceId string) *core.Ins
 		return nil
 	}
 
+	instanceId = strings.Replace(instanceId, "-", "", -1)
+
 	tenantId := self.TenantIdMap.TenantId
 	instance := huddle.NewInstance(tenantId, bundleType, instanceId)
 	return instance

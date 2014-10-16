@@ -21,17 +21,17 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 
 		service.Id = helper.mapBundleTypeIdToCfServiceId(bundle.Id)
 		service.Name = bundle.Name
-		//		service.Description = bundle.Name + " service"
+		service.Description = bundle.Name + " service"
 		service.Bindable = true
-		//	Tags        []string
+		service.Tags = []string{}
 		//	Metadata    map[string]string
-		//	Requires    []string
+		service.Requires = []string{}
 
 		service.Plans = []*CatalogModelPlan{}
 		plan := &CatalogModelPlan{}
 		plan.Id = service.Id + "::" + "default"
-		plan.Name = "Default plan"
-		//	Description     string
+		plan.Name = "default"
+		plan.Description = "Default plan"
 		//	Metadata        map[string]string
 		//	Free            bool
 		//	DashboardClient *CatalogModelDashboard

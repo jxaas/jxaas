@@ -16,7 +16,6 @@ func (self *EndpointCfV2) ItemCatalog() *EndpointCatalog {
 	return child
 }
 
-// XXX: This needs to map service_instances... may need to use Item
 func (self *EndpointCfV2) ItemServiceInstances() *EndpointServiceInstances {
 	child := &EndpointServiceInstances{}
 	child.Parent = self

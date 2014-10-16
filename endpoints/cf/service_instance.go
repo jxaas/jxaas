@@ -30,8 +30,10 @@ func (self *EndpointServiceInstance) getInstanceId() string {
 	return self.Id
 }
 
-func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (*CfCreateInstanceResponse, error) {
+func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (*rs.HttpResponse, error) {
 	helper := self.getHelper()
+
+	log.Info("CF instance put request: %v", request)
 
 	instance := helper.getInstance(request.ServiceId, self.Id)
 	if instance == nil {
@@ -61,7 +63,10 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 			response := &CfCreateInstanceResponse{}
 			// XXX: We need a dashboard URL - maybe a Juju GUI?
 			response.DashboardUrl = "http://localhost:8080"
-			return response, nil
+
+			httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
+			httpResponse.Content = response
+			return httpResponse, nil
 		}
 	}
 
@@ -93,14 +98,14 @@ func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfD
 }
 
 type CfCreateInstanceRequest struct {
-	ServiceId        string
-	PlanId           string
-	OrganizationGuid string
-	SpaceGuid        string
+	ServiceId        string `json:"service_id"`
+	PlanId           string `json:"plan_id"`
+	OrganizationGuid string `json:"organization_guid"`
+	SpaceGuid        string `json:"space_guid"`
 }
 
 type CfCreateInstanceResponse struct {
-	DashboardUrl string
+	DashboardUrl string `json:"dashboard_url"`
 }
 
 type CfDeleteInstanceResponse struct {
