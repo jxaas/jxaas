@@ -1,7 +1,5 @@
 package cf
 
-import ()
-
 type EndpointCfRoot struct {
 	Helper *CfHelper `inject:"y"`
 }
@@ -12,15 +10,8 @@ func (self *EndpointCfRoot) getHelper() *CfHelper {
 
 // XXX: We should probably authenticate against CloudFoundry!
 
-func (self *EndpointCfRoot) ItemCatalog() *EndpointCatalog {
-	child := &EndpointCatalog{}
-	child.Parent = self
-	return child
-}
-
-// XXX: This needs to map service_instances... may need to use Item
-func (self *EndpointCfRoot) ItemServiceInstances() *EndpointServiceInstances {
-	child := &EndpointServiceInstances{}
+func (self *EndpointCfRoot) ItemV2() *EndpointCfV2 {
+	child := &EndpointCfV2{}
 	child.Parent = self
 	return child
 }

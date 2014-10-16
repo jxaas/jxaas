@@ -16,6 +16,7 @@ type MysqlBundleType struct {
 func NewMysqlBundleType(bundleStore *bundle.BundleStore) *MysqlBundleType {
 	self := &MysqlBundleType{}
 	self.key = "mysql"
+	self.primaryRelationKey = "mysql"
 	self.bundleStore = bundleStore
 	return self
 }
@@ -40,12 +41,7 @@ func (self *MysqlBundleType) IsStarted(annotations map[string]string) bool {
 }
 
 func (self *MysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	switch data.Relation {
-	case "db", "mysql":
-		data.Relation = "mysql"
-	default:
-		data.Relation = ""
-	}
+	data.Relation = self.primaryRelationKey
 
 	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 	//

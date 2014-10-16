@@ -11,7 +11,10 @@ import (
 
 type BundleType interface {
 	Key() string
+
 	PrimaryJujuService() string
+	PrimaryRelationKey() string
+
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
@@ -33,8 +36,9 @@ type RelationBuilder struct {
 }
 
 type baseBundleType struct {
-	key         string
-	bundleStore *bundle.BundleStore
+	key                string
+	primaryRelationKey string
+	bundleStore        *bundle.BundleStore
 }
 
 func (self *baseBundleType) Key() string {
@@ -43,6 +47,10 @@ func (self *baseBundleType) Key() string {
 
 func (self *baseBundleType) PrimaryJujuService() string {
 	return self.key
+}
+
+func (self *baseBundleType) PrimaryRelationKey() string {
+	return self.primaryRelationKey
 }
 
 func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error) {

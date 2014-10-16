@@ -74,9 +74,9 @@ func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfD
 
 	queryValues := httpRequest.URL.Query()
 	serviceId := queryValues.Get("service_id")
-	planId := queryValues.Get("plan_id")
+	//	planId := queryValues.Get("plan_id")
 
-	instance := helper.getInstance(planId, self.getInstanceId())
+	instance := helper.getInstance(serviceId, self.getInstanceId())
 	if instance == nil {
 		return nil, rs.ErrNotFound()
 	}

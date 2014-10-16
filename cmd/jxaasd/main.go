@@ -18,6 +18,7 @@ import (
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
 	"github.com/jxaas/jxaas/endpoints"
+	"github.com/jxaas/jxaas/endpoints/cf"
 	"github.com/jxaas/jxaas/juju"
 )
 
@@ -104,6 +105,11 @@ func main() {
 	binder.AddSingleton(authenticator)
 	binder.BindType(reflect.TypeOf((*auth.Authenticator)(nil)).Elem()).ToInstance(authenticator)
 
+	cfTenantIdMap := cf.NewCfTenantIdMap(options.CfTenantId)
+	binder.AddSingleton(cfTenantIdMap)
+
+	binder.AddDefaultBindingByPointer((*cf.CfHelper)(nil))
+
 	apiclient, err := clientFactory()
 
 	// TODO: How would we get the full config "from afar"?
@@ -163,11 +169,15 @@ func main() {
 
 	typeEndpointXaas := reflect.TypeOf((*endpoints.EndpointXaas)(nil)).Elem()
 	binder.AddDefaultBinding(typeEndpointXaas)
-	rest.AddEndpoint("/xaas/", reflect.TypeOf((*endpoints.EndpointXaas)(nil)).Elem())
+	rest.AddEndpoint("/xaas/", typeEndpointXaas)
 
 	typeEndpointXaasPrivate := reflect.TypeOf((*endpoints.EndpointXaasPrivate)(nil)).Elem()
 	binder.AddDefaultBinding(typeEndpointXaasPrivate)
 	rest.AddEndpoint("/xaasprivate/", typeEndpointXaasPrivate)
+
+	typeEndpointCf := reflect.TypeOf((*cf.EndpointCfRoot)(nil)).Elem()
+	binder.AddDefaultBinding(typeEndpointCf)
+	rest.AddEndpoint("/cf/", typeEndpointCf)
 
 	injector := binder.CreateInjector()
 	rest.WithInjector(injector)

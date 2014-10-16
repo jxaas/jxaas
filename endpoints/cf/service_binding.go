@@ -3,6 +3,7 @@ package cf
 import (
 	"net/http"
 
+	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
 )
 
@@ -22,12 +23,18 @@ func (self *EndpointServiceBinding) getInstanceId() string {
 func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*CfBindResponse, error) {
 	helper := self.getHelper()
 
-	instance := helper.getInstance(request.PlanId, self.getInstanceId())
+	instance := helper.getInstance(request.ServiceId, self.getInstanceId())
 	if instance == nil {
 		return nil, rs.ErrNotFound()
 	}
 
-	relationInfo, err := instance.GetRelationInfo(relationKey)
+	bundleType := helper.getBundleType(request.ServiceId)
+	if bundleType == nil {
+		log.Warn("BundleType not found for serviceId: %v", request.ServiceId)
+		return nil, rs.ErrNotFound()
+	}
+
+	relationInfo, err := instance.GetRelationInfo(bundleType.PrimaryRelationKey())
 
 	if err != nil {
 		return nil, err
@@ -55,9 +62,9 @@ func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUn
 
 	queryValues := httpRequest.URL.Query()
 	serviceId := queryValues.Get("service_id")
-	planId := queryValues.Get("plan_id")
+	//	planId := queryValues.Get("plan_id")
 
-	instance := helper.getInstance(planId, self.getInstanceId())
+	instance := helper.getInstance(serviceId, self.getInstanceId())
 	if instance == nil {
 		return nil, rs.ErrNotFound()
 	}

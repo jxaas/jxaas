@@ -1,9 +1,7 @@
 package cf
 
-import ()
-
 type EndpointServiceInstances struct {
-	Parent *EndpointCfRoot
+	Parent *EndpointCfV2
 }
 
 func (self *EndpointServiceInstances) getHelper() *CfHelper {

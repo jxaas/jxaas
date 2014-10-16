@@ -1,9 +1,7 @@
 package cf
 
-import ()
-
 type EndpointCatalog struct {
-	Parent *EndpointCfRoot
+	Parent *EndpointCfV2
 }
 
 func (self *EndpointCatalog) getHelper() *CfHelper {
@@ -46,31 +44,31 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 }
 
 type CatalogModel struct {
-	Services []*CatalogModelService
+	Services []*CatalogModelService `json:"services"`
 }
 
 type CatalogModelService struct {
-	Id          string // guid
-	Name        string // cli friendly
-	Description string
-	Bindable    bool
-	Tags        []string
-	Metadata    map[string]string
-	Requires    []string
-	Plans       []*CatalogModelPlan
+	Id          string              `json:"id"`   // guid
+	Name        string              `json:"name"` // cli friendly
+	Description string              `json:"description"`
+	Bindable    bool                `json:"bindable"`
+	Tags        []string            `json:"tags"`
+	Metadata    map[string]string   `json:"metadata"`
+	Requires    []string            `json:"requires"`
+	Plans       []*CatalogModelPlan `json:"plans"`
 }
 
 type CatalogModelPlan struct {
-	Id              string // guid
-	Name            string // cli friendly
-	Description     string
-	Metadata        map[string]string
-	Free            bool
-	DashboardClient *CatalogModelDashboard
+	Id              string                 `json:"id"`   // guid
+	Name            string                 `json:"name"` // cli friendly
+	Description     string                 `json:"description"`
+	Metadata        map[string]string      `json:"metadata"`
+	Free            bool                   `json:"free"`
+	DashboardClient *CatalogModelDashboard `json:"dashboard_client"`
 }
 
 type CatalogModelDashboard struct {
-	Id          string
-	Secret      string
-	RedirectUrl string
+	Id          string `json:"id"`
+	Secret      string `json:"secret"`
+	RedirectUri string `json:"redirect_uri"`
 }
