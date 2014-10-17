@@ -64,3 +64,28 @@ func (self *MysqlBundleType) GetHealthChecks() []jxaas.HealthCheck {
 
 	return healthChecks
 }
+
+func (self *MysqlBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
+	credentials := map[string]string{}
+
+	properties := relationInfo.Properties
+
+	db := properties["database"]
+
+	// relationInfo.PublicAddresses ?
+	host := properties["host"]
+
+	port := properties["port"]
+	username := properties["user"]
+	password := properties["password"]
+
+	credentials["jdbcUrl"] = "jdbcmysql://" + username + ":" + password + "@" + host + ":" + port + "/" + db
+	credentials["uri"] = "mysql://" + username + ":" + password + "@" + host + ":" + port + "/" + db + "?reconnect=true"
+	credentials["name"] = db
+	credentials["hostname"] = host
+	credentials["port"] = port
+	credentials["username"] = username
+	credentials["password"] = password
+
+	return credentials, nil
+}

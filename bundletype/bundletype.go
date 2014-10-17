@@ -15,6 +15,8 @@ type BundleType interface {
 	PrimaryJujuService() string
 	PrimaryRelationKey() string
 
+	MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error)
+
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
@@ -56,6 +58,10 @@ func (self *baseBundleType) PrimaryRelationKey() string {
 func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error) {
 	bundleKey := self.Key()
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
+}
+
+func (self *baseBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
+	return map[string]string{}, nil
 }
 
 func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {

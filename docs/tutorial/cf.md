@@ -13,3 +13,13 @@ cf service-access
 cf enable-service-access mysql
 cf service-access
 ```
+
+```
+cf create-service mysql default mysql2
+cf services
+
+cf apps
+
+cf bind-service myapp mysql2
+
+cf env myapp

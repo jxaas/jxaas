@@ -20,7 +20,7 @@ func (self *EndpointServiceBinding) getInstanceId() string {
 	return self.Parent.getInstanceId()
 }
 
-func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*CfBindResponse, error) {
+func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpResponse, error) {
 	helper := self.getHelper()
 
 	instance := helper.getInstance(request.ServiceId, self.getInstanceId())
@@ -35,7 +35,6 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*CfBindResp
 	}
 
 	relationInfo, err := instance.GetRelationInfo(bundleType.PrimaryRelationKey())
-
 	if err != nil {
 		return nil, err
 	}
@@ -46,15 +45,18 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*CfBindResp
 		return nil, rs.ErrNotFound()
 	}
 
-	response := &CfBindResponse{}
-	response.Credentials = map[string]string{}
-
-	// XXX: How to map?
-	for k, v := range relationInfo.Properties {
-		response.Credentials[k] = v
+	credentials, err := bundleType.MapCfCredentials(relationInfo)
+	if err != nil {
+		log.Warn("Error mapping to CF", err)
+		return nil, err
 	}
 
-	return response, nil
+	response := &CfBindResponse{}
+	response.Credentials = credentials
+
+	httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
+	httpResponse.Content = response
+	return httpResponse, nil
 }
 
 func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUnbindResponse, error) {
@@ -77,13 +79,13 @@ func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUn
 }
 
 type CfBindRequest struct {
-	ServiceId string
-	PlanId    string
-	AppGuid   string
+	ServiceId string `json:"service_id"`
+	PlanId    string `json:"plan_id"`
+	AppGuid   string `json:"app_guid"`
 }
 
 type CfBindResponse struct {
-	Credentials map[string]string
+	Credentials map[string]string `json:"credentials"`
 }
 
 type CfUnbindResponse struct {
