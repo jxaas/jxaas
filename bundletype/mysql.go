@@ -79,8 +79,8 @@ func (self *MysqlBundleType) MapCfCredentials(relationInfo *model.RelationInfo) 
 	username := properties["user"]
 	password := properties["password"]
 
-	credentials["jdbcUrl"] = "jdbcmysql://" + username + ":" + password + "@" + host + ":" + port + "/" + db
-	credentials["uri"] = "mysql://" + username + ":" + password + "@" + host + ":" + port + "/" + db + "?reconnect=true"
+	credentials["jdbcUrl"] = "jdbc:mysql://" + username + ":" + password + "@" + host + ":" + port + "/" + db
+	credentials["uri"] = "mysql://" + username + ":" + password + "@" + host + ":" + port + "/" + db  //+ "?reconnect=true"
 	credentials["name"] = db
 	credentials["hostname"] = host
 	credentials["port"] = port

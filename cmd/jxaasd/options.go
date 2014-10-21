@@ -17,7 +17,7 @@ var (
 	flagPrivateUrl      = flag.String("private", "", "Private URL")
 	flagKeystoneUrl     = flag.String("openstack", "http://127.0.0.1:5000/v2.0", "URL for OpenStack Identity service")
 	flagAuth            = flag.String("auth", "development", "Authentication plugin to use")
-	flagCfTenantId      = flag.String("cf-tenant", "cloudfoundry", "TenantId to use for cloudfoundry services")
+	flagCfTenantId      = flag.String("cf-tenant", "cf", "TenantId to use for cloudfoundry services")
 )
 
 type Options struct {
