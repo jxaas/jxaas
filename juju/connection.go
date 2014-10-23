@@ -105,6 +105,26 @@ func (self *Client) canAccessPrefix(serviceId string) bool {
 	return true
 }
 
+func (self *Client) GetSystemStatus() (*api.Status, error) {
+	patterns := make([]string, 0)
+	status, err := self.client.Status(patterns)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return status, nil
+}
+
+func (self *Client) DestroyMachine(machineId string) error {
+	err := self.client.DestroyMachines(machineId)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (self *Client) GetServiceStatus(serviceId string) (*api.ServiceStatus, error) {
 	if !self.canAccess(serviceId) {
 		return nil, nil

@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"launchpad.net/juju-core/state/api"
+
 	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
@@ -96,6 +98,12 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 		scaling := &AutoScaleAllInstances{}
 		scaling.huddle = huddle
 		system.Scheduler.AddTask(scaling, time.Minute*1)
+	}
+
+	{
+		task := &CleanupOldMachines{}
+		task.huddle = huddle
+		system.Scheduler.AddTask(task, time.Minute*5)
 	}
 
 	return huddle, nil
@@ -310,4 +318,56 @@ func (self *Huddle) jujuPrefix(tenant string, bundleType bundletype.BundleType) 
 	prefix := "u" + tenant + "-" + bundleType.Key() + "-"
 
 	return prefix
+}
+
+func (self *Huddle) cleanupOldMachines(state map[string]int, threshold int) (map[string]int, error) {
+	status, err := self.JujuClient.GetSystemStatus()
+	if err != nil {
+		log.Warn("Error getting system status", err)
+		return nil, err
+	}
+
+	unitsByMachine := map[string]*api.UnitStatus{}
+
+	for _, serviceStatus := range status.Services {
+		for _, unitStatus := range serviceStatus.Units {
+			machineId := unitStatus.Machine
+			unitsByMachine[machineId] = &unitStatus
+		}
+	}
+
+	idleMachines := map[string]*api.MachineStatus{}
+	for machineId, machineStatus := range status.Machines {
+		unit := unitsByMachine[machineId]
+		if unit != nil {
+			continue
+		}
+		idleMachines[machineId] = &machineStatus
+	}
+
+	idleCounts := map[string]int{}
+	for machineId, _ := range idleMachines {
+		idleCount := state[machineId]
+		idleCount++
+		idleCounts[machineId] = idleCount
+	}
+
+	for machineId, idleCount := range idleCounts {
+		if idleCount < threshold {
+			continue
+		}
+
+		if machineId == "0" {
+			// Machine id 0 is special (the system machine); we can't destroy it
+			continue
+		}
+		
+		log.Info("Machine is idle; removing: %v", machineId);
+		err = self.JujuClient.DestroyMachine(machineId)
+		if err != nil {
+			log.Warn("Failed to delete machine %v", machineId, err)
+		}
+	}
+
+	return idleCounts, nil
 }
