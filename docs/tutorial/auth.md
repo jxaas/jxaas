@@ -39,8 +39,10 @@ keystone endpoint-create \
 ### Create a service account for jxaas
 
 ```
+IP=127.0.0.1
+
 JXAAS_PASSWORD=secret
-JXAAS_BASE=http://127.0.0.1:8080/xaas
+JXAAS_BASE=http://${IP}:8080/xaas
 
 keystone user-create --name=jxaas --pass=${JXAAS_PASSWORD}
 keystone user-role-add --user=jxaas --tenant=service --role=admin

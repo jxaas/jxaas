@@ -78,7 +78,7 @@ func GetOptions() *Options {
 	authMode = strings.ToLower(authMode)
 	if authMode == "openstack" {
 		keystoneUrl := *flagKeystoneUrl
-		self.Authenticator = auth.NewOpenstackTokenAuthenticator(keystoneUrl)
+		self.Authenticator = auth.NewOpenstackMultiAuthenticator(keystoneUrl)
 	} else if authMode == "development" {
 		self.Authenticator = auth.NewDevelopmentAuthenticator()
 	} else {

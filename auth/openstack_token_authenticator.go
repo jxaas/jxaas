@@ -22,8 +22,11 @@ func NewOpenstackTokenAuthenticator(keystoneEndpoint string) *OpenstackTokenAuth
 	return self
 }
 
-func (self *OpenstackTokenAuthenticator) Authenticate(tenantId string, req *http.Request) *Authentication {
+func (self *OpenstackTokenAuthenticator) Authenticate(tenantSpec string, req *http.Request) *Authentication {
 	var authorization *Authentication
+
+	// Becaue the user has authenticated with keystone, we expect a tenant id
+	tenantId := tenantSpec
 
 	authTokens := req.Header["X-Auth-Token"]
 	if len(authTokens) > 0 {

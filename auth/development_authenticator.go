@@ -15,8 +15,11 @@ func NewDevelopmentAuthenticator() *DevelopmentAuthenticator {
 	return self
 }
 
-func (self *DevelopmentAuthenticator) Authenticate(tenantId string, req *http.Request) *Authentication {
+func (self *DevelopmentAuthenticator) Authenticate(tenantSpec string, req *http.Request) *Authentication {
 	var authorization *Authentication
+
+	// We expect a jxaas tenantId
+	tenantId := tenantSpec
 
 	authorizationHeaders := req.Header["Authorization"]
 	if len(authorizationHeaders) > 0 {
@@ -28,10 +31,10 @@ func (self *DevelopmentAuthenticator) Authenticate(tenantId string, req *http.Re
 			usernameAndPassword := strings.SplitN(string(payload), ":", 2)
 
 			if len(usernameAndPassword) == 2 {
-				username := usernameAndPassword[0]
+				//username := usernameAndPassword[0]
 				password := usernameAndPassword[1]
 
-				if username == password {
+				if password == "secret" {
 					authorization = &Authentication{TenantId: tenantId, TenantName: tenantId}
 				}
 			}

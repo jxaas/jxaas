@@ -6,6 +6,7 @@ import (
 
 	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/inject"
+	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
 	"github.com/jxaas/jxaas/auth"
 )
@@ -30,6 +31,7 @@ func (self *EndpointXaas) Item(key string, injector inject.Injector, req *http.R
 	authentication := self.Authenticator.Authenticate(tenantId, req)
 
 	if authentication == nil {
+		log.Debug("Authentication failed")
 		notAuthorized := rs.HttpError(http.StatusUnauthorized)
 		notAuthorized.Headers["WWW-Authenticate"] = "Basic realm=\"jxaas\""
 		return nil, notAuthorized
