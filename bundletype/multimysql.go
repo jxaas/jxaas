@@ -30,7 +30,7 @@ func (self *MultitenantMysqlBundleType) IsStarted(annotations map[string]string)
 	return annotationsReady
 }
 
-func (self *MultitenantMysqlBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+func (self *MultitenantMysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
 	switch data.Relation {
 	case "db", "mysql":
 		data.Relation = "mysql"
@@ -38,7 +38,10 @@ func (self *MultitenantMysqlBundleType) BuildRelationInfo(relationInfo *model.Re
 		data.Relation = ""
 	}
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, data)
+	err := self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
+	if err != nil {
+		return err
+	}
 
 	// To override the IP / port
 	if data.ProxyHost != "" {
@@ -48,4 +51,6 @@ func (self *MultitenantMysqlBundleType) BuildRelationInfo(relationInfo *model.Re
 		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
 		relationInfo.PublicAddresses = []string{proxyHost}
 	}
+
+	return nil
 }

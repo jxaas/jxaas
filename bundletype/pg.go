@@ -29,8 +29,8 @@ func (self *PgBundleType) IsStarted(annotations map[string]string) bool {
 	return annotationsReady
 }
 
-func (self *PgBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+func (self *PgBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
 	data.Relation = "pgsql"
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, data)
+	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

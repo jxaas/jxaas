@@ -199,6 +199,8 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 			self.Relations = append(self.Relations, relation)
 		}
 	}
+	
+	self.Properties = getStringMap(dataMap, "properties")
 
 	return self, nil
 }

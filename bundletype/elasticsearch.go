@@ -29,8 +29,8 @@ func (self *ElasticsearchBundleType) IsStarted(annotations map[string]string) bo
 	return annotationsReady
 }
 
-func (self *ElasticsearchBundleType) BuildRelationInfo(relationInfo *model.RelationInfo, data *RelationBuilder) {
+func (self *ElasticsearchBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
 	data.Relation = "elasticsearch"
 
-	self.baseBundleType.BuildRelationInfo(relationInfo, data)
+	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

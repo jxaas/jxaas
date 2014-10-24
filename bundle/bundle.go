@@ -7,8 +7,9 @@ import (
 )
 
 type Bundle struct {
-	Services  map[string]*ServiceConfig
-	Relations []*RelationConfig
+	Services   map[string]*ServiceConfig
+	Relations  []*RelationConfig
+	Properties map[string]string
 }
 
 type ServiceConfig struct {

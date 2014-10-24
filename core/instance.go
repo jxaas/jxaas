@@ -19,9 +19,14 @@ import (
 )
 
 const (
+	// Used to store the (user-set) instance config
+	ANNOTATION_PREFIX_INSTANCECONFIG = "__jxaas_config_"
+
+	// Used to store relation properties
 	ANNOTATION_PREFIX_RELATIONINFO  = "__jxaas_relinfo_"
 	RELATIONINFO_METADATA_TIMESTAMP = "timestamp"
 
+	// Used to store a few system housekeeping items
 	ANNOTATION_PREFIX_SYSTEM = "__jxaas_system_"
 
 	// TODO: Should we just find the public-port annotation on the proxy?
@@ -179,7 +184,7 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	log.Debug("Service state: %v", status)
 
-	instance := model.MapToInstance(self.instanceId, status, config)
+	state := model.MapToInstance(self.instanceId, status, config)
 
 	serviceKeys, err := self.getBundleKeys()
 	if err != nil {
@@ -199,14 +204,14 @@ func (self *Instance) getState0() (*model.Instance, error) {
 		status, err := client.GetServiceStatus(serviceId)
 		if err != nil {
 			log.Warn("Error while fetching status of service: %v", serviceId, err)
-			instance.Status = "pending"
+			state.Status = "pending"
 		} else if status == nil {
 			log.Warn("No status for service: %v", serviceId)
-			instance.Status = "pending"
+			state.Status = "pending"
 		} else {
 			log.Info("Got state of secondary service: %v => %v", serviceId, status)
 			for _, unitStatus := range status.Units {
-				model.MergeInstanceStatus(instance, &unitStatus)
+				model.MergeInstanceStatus(state, &unitStatus)
 			}
 		}
 	}
@@ -226,12 +231,23 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	if !annotationsReady {
 		log.Info("Instance not started (per annotations): %v", annotations)
-		instance.Status = "pending"
+		state.Status = "pending"
 	}
 
-	log.Info("Status of %v: %v", primaryServiceId, instance.Status)
+	log.Info("Status of %v: %v", primaryServiceId, state.Status)
 
-	return instance, nil
+	state.Config = map[string]string{}
+
+	for tagName, v := range annotations {
+		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
+			key := tagName[len(ANNOTATION_PREFIX_INSTANCECONFIG):]
+			state.Config[key] = v
+		}
+	}
+
+	// TODO: Fetch inherited properties from primary service and merge
+
+	return state, nil
 }
 
 // Deletes the instance.
@@ -304,6 +320,15 @@ func (self *Instance) SetRelationInfo(unitId string, relationId string, properti
 	}
 	pairs[ANNOTATION_PREFIX_RELATIONINFO+unitId+"_"+relationId+"_"+RELATIONINFO_METADATA_TIMESTAMP] = strconv.FormatInt(time.Now().Unix(), 10)
 
+	return self.setServiceAnnotations(pairs)
+}
+
+// Store the instance configuration, as set by the user
+func (self *Instance) setInstanceConfig(properties map[string]string) error {
+	pairs := make(map[string]string)
+	for k, v := range properties {
+		pairs[ANNOTATION_PREFIX_INSTANCECONFIG+k] = v
+	}
 	return self.setServiceAnnotations(pairs)
 }
 
@@ -460,6 +485,13 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	builder.Relation = relationKey
 	builder.Properties = relationProperties
 
+	// Can we rationalize all this?  We repeat a lot of calls right now...
+	builder.InstanceConfig, err = self.getState0()
+	if err != nil {
+		log.Warn("Error getting instance state", err)
+		return nil, err
+	}
+
 	// TODO: Skip proxy host on EC2?
 	useProxyHost := true
 
@@ -484,8 +516,18 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	//	log.Debug("relationProperties: %v", relationProperties)
 	//	log.Debug("relationMetadata: %v", relationMetadata)
 
+	// TODO: Can we refactor a lot of the above into the current state?
+	context := self.buildCurrentTemplateContext()
+	bundle, err := self.getBundle(context)
+	if err != nil {
+		return nil, err
+	}
+
 	relationInfo.Timestamp = relationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
-	self.bundleType.BuildRelationInfo(relationInfo, builder)
+	err = self.bundleType.BuildRelationInfo(bundle, relationInfo, builder)
+	if err != nil {
+		return nil, err
+	}
 
 	return relationInfo, nil
 }
@@ -507,6 +549,15 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	context.SystemImplicits["jxaas-secret"] = "rpcsecret"
 
 	context.PublicPortAssigner = &StubPortAssigner{}
+
+	return context
+}
+
+func (self *Instance) buildCurrentTemplateContext() *bundle.TemplateContext {
+	context := self.buildSkeletonTemplateContext()
+
+	// TODO: Add current configuration
+	log.Warn("buildCurrentTemplateContext is stub-implemented")
 
 	return context
 }
@@ -553,14 +604,35 @@ func (self *Instance) getBundleKeys() (map[string]string, error) {
 // Ensures the instance is created and has the specified configuration.
 // This method is (supposed to be) idempotent.
 func (self *Instance) Configure(request *model.Instance) error {
+	var err error
+
 	jujuClient := self.huddle.JujuClient
 
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
-	if request.Config == nil {
-		request.Config = make(map[string]string)
+
+	state, err := self.getState0()
+	if err != nil {
+		log.Warn("Error getting instance state", err)
+		return err
 	}
+
+	// Record the (requested) configuration options
+	instanceConfigChanges := request.Config
+
+	// Merge the new configuration options with the existing ones
+	mergedConfig := make(map[string]string)
+	if state != nil {
+		for k, v := range state.Config {
+			mergedConfig[k] = v
+		}
+	}
+	for k, v := range request.Config {
+		mergedConfig[k] = v
+	}
+	request.Config = mergedConfig
+
 	request.ConfigParameters = nil
 
 	context := self.buildSkeletonTemplateContext()
@@ -591,6 +663,12 @@ func (self *Instance) Configure(request *model.Instance) error {
 		return err
 	}
 
+	// Save changed config
+	if instanceConfigChanges != nil {
+		self.setInstanceConfig(instanceConfigChanges)
+	}
+
+	// TODO: Is this idempotent?
 	if publicPortAssigner.Port != 0 {
 		self.setPublicPort(publicPortAssigner.Port)
 	}
