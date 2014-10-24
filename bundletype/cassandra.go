@@ -17,6 +17,7 @@ type CassandraBundleType struct {
 func NewCassandraBundleType(bundleStore *bundle.BundleStore) *CassandraBundleType {
 	self := &CassandraBundleType{}
 	self.key = "cassandra"
+	self.primaryRelationKey = "cassandra"
 	self.bundleStore = bundleStore
 	return self
 }

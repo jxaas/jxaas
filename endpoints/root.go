@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/justinsb/gova/assert"
-	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
 	"github.com/jxaas/jxaas/auth"
@@ -20,7 +19,7 @@ type Authorization struct {
 	TenantName string
 }
 
-func (self *EndpointXaas) Item(key string, injector inject.Injector, req *http.Request) (*EndpointTenant, error) {
+func (self *EndpointXaas) Item(key string, req *http.Request) (*EndpointTenant, error) {
 	child := &EndpointTenant{}
 
 	tenantId := key

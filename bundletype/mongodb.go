@@ -14,6 +14,7 @@ type MongodbBundleType struct {
 func NewMongodbBundleType(bundleStore *bundle.BundleStore) *MongodbBundleType {
 	self := &MongodbBundleType{}
 	self.key = "mongodb"
+	self.primaryRelationKey = "mongodb"
 	self.bundleStore = bundleStore
 	return self
 }
@@ -30,7 +31,7 @@ func (self *MongodbBundleType) IsStarted(annotations map[string]string) bool {
 }
 
 func (self *MongodbBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	data.Relation = "mongodb"
+	data.Relation = self.primaryRelationKey
 
 	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

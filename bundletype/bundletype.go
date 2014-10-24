@@ -11,7 +11,12 @@ import (
 
 type BundleType interface {
 	Key() string
+
 	PrimaryJujuService() string
+	PrimaryRelationKey() string
+
+	MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error)
+
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
@@ -33,8 +38,9 @@ type RelationBuilder struct {
 }
 
 type baseBundleType struct {
-	key         string
-	bundleStore *bundle.BundleStore
+	key                string
+	primaryRelationKey string
+	bundleStore        *bundle.BundleStore
 }
 
 func (self *baseBundleType) Key() string {
@@ -45,9 +51,17 @@ func (self *baseBundleType) PrimaryJujuService() string {
 	return self.key
 }
 
+func (self *baseBundleType) PrimaryRelationKey() string {
+	return self.primaryRelationKey
+}
+
 func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error) {
 	bundleKey := self.Key()
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
+}
+
+func (self *baseBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
+	return map[string]string{}, nil
 }
 
 func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {

@@ -14,6 +14,7 @@ type ElasticsearchBundleType struct {
 func NewElasticsearchBundleType(bundleStore *bundle.BundleStore) *ElasticsearchBundleType {
 	self := &ElasticsearchBundleType{}
 	self.key = "es"
+	self.primaryRelationKey = "elasticsearch"
 	self.bundleStore = bundleStore
 	return self
 }
@@ -30,7 +31,7 @@ func (self *ElasticsearchBundleType) IsStarted(annotations map[string]string) bo
 }
 
 func (self *ElasticsearchBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	data.Relation = "elasticsearch"
+	data.Relation = self.primaryRelationKey
 
 	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

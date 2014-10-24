@@ -14,6 +14,7 @@ type PgBundleType struct {
 func NewPgBundleType(bundleStore *bundle.BundleStore) *PgBundleType {
 	self := &PgBundleType{}
 	self.key = "pg"
+	self.primaryRelationKey = "pgsql"
 	self.bundleStore = bundleStore
 	return self
 }
@@ -30,7 +31,7 @@ func (self *PgBundleType) IsStarted(annotations map[string]string) bool {
 }
 
 func (self *PgBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	data.Relation = "pgsql"
+	data.Relation = self.primaryRelationKey
 
 	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

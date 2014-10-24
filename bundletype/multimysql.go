@@ -15,6 +15,7 @@ type MultitenantMysqlBundleType struct {
 func NewMultitenantMysqlBundleType(bundleStore *bundle.BundleStore) *MultitenantMysqlBundleType {
 	self := &MultitenantMysqlBundleType{}
 	self.key = "multimysql"
+	self.primaryRelationKey = "mysql"
 	self.bundleStore = bundleStore
 	return self
 }
@@ -31,12 +32,8 @@ func (self *MultitenantMysqlBundleType) IsStarted(annotations map[string]string)
 }
 
 func (self *MultitenantMysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	switch data.Relation {
-	case "db", "mysql":
-		data.Relation = "mysql"
-	default:
-		data.Relation = ""
-	}
+		data.Relation = self.primaryRelationKey
+
 
 	err := self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 	if err != nil {
