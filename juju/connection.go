@@ -93,18 +93,6 @@ func DirectClientFactory(conf *config.Config) (*Client, error) {
 	return wrapper, err
 }
 
-func (self *Client) canAccess(serviceId string) bool {
-	// Maybe we should panic here
-	log.Warn("Juju connection canAccess is stub-implemented")
-	return true
-}
-
-func (self *Client) canAccessPrefix(serviceId string) bool {
-	// Maybe we should panic here
-	log.Warn("Juju connection canAccessPrefix is stub-implemented")
-	return true
-}
-
 func (self *Client) GetSystemStatus() (*api.Status, error) {
 	patterns := make([]string, 0)
 	status, err := self.client.Status(patterns)
@@ -126,10 +114,6 @@ func (self *Client) DestroyMachine(machineId string) error {
 }
 
 func (self *Client) GetServiceStatus(serviceId string) (*api.ServiceStatus, error) {
-	if !self.canAccess(serviceId) {
-		return nil, nil
-	}
-
 	// TODO: Is this efficient?  Any direct just-this-service call?
 	patterns := make([]string, 1)
 	patterns[0] = serviceId
@@ -155,10 +139,6 @@ func (self *Client) GetServiceStatus(serviceId string) (*api.ServiceStatus, erro
 }
 
 func (self *Client) GetServiceStatusList(prefix string) (map[string]api.ServiceStatus, error) {
-	if !self.canAccessPrefix(prefix) {
-		return nil, nil
-	}
-
 	patterns := make([]string, 1)
 	patterns[0] = prefix + "*"
 	status, err := self.client.Status(patterns)
@@ -172,10 +152,6 @@ func (self *Client) GetServiceStatusList(prefix string) (map[string]api.ServiceS
 }
 
 func (self *Client) FindConfig(serviceId string) (*params.ServiceGetResults, error) {
-	if !self.canAccess(serviceId) {
-		return nil, nil
-	}
-
 	config, err := self.client.ServiceGet(serviceId)
 	if err != nil {
 		paramsError, ok := err.(*params.Error)
@@ -190,10 +166,6 @@ func (self *Client) FindConfig(serviceId string) (*params.ServiceGetResults, err
 }
 
 func (self *Client) SetConfig(serviceId string, options map[string]string) error {
-	if !self.canAccess(serviceId) {
-		return fmt.Errorf("Unknown service: %v", serviceId)
-	}
-
 	err := self.client.ServiceSet(serviceId, options)
 	if err != nil {
 		return err
@@ -203,10 +175,6 @@ func (self *Client) SetConfig(serviceId string, options map[string]string) error
 }
 
 func (self *Client) SetExposed(serviceId string, exposed bool) error {
-	if !self.canAccess(serviceId) {
-		return fmt.Errorf("Unknown service: %v", serviceId)
-	}
-
 	var err error
 	if exposed {
 		err = self.client.ServiceExpose(serviceId)
@@ -222,10 +190,6 @@ func (self *Client) SetExposed(serviceId string, exposed bool) error {
 }
 
 func (self *Client) ServiceDestroy(serviceId string) error {
-	if !self.canAccess(serviceId) {
-		return nil
-	}
-
 	return self.client.ServiceDestroy(serviceId)
 }
 
@@ -250,10 +214,6 @@ func (c *Client) serviceDeploy(charmURL string, serviceName string, numUnits int
 }
 
 func (self *Client) ServiceDeploy(charmUrl string, serviceId string, numUnits int, configYAML string) error {
-	if !self.canAccess(serviceId) {
-		return nil
-	}
-
 	var constraints constraints.Value
 	var toMachineSpec string
 
@@ -276,14 +236,6 @@ func (self *Client) CharmInfo(charmUrl string) (*api.CharmInfo, error) {
 }
 
 func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, error) {
-	if !self.canAccess(from) {
-		return nil, fmt.Errorf("Cannot find service")
-	}
-
-	if !self.canAccess(to) {
-		return nil, fmt.Errorf("Cannot find service")
-	}
-
 	results, err := self.client.AddRelation(from, to)
 
 	if err != nil {
@@ -306,10 +258,6 @@ func (self *Client) PutRelation(from, to string) (*params.AddRelationResults, er
 
 // Adds annotations on the specified service
 func (self *Client) SetServiceAnnotations(serviceId string, pairs map[string]string) error {
-	if !self.canAccess(serviceId) {
-		return nil
-	}
-
 	annotateTag := "service-" + serviceId
 
 	return self.client.SetAnnotations(annotateTag, pairs)
@@ -317,10 +265,6 @@ func (self *Client) SetServiceAnnotations(serviceId string, pairs map[string]str
 
 // Deletes annotations from the specified service
 func (self *Client) DeleteServiceAnnotations(serviceId string, keys []string) error {
-	if !self.canAccess(serviceId) {
-		return nil
-	}
-
 	annotateTag := "service-" + serviceId
 
 	pairs := map[string]string{}
@@ -333,10 +277,6 @@ func (self *Client) DeleteServiceAnnotations(serviceId string, keys []string) er
 
 // Retrieves all annotations on the service
 func (self *Client) GetServiceAnnotations(serviceId string) (map[string]string, error) {
-	if !self.canAccess(serviceId) {
-		return nil, nil
-	}
-
 	annotateTag := "service-" + serviceId
 
 	annotations, err := self.client.GetAnnotations(annotateTag)
@@ -344,10 +284,6 @@ func (self *Client) GetServiceAnnotations(serviceId string) (map[string]string, 
 }
 
 func (self *Client) AddServiceUnits(serviceId string, numUnits int) ([]string, error) {
-	if !self.canAccess(serviceId) {
-		return nil, fmt.Errorf("Unknown service: %v", serviceId)
-	}
-
 	machineSpecString := ""
 	units, err := self.client.AddServiceUnits(serviceId, numUnits, machineSpecString)
 	if err != nil {
@@ -358,10 +294,6 @@ func (self *Client) AddServiceUnits(serviceId string, numUnits int) ([]string, e
 }
 
 func (self *Client) DestroyUnit(serviceId string, unitId int) error {
-	if !self.canAccess(serviceId) {
-		return fmt.Errorf("Unknown service: %v", serviceId)
-	}
-
 	unitName := serviceId + "/" + strconv.Itoa(unitId)
 	err := self.client.DestroyServiceUnits(unitName)
 	if err != nil {
@@ -372,10 +304,6 @@ func (self *Client) DestroyUnit(serviceId string, unitId int) error {
 }
 
 func (self *Client) Run(serviceId string, unitIds []string, command string, timeout time.Duration) ([]params.RunResult, error) {
-	if !self.canAccess(serviceId) {
-		return nil, fmt.Errorf("Unknown service: %v", serviceId)
-	}
-
 	params := params.RunParams{
 		Commands: command,
 		Timeout:  5 * time.Second,
