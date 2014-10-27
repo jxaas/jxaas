@@ -18,7 +18,10 @@ func NewMongodbBundleType(bundleStore *bundle.BundleStore) *MongodbBundleType {
 	return self
 }
 
-func (self *MongodbBundleType) IsStarted(annotations map[string]string) bool {
+func (self *MongodbBundleType) IsStarted(allAnnotations map[string]map[string]string) bool {
+	// TODO: Loop over all when no primaryRelationKey?
+	annotations := allAnnotations[self.primaryRelationKey]
+
 	annotationsReady := false
 	for key, _ := range annotations {
 		if strings.HasSuffix(key, "__hostname") {

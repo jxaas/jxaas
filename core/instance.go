@@ -169,7 +169,7 @@ type instanceState struct {
 	RelationMetadata map[string]string
 	PublicAddresses  []string
 
-	Relations []model.RelationProperty
+	Relations map[string]map[string]string
 }
 
 // Returns the current state of the instance
@@ -244,21 +244,12 @@ func (self *Instance) getState0() (*instanceState, error) {
 
 	log.Info("Annotations on %v: %v", primaryServiceId, annotations)
 
-	// TODO: Only if otherwise ready
-	annotationsReady := self.bundleType.IsStarted(annotations)
-	if !annotationsReady {
-		log.Info("Instance not started (per annotations): %v", annotations)
-		state.Model.Status = "pending"
-	}
-
-	log.Info("Status of %v: %v", primaryServiceId, state.Model.Status)
-
 	state.Model.Options = map[string]string{}
 
 	state.SystemProperties = map[string]string{}
 	state.RelationMetadata = map[string]string{}
 
-	state.Relations = []model.RelationProperty{}
+	relationList := []model.RelationProperty{}
 
 	for tagName, v := range annotations {
 		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
@@ -302,11 +293,31 @@ func (self *Instance) getState0() (*instanceState, error) {
 			relationProperty.Value = v
 			relationProperty.RelationType = relationTokens[0]
 			relationProperty.RelationKey = relationTokens[1]
-			state.Relations = append(state.Relations, relationProperty)
+			relationList = append(relationList, relationProperty)
 
 			continue
 		}
 	}
+
+	state.Relations = map[string]map[string]string{}
+	for _, relation := range relationList {
+		relationType := relation.RelationType
+		relations, found := state.Relations[relationType]
+		if !found {
+			relations = map[string]string{}
+			state.Relations[relationType] = relations
+		}
+		relations[relation.Key] = relation.Value
+	}
+
+	// TODO: Only if otherwise ready?
+	annotationsReady := self.bundleType.IsStarted(state.Relations)
+	if !annotationsReady {
+		log.Info("Instance not started (per annotations): %v", state.Relations)
+		state.Model.Status = "pending"
+	}
+
+	log.Info("Status of %v: %v", primaryServiceId, state.Model.Status)
 
 	// TODO: Fetch inherited properties from primary service and merge
 
@@ -545,16 +556,7 @@ func (self *Instance) buildCurrentTemplateContext(state *instanceState) (*bundle
 	context.PublicPortAssigner = publicPortAssigner
 
 	// Populate relation info
-	context.Relations = map[string]map[string]string{}
-	for _, relation := range state.Relations {
-		relationType := relation.RelationType
-		relations, found := context.Relations[relationType]
-		if !found {
-			relations = map[string]string{}
-			context.Relations[relationType] = relations
-		}
-		relations[relation.Key] = relation.Value
-	}
+	context.Relations = state.Relations
 
 	// Populate proxy
 	// TODO: Skip proxy host on EC2?

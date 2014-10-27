@@ -18,7 +18,10 @@ func NewPgBundleType(bundleStore *bundle.BundleStore) *PgBundleType {
 	return self
 }
 
-func (self *PgBundleType) IsStarted(annotations map[string]string) bool {
+func (self *PgBundleType) IsStarted(allAnnotations map[string]map[string]string) bool {
+	// TODO: Loop over all when no primaryRelationKey?
+	annotations := allAnnotations[self.primaryRelationKey]
+
 	annotationsReady := false
 	for key, _ := range annotations {
 		if strings.HasSuffix(key, "__database") {

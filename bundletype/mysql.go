@@ -1,10 +1,6 @@
 package bundletype
 
-import (
-	"strings"
-
-	"github.com/jxaas/jxaas/bundle"
-)
+import "github.com/jxaas/jxaas/bundle"
 
 type MysqlBundleType struct {
 	baseBundleType
