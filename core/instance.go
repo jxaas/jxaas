@@ -733,11 +733,11 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	//			continue
 	//		}
 
-	for _, healthCheck := range healthChecks {
+	for healthCheckId, healthCheck := range healthChecks {
 		result, err := healthCheck.Run(self, services, repair)
 
 		if err != nil {
-			log.Info("Health check failed: %v", healthCheck, err)
+			log.Info("Health check %v failed", healthCheckId, err)
 			return nil, err
 		}
 
