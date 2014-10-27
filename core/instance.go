@@ -81,6 +81,11 @@ type Instance struct {
 	primaryServiceId string
 }
 
+// Implement fmt.Stringer
+func (self *Instance) String() string {
+	return "Instance::" + self.tenant + ":" + self.bundleType.Key() + ":" + self.instanceId
+}
+
 // Returns the current state of the instance
 func (self *Instance) GetState() (*model.Instance, error) {
 	state, err := self.getState0()
