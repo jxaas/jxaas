@@ -6,6 +6,7 @@ import (
 	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
+	"github.com/jxaas/jxaas/checks"
 	"github.com/jxaas/jxaas/model"
 )
 
@@ -22,7 +23,7 @@ type BundleType interface {
 
 	// Lets the bundle modify the relations that are returned
 	BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error
-	GetHealthChecks() []jxaas.HealthCheck
+	GetHealthChecks(bundle *bundle.Bundle) (map[string]jxaas.HealthCheck, error)
 
 	GetDefaultScalingPolicy() *model.ScalingPolicy
 }
@@ -115,8 +116,17 @@ func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInf
 	return nil
 }
 
-func (self *baseBundleType) GetHealthChecks() []jxaas.HealthCheck {
-	return []jxaas.HealthCheck{}
+func (self *baseBundleType) GetHealthChecks(bundle *bundle.Bundle) (map[string]jxaas.HealthCheck, error) {
+	mapped := map[string]jxaas.HealthCheck{}
+	for k, definition := range bundle.HealthChecks {
+		if definition.Service != "" {
+			check := &checks.ServiceHealthCheck{}
+			check.ServiceName = definition.Service
+			mapped[k] = check
+		}
+	}
+
+	return mapped, nil
 }
 
 func (self *baseBundleType) GetDefaultScalingPolicy() *model.ScalingPolicy {

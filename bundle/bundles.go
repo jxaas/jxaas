@@ -9,6 +9,7 @@ import (
 
 type PortAssigner interface {
 	AssignPort() (int, error)
+	GetAssignedPort() (int, bool)
 }
 
 type TemplateContext struct {

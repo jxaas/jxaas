@@ -38,3 +38,7 @@ mysql:
 
     - - "stubclient:website"
       - "{{.SystemServices.haproxy}}:reverseproxy"
+
+  checks:
+    service-mysql:
+      service: mysql

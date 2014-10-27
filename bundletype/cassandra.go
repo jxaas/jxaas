@@ -3,10 +3,7 @@ package bundletype
 import (
 	"strconv"
 	"strings"
-
-	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/checks"
 	"github.com/jxaas/jxaas/model"
 )
 
@@ -51,14 +48,4 @@ func (self *CassandraBundleType) BuildRelationInfo(bundle *bundle.Bundle, relati
 	}
 
 	return nil
-}
-
-func (self *CassandraBundleType) GetHealthChecks() []jxaas.HealthCheck {
-	healthChecks := self.baseBundleType.GetHealthChecks()
-
-	checkService := &checks.ServiceHealthCheck{}
-	checkService.ServiceName = "cassandra"
-	healthChecks = append(healthChecks, checkService)
-
-	return healthChecks
 }

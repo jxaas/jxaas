@@ -7,6 +7,10 @@ func (self *StubPortAssigner) AssignPort() (int, error) {
 	return 0, nil
 }
 
+func (self *StubPortAssigner) GetAssignedPort() (int, bool) {
+	return 0, false
+}
+
 type InstancePublicPortAssigner struct {
 	Instance *Instance
 	Assigned bool
@@ -21,4 +25,8 @@ func (self *InstancePublicPortAssigner) AssignPort() (int, error) {
 	}
 	self.Port = port
 	return port, err
+}
+
+func (self *InstancePublicPortAssigner) GetAssignedPort() (int, bool) {
+	return self.Port, self.Assigned
 }

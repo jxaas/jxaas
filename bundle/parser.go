@@ -139,6 +139,17 @@ func parseRelationConfig(config interface{}) (*RelationConfig, error) {
 	return self, nil
 }
 
+func parseHealthCheck(config interface{}) (*HealthCheckConfig, error) {
+	configMap, ok := config.(map[interface{}]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Expected generic map for health check, found %T", config)
+	}
+
+	self := &HealthCheckConfig{}
+	self.Service = getString(configMap, "service")
+	return self, nil
+}
+
 func ParseBundle(yaml string) (map[string]*Bundle, error) {
 	config := map[string]interface{}{}
 	err := goyaml.Unmarshal([]byte(yaml), &config)
@@ -199,7 +210,22 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 			self.Relations = append(self.Relations, relation)
 		}
 	}
-	
+
+	self.HealthChecks = map[string]*HealthCheckConfig{}
+	healthChecks := dataMap["checks"]
+	if healthChecks != nil {
+		healthChecksMap, ok := healthChecks.(map[interface{}]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for health checks, found %T", services)
+		}
+		for healthCheckKey, healthCheckDefinition := range healthChecksMap {
+			self.HealthChecks[asString(healthCheckKey)], err = parseHealthCheck(healthCheckDefinition)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	self.Properties = getStringMap(dataMap, "properties")
 
 	return self, nil

@@ -7,9 +7,10 @@ import (
 )
 
 type Bundle struct {
-	Services   map[string]*ServiceConfig
-	Relations  []*RelationConfig
-	Properties map[string]string
+	Services     map[string]*ServiceConfig
+	Relations    []*RelationConfig
+	Properties   map[string]string
+	HealthChecks map[string]*HealthCheckConfig
 }
 
 type ServiceConfig struct {
@@ -24,6 +25,10 @@ type ServiceConfig struct {
 type RelationConfig struct {
 	From string
 	To   string
+}
+
+type HealthCheckConfig struct {
+	Service string
 }
 
 // Implement fmt.Stringer

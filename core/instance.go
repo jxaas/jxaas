@@ -517,7 +517,10 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	//	log.Debug("relationMetadata: %v", relationMetadata)
 
 	// TODO: Can we refactor a lot of the above into the current state?
-	context := self.buildCurrentTemplateContext()
+	context, err := self.buildCurrentTemplateContext()
+	if err != nil {
+		return nil, err
+	}
 	bundle, err := self.getBundle(context)
 	if err != nil {
 		return nil, err
@@ -553,13 +556,27 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	return context
 }
 
-func (self *Instance) buildCurrentTemplateContext() *bundle.TemplateContext {
+func (self *Instance) buildCurrentTemplateContext() (*bundle.TemplateContext, error) {
+	var err error
+
+	state, err := self.getState0()
+	if err != nil {
+		log.Warn("Error getting instance state", err)
+		return nil, err
+	}
+
 	context := self.buildSkeletonTemplateContext()
 
-	// TODO: Add current configuration
-	log.Warn("buildCurrentTemplateContext is stub-implemented")
+	// TODO: Need to determine current # of units
+	context.NumberUnits = 1
 
-	return context
+	context.Options = state.Config
+
+	publicPortAssigner := &InstancePublicPortAssigner{}
+	publicPortAssigner.Instance = self
+	context.PublicPortAssigner = publicPortAssigner
+
+	return context, nil
 }
 
 func (self *Instance) getBundle(context *bundle.TemplateContext) (*bundle.Bundle, error) {
@@ -612,44 +629,24 @@ func (self *Instance) Configure(request *model.Instance) error {
 	request.Id = ""
 	request.Units = nil
 
-	state, err := self.getState0()
-	if err != nil {
-		log.Warn("Error getting instance state", err)
-		return err
-	}
-
 	// Record the (requested) configuration options
 	instanceConfigChanges := request.Config
 
+	// Get the existing configuration
+	context, err := self.buildCurrentTemplateContext()
+	if err != nil {
+		return err
+	}
+
 	// Merge the new configuration options with the existing ones
-	mergedConfig := make(map[string]string)
-	if state != nil {
-		for k, v := range state.Config {
-			mergedConfig[k] = v
-		}
-	}
-	for k, v := range request.Config {
-		mergedConfig[k] = v
-	}
-	request.Config = mergedConfig
-
-	request.ConfigParameters = nil
-
-	context := self.buildSkeletonTemplateContext()
-
-	if request.NumberUnits == nil {
-		// TODO: Need to determine current # of units
-		context.NumberUnits = 1
-	} else {
+	if request.NumberUnits != nil {
 		context.NumberUnits = *request.NumberUnits
 	}
+	for k, v := range request.Config {
+		context.Options[k] = v
+	}
 
-	context.Options = request.Config
-
-	publicPortAssigner := &InstancePublicPortAssigner{}
-	publicPortAssigner.Instance = self
-	context.PublicPortAssigner = publicPortAssigner
-
+	// Create a bundle from the new configuration
 	b, err := self.getBundle(context)
 	if err != nil {
 		return err
@@ -669,11 +666,26 @@ func (self *Instance) Configure(request *model.Instance) error {
 	}
 
 	// TODO: Is this idempotent?
-	if publicPortAssigner.Port != 0 {
-		self.setPublicPort(publicPortAssigner.Port)
+	publicPortAssigner := context.PublicPortAssigner
+	port, assigned := publicPortAssigner.GetAssignedPort()
+	if assigned {
+		self.setPublicPort(port)
 	}
 
 	return nil
+}
+
+func (self *Instance) getCurrentBundle() (*bundle.Bundle, error) {
+	context, err := self.buildCurrentTemplateContext()
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := self.getBundle(context)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 // Gets the Juju client
@@ -696,10 +708,18 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 		return nil, rs.ErrNotFound()
 	}
 
+	bundle, err := self.getCurrentBundle()
+	if err != nil {
+		return nil, err
+	}
+
 	health := &model.Health{}
 	health.Units = map[string]bool{}
 
-	healthChecks := self.bundleType.GetHealthChecks()
+	healthChecks, err := self.bundleType.GetHealthChecks(bundle)
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO: We can't "juju run" on subordinate charms
 	//		charm := self.huddle.getCharmInfo(service.Charm)

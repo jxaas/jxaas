@@ -2,10 +2,7 @@ package bundletype
 
 import (
 	"strings"
-
-	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/checks"
 	"github.com/jxaas/jxaas/model"
 )
 
@@ -53,16 +50,6 @@ func (self *MysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationIn
 	//		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
 	//		relationInfo.PublicAddresses = []string{proxyHost}
 	//	}
-}
-
-func (self *MysqlBundleType) GetHealthChecks() []jxaas.HealthCheck {
-	healthChecks := self.baseBundleType.GetHealthChecks()
-
-	checkService := &checks.ServiceHealthCheck{}
-	checkService.ServiceName = "mysql"
-	healthChecks = append(healthChecks, checkService)
-
-	return healthChecks
 }
 
 func (self *MysqlBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {

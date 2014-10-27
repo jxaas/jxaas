@@ -19,3 +19,7 @@ cassandra:
       - "cassandra:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
+
+  checks:
+    service-main:
+      service: cassandra
