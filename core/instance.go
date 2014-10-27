@@ -172,6 +172,21 @@ type instanceState struct {
 	Relations map[string]map[string]string
 }
 
+// TODO: Get rid of relationProperty entirely?
+type relationProperty struct {
+	UnitId string
+
+	RelationType string
+	RelationKey  string
+
+	Key   string
+	Value string
+}
+
+func (self *relationProperty) String() string {
+	return log.AsJson(self)
+}
+
 // Returns the current state of the instance
 func (self *Instance) getState0() (*instanceState, error) {
 	jujuClient := self.GetJujuClient()
@@ -249,7 +264,7 @@ func (self *Instance) getState0() (*instanceState, error) {
 	state.SystemProperties = map[string]string{}
 	state.RelationMetadata = map[string]string{}
 
-	relationList := []model.RelationProperty{}
+	relationList := []relationProperty{}
 
 	for tagName, v := range annotations {
 		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
@@ -286,7 +301,7 @@ func (self *Instance) getState0() (*instanceState, error) {
 				continue
 			}
 
-			relationProperty := model.RelationProperty{}
+			relationProperty := relationProperty{}
 			relationProperty.UnitId = unitId
 			assert.That(key[0] == '_')
 			relationProperty.Key = key[1:]
