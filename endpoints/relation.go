@@ -21,7 +21,7 @@ func (self *EndpointRelation) HttpGet(apiclient *juju.Client) (*model.RelationIn
 	instance := self.getInstance()
 
 	relationKey := self.RelationKey
-	relationInfo, err := instance.GetRelationInfo(relationKey)
+	_, relationInfo, err := instance.GetRelationInfo(relationKey)
 
 	if err != nil {
 		return nil, err

@@ -95,7 +95,7 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	}
 
 	if state == nil {
-		return state, nil
+		return nil, nil
 	}
 
 	// We inject an artificial pause of 10 seconds between Juju telling us the service is ready,
@@ -107,22 +107,15 @@ func (self *Instance) GetState() (*model.Instance, error) {
 	jujuClient := self.GetJujuClient()
 	primaryServiceId := self.primaryServiceId
 
-	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
-	if err != nil {
-		log.Warn("Error getting annotations", err)
-		// TODO: Ignore?
-		return nil, err
-	}
-
-	lastState := annotations[ANNOTATION_KEY_LAST_STATE]
-	lastStateTimestamp := annotations[ANNOTATION_KEY_LAST_STATE_TIMESTAMP]
+	lastState := state.SystemProperties[SYSTEM_KEY_LAST_STATE]
+	lastStateTimestamp := state.SystemProperties[SYSTEM_KEY_LAST_STATE_TIMESTAMP]
 
 	shouldUpdate := true
 	delay := false
 
 	now := time.Now().Unix()
 
-	if state.Status == "started" && lastState != "started" {
+	if state.Model.Status == "started" && lastState != "started" {
 		if lastStateTimestamp == "" {
 			shouldUpdate = true
 			delay = true
@@ -146,7 +139,7 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	if shouldUpdate {
 		pairs := make(map[string]string)
-		pairs[ANNOTATION_KEY_LAST_STATE] = state.Status
+		pairs[ANNOTATION_KEY_LAST_STATE] = state.Model.Status
 		pairs[ANNOTATION_KEY_LAST_STATE_TIMESTAMP] = strconv.FormatInt(now, 10)
 
 		jujuClient.SetServiceAnnotations(primaryServiceId, pairs)
@@ -154,10 +147,10 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	if delay {
 		log.Warn("Delaying service ready for %v", primaryServiceId)
-		state.Status = "pending"
+		state.Model.Status = "pending"
 	}
 
-	return state, nil
+	return state.Model, nil
 }
 
 // Like GetState, but only returns true/false if it exists; may be much faster
@@ -170,12 +163,23 @@ func (self *Instance) Exists() (bool, error) {
 	return (info != nil), nil
 }
 
+type instanceState struct {
+	Model            *model.Instance
+	SystemProperties map[string]string
+	RelationMetadata map[string]string
+	PublicAddresses  []string
+
+	Relations []model.RelationProperty
+}
+
 // Returns the current state of the instance
-func (self *Instance) getState0() (*model.Instance, error) {
+func (self *Instance) getState0() (*instanceState, error) {
 	jujuClient := self.GetJujuClient()
 
 	primaryServiceId := self.primaryServiceId
 	status, err := jujuClient.GetServiceStatus(primaryServiceId)
+
+	// XXX: check err?
 
 	jujuService, err := jujuClient.FindService(primaryServiceId)
 	if err != nil {
@@ -189,7 +193,16 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	log.Debug("Service state: %v", status)
 
-	state := model.MapToInstance(self.instanceId, status, jujuService)
+	state := &instanceState{}
+	state.Model = model.MapToInstance(self.instanceId, status, jujuService)
+
+	state.PublicAddresses = []string{}
+	for _, unitStatus := range status.Units {
+		if unitStatus.PublicAddress == "" {
+			continue
+		}
+		state.PublicAddresses = append(state.PublicAddresses, unitStatus.PublicAddress)
+	}
 
 	serviceKeys, err := self.getBundleKeys()
 	if err != nil {
@@ -209,14 +222,14 @@ func (self *Instance) getState0() (*model.Instance, error) {
 		status, err := jujuClient.GetServiceStatus(serviceId)
 		if err != nil {
 			log.Warn("Error while fetching status of service: %v", serviceId, err)
-			state.Status = "pending"
+			state.Model.Status = "pending"
 		} else if status == nil {
 			log.Warn("No status for service: %v", serviceId)
-			state.Status = "pending"
+			state.Model.Status = "pending"
 		} else {
 			log.Info("Got state of secondary service: %v => %v", serviceId, status)
 			for _, unitStatus := range status.Units {
-				model.MergeInstanceStatus(state, &unitStatus)
+				model.MergeInstanceStatus(state.Model, &unitStatus)
 			}
 		}
 	}
@@ -233,20 +246,65 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	// TODO: Only if otherwise ready
 	annotationsReady := self.bundleType.IsStarted(annotations)
-
 	if !annotationsReady {
 		log.Info("Instance not started (per annotations): %v", annotations)
-		state.Status = "pending"
+		state.Model.Status = "pending"
 	}
 
-	log.Info("Status of %v: %v", primaryServiceId, state.Status)
+	log.Info("Status of %v: %v", primaryServiceId, state.Model.Status)
 
-	state.Options = map[string]string{}
+	state.Model.Options = map[string]string{}
+
+	state.SystemProperties = map[string]string{}
+	state.RelationMetadata = map[string]string{}
+
+	state.Relations = []model.RelationProperty{}
 
 	for tagName, v := range annotations {
 		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
 			key := tagName[len(ANNOTATION_PREFIX_INSTANCECONFIG):]
-			state.Options[key] = v
+			state.Model.Options[key] = v
+			continue
+		}
+
+		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_SYSTEM) {
+			key := tagName[len(ANNOTATION_PREFIX_SYSTEM):]
+			state.SystemProperties[key] = v
+			continue
+		}
+
+		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_RELATIONINFO) {
+			suffix := tagName[len(ANNOTATION_PREFIX_RELATIONINFO):]
+			tokens := strings.SplitN(suffix, "_", 3)
+			if len(tokens) < 3 {
+				log.Debug("Ignoring unparseable tag: %v", tagName)
+				continue
+			}
+
+			unitId := tokens[0]
+			relationId := tokens[1]
+			key := tokens[2]
+			if key[0] != '_' {
+				state.RelationMetadata[key] = v
+				continue
+			}
+
+			relationTokens := strings.SplitN(relationId, ":", 2)
+			if len(relationTokens) != 2 {
+				log.Debug("Ignoring unparseable relation id in tag: %v", tagName)
+				continue
+			}
+
+			relationProperty := model.RelationProperty{}
+			relationProperty.UnitId = unitId
+			assert.That(key[0] == '_')
+			relationProperty.Key = key[1:]
+			relationProperty.Value = v
+			relationProperty.RelationType = relationTokens[0]
+			relationProperty.RelationKey = relationTokens[1]
+			state.Relations = append(state.Relations, relationProperty)
+
+			continue
 		}
 	}
 
@@ -402,116 +460,49 @@ func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error
 // Retrieve the relation properties.
 // It doesn't seem to be possible to retrieve these direct from Juju,
 // so the stubclient stores them for us.
-func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, error) {
-	jujuClient := self.GetJujuClient()
+func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *model.RelationInfo, error) {
 	serviceId := self.primaryServiceId
 
 	relationInfo := &model.RelationInfo{}
 	relationInfo.Properties = make(map[string]string)
 
-	status, err := jujuClient.GetServiceStatus(serviceId)
+	// Can we rationalize all this?  We repeat a lot of calls right now...
+	state, err := self.getState0()
 	if err != nil {
-		log.Warn("Error while fetching status of service: %v", serviceId, err)
-		return nil, err
+		log.Warn("Error getting instance state", err)
+		return nil, nil, err
 	}
 
-	relationInfo.PublicAddresses = []string{}
-
-	if status != nil {
-		log.Info("unitStatus: %v", log.AsJson(status))
-		for _, unitStatus := range status.Units {
-			if unitStatus.PublicAddress == "" {
-				continue
-			}
-			relationInfo.PublicAddresses = append(relationInfo.PublicAddresses, unitStatus.PublicAddress)
-		}
-	} else {
+	if state == nil {
 		log.Warn("No status found for service: %v", serviceId)
-		return nil, nil
+		return nil, nil, nil
 	}
 
-	annotations, err := jujuClient.GetServiceAnnotations(serviceId)
-	if err != nil {
-		log.Warn("Error getting annotations", err)
-		// TODO: Mask error?
-		return nil, err
-	}
-
-	//log.Debug("Service annotations: %v", annotations)
-
-	systemProperties := map[string]string{}
-	relationMetadata := map[string]string{}
-
-	relationProperties := []model.RelationProperty{}
-
-	for tagName, v := range annotations {
-		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_SYSTEM) {
-			key := tagName[len(ANNOTATION_PREFIX_SYSTEM):]
-			systemProperties[key] = v
-			continue
-		}
-
-		if !strings.HasPrefix(tagName, ANNOTATION_PREFIX_RELATIONINFO) {
-			//log.Debug("Prefix mismatch: %v", tagName)
-			continue
-		}
-		suffix := tagName[len(ANNOTATION_PREFIX_RELATIONINFO):]
-		tokens := strings.SplitN(suffix, "_", 3)
-		if len(tokens) < 3 {
-			log.Debug("Ignoring unparseable tag: %v", tagName)
-			continue
-		}
-
-		unitId := tokens[0]
-		relationId := tokens[1]
-		key := tokens[2]
-		if key[0] != '_' {
-			relationMetadata[key] = v
-			continue
-		}
-
-		relationTokens := strings.SplitN(relationId, ":", 2)
-		if len(relationTokens) != 2 {
-			log.Debug("Ignoring unparseable relation id in tag: %v", tagName)
-			continue
-		}
-
-		relationProperty := model.RelationProperty{}
-		relationProperty.UnitId = unitId
-		assert.That(key[0] == '_')
-		relationProperty.Key = key[1:]
-		relationProperty.Value = v
-		relationProperty.RelationType = relationTokens[0]
-		relationProperty.RelationKey = relationTokens[1]
-		relationProperties = append(relationProperties, relationProperty)
-	}
+	relationInfo.PublicAddresses = state.PublicAddresses
+	relationInfo.Timestamp = state.RelationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
 
 	builder := &bundletype.RelationBuilder{}
 	builder.Relation = relationKey
-	builder.Properties = relationProperties
-
-	// Can we rationalize all this?  We repeat a lot of calls right now...
-	builder.InstanceConfig, err = self.getState0()
-	if err != nil {
-		log.Warn("Error getting instance state", err)
-		return nil, err
-	}
+	builder.Properties = state.Relations
+	builder.InstanceConfig = state.Model
 
 	// TODO: Skip proxy host on EC2?
 	useProxyHost := true
+
+	systemProperties := state.SystemProperties
 
 	if useProxyHost && systemProperties[SYSTEM_KEY_PUBLIC_PORT] != "" {
 		publicPortString := systemProperties[SYSTEM_KEY_PUBLIC_PORT]
 		publicPort, err := strconv.Atoi(publicPortString)
 		if err != nil {
 			log.Warn("Error parsing public port: %v", publicPortString, err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		proxyHost, err := self.huddle.getProxyHost()
 		if err != nil {
 			log.Warn("Error fetching proxy host", err)
-			return nil, err
+			return nil, nil, err
 		}
 
 		builder.ProxyHost = proxyHost
@@ -521,23 +512,21 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 	//	log.Debug("relationProperties: %v", relationProperties)
 	//	log.Debug("relationMetadata: %v", relationMetadata)
 
-	// TODO: Can we refactor a lot of the above into the current state?
-	context, err := self.buildCurrentTemplateContext()
+	context, err := self.buildCurrentTemplateContext(state)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	bundle, err := self.getBundle(context)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	relationInfo.Timestamp = relationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
 	err = self.bundleType.BuildRelationInfo(bundle, relationInfo, builder)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return relationInfo, nil
+	return bundle, relationInfo, nil
 }
 
 func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
@@ -561,13 +550,15 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	return context
 }
 
-func (self *Instance) buildCurrentTemplateContext() (*bundle.TemplateContext, error) {
+func (self *Instance) buildCurrentTemplateContext(state *instanceState) (*bundle.TemplateContext, error) {
 	var err error
 
-	state, err := self.getState0()
-	if err != nil {
-		log.Warn("Error getting instance state", err)
-		return nil, err
+	if state == nil {
+		state, err = self.getState0()
+		if err != nil {
+			log.Warn("Error getting instance state", err)
+			return nil, err
+		}
 	}
 
 	context := self.buildSkeletonTemplateContext()
@@ -575,7 +566,7 @@ func (self *Instance) buildCurrentTemplateContext() (*bundle.TemplateContext, er
 	// TODO: Need to determine current # of units
 	context.NumberUnits = 1
 
-	context.Options = state.Options
+	context.Options = state.Model.Options
 
 	publicPortAssigner := &InstancePublicPortAssigner{}
 	publicPortAssigner.Instance = self
@@ -638,7 +629,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 	instanceConfigChanges := request.Options
 
 	// Get the existing configuration
-	context, err := self.buildCurrentTemplateContext()
+	context, err := self.buildCurrentTemplateContext(nil)
 	if err != nil {
 		return err
 	}
@@ -681,7 +672,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 }
 
 func (self *Instance) getCurrentBundle() (*bundle.Bundle, error) {
-	context, err := self.buildCurrentTemplateContext()
+	context, err := self.buildCurrentTemplateContext(nil)
 	if err != nil {
 		return nil, err
 	}

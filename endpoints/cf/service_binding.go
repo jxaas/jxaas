@@ -34,7 +34,7 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpRes
 		return nil, rs.ErrNotFound()
 	}
 
-	relationInfo, err := instance.GetRelationInfo(bundleType.PrimaryRelationKey())
+	bundle, relationInfo, err := instance.GetRelationInfo(bundleType.PrimaryRelationKey())
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpRes
 		return nil, rs.ErrNotFound()
 	}
 
-	credentials, err := bundleType.MapCfCredentials(relationInfo)
+	credentials, err := bundleType.MapCfCredentials(bundle, relationInfo)
 	if err != nil {
 		log.Warn("Error mapping to CF", err)
 		return nil, err
