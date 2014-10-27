@@ -3,6 +3,7 @@ package bundle
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 
 	"github.com/justinsb/gova/log"
 )
@@ -39,6 +40,31 @@ func (self *TemplateContext) AssignPublicPort() (int, error) {
 	}
 
 	return self.PublicPortAssigner.AssignPort()
+}
+
+func (self *TemplateContext) GetSpecialProperty(relationType, key, value string) string {
+	// Some special cases
+	// host, private-address map to the proxy host
+	if key == "host" || key == "private-address" {
+		// Use proxy address
+		if self.Proxy != nil {
+			value = self.Proxy.Host
+		}
+	}
+	if key == "port" {
+		// Use proxy port
+		if self.Proxy != nil {
+			value = strconv.Itoa(self.Proxy.Port)
+		}
+	}
+	if key == "protocol" {
+		instanceValue := self.Options["protocol"]
+		if instanceValue != "" {
+			value = instanceValue
+		}
+	}
+
+	return value
 }
 
 func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {

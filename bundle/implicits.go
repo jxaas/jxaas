@@ -1,10 +1,6 @@
 package bundle
 
-import (
-	"strconv"
-
-	"github.com/justinsb/gova/log"
-)
+import "github.com/justinsb/gova/log"
 
 const (
 	IMPLICIT_MARKER     = "<<"
@@ -51,26 +47,7 @@ func (self *ProvideConfig) applyImplicits(templateContext *TemplateContext, rela
 		if v == IMPLICIT_MARKER {
 			propertyValue := relationInfo[k]
 
-			// Some special cases
-			// host, private-address map to the proxy host
-			if k == "host" || k == "private-address" {
-				// Use proxy address
-				if templateContext.Proxy != nil {
-					propertyValue = templateContext.Proxy.Host
-				}
-			}
-			if k == "port" {
-				// Use proxy port
-				if templateContext.Proxy != nil {
-					propertyValue = strconv.Itoa(templateContext.Proxy.Port)
-				}
-			}
-			if k == "protocol" {
-				instanceValue := templateContext.Options["protocol"]
-				if instanceValue != "" {
-					propertyValue = instanceValue
-				}
-			}
+			propertyValue = templateContext.GetSpecialProperty(relationKey, k, propertyValue)
 
 			self.Properties[k] = propertyValue
 		}

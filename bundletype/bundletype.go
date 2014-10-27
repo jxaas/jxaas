@@ -64,8 +64,20 @@ func (self *baseBundleType) BuildRelationInfo(templateContext *bundle.TemplateCo
 	if len(bundle.Provides) == 0 {
 		// No explicit provides => derive automatically
 		for k, v := range relationProperties {
+			v = templateContext.GetSpecialProperty(relationKey, k, v)
 			provideProperties[k] = v
 		}
+
+		// Auto-populate required properties that we generate
+		required := []string{"protocol","port"}
+		for _, k := range required {
+			v, found := relationProperties[k]
+			if !found {
+				v = templateContext.GetSpecialProperty(relationKey, k, v)
+			}
+			provideProperties[k] = v
+		}
+
 	} else {
 		definition, found := bundle.Provides[relationKey]
 		if !found {
