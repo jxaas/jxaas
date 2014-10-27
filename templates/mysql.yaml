@@ -42,3 +42,13 @@ mysql:
   checks:
     service-mysql:
       service: mysql
+
+  cloudfoundry:
+    properties:
+      jdbcUrl: jdbc:mysql://{{.Properties.user}}:{{.Properties.password}}@{{.Properties.host}}:{{.Properties.port}}/{{.Properties.database}}
+      uri: mysql://{{.Properties.user}}:{{.Properties.password}}@{{.Properties.host}}:{{.Properties.port}}/{{.Properties.database}}
+      name: {{.Properties.database}}
+      hostname: {{.Properties.host}}
+      port: {{.Properties.port}}
+      username: {{.Properties.username}}
+      password: {{.Properties.password}}

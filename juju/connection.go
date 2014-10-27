@@ -151,7 +151,7 @@ func (self *Client) GetServiceStatusList(prefix string) (map[string]api.ServiceS
 	return status.Services, nil
 }
 
-func (self *Client) FindConfig(serviceId string) (*params.ServiceGetResults, error) {
+func (self *Client) FindService(serviceId string) (*params.ServiceGetResults, error) {
 	config, err := self.client.ServiceGet(serviceId)
 	if err != nil {
 		paramsError, ok := err.(*params.Error)

@@ -50,14 +50,14 @@ func (self *Bundle) ApplyImplicits(templateContext *TemplateContext) {
 
 	stub, found := self.Services["stubclient"]
 	if found {
-		self.configureStub(templateContext, stub)
+		self.configureStubClient(templateContext, stub)
 		log.Info("Configured stubclient: %v", stub)
 	} else {
 		log.Info("stubclient not found")
 	}
 }
 
-func (self *Bundle) configureStub(templateContext *TemplateContext, stub *ServiceConfig) {
+func (self *Bundle) configureStubClient(templateContext *TemplateContext, stub *ServiceConfig) {
 	if stub.Options == nil {
 		stub.Options = map[string]string{}
 	}

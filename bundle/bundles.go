@@ -15,7 +15,9 @@ type PortAssigner interface {
 type TemplateContext struct {
 	SystemServices  map[string]string
 	SystemImplicits map[string]string
-	Options         map[string]string
+
+	// The configuration options as specified by the user
+	Options map[string]string
 
 	NumberUnits int
 

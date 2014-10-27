@@ -226,6 +226,16 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 		}
 	}
 
+	self.CloudFoundryConfig = &CloudFoundryConfig{}
+	cfConfig := dataMap["cloudfoundry"]
+	if cfConfig != nil {
+		cfConfigMap, ok := cfConfig.(map[interface{}]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for cloudfoundry, found %T", cfConfig)
+		}
+		self.CloudFoundryConfig.Credentials = getStringMap(cfConfigMap, "credentials")
+	}
+
 	self.Properties = getStringMap(dataMap, "properties")
 
 	return self, nil

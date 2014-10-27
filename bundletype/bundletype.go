@@ -1,7 +1,9 @@
 package bundletype
 
 import (
+	"bytes"
 	"strconv"
+	"text/template"
 
 	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas"
@@ -16,7 +18,7 @@ type BundleType interface {
 	PrimaryJujuService() string
 	PrimaryRelationKey() string
 
-	MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error)
+	MapCfCredentials(bundle *bundle.Bundle, relationInfo *model.RelationInfo) (map[string]string, error)
 
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
@@ -61,10 +63,6 @@ func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, t
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
 }
 
-func (self *baseBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
-	return map[string]string{}, nil
-}
-
 func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
 	// TODO: Unclear if we should expose other properties... probably not
 	if data.Relation != "" {
@@ -97,7 +95,7 @@ func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInf
 				}
 			}
 			if k == "protocol" {
-				instanceValue := data.InstanceConfig.Config["protocol"]
+				instanceValue := data.InstanceConfig.Options["protocol"]
 				if instanceValue != "" {
 					propertyValue = instanceValue
 				}
@@ -127,6 +125,42 @@ func (self *baseBundleType) GetHealthChecks(bundle *bundle.Bundle) (map[string]j
 	}
 
 	return mapped, nil
+}
+
+func runTemplate(templateDefinition string, context map[string]string) (string, error) {
+	// TODO: Cache templates
+	t, err := template.New(templateDefinition).Parse(templateDefinition)
+	if err != nil {
+		return "", err
+	}
+
+	var buffer bytes.Buffer
+	err = t.Execute(&buffer, context)
+	if err != nil {
+		return "", err
+	}
+
+	return buffer.String(), nil
+}
+
+func (self *baseBundleType) MapCfCredentials(bundle *bundle.Bundle, relationInfo *model.RelationInfo) (map[string]string, error) {
+	credentials := map[string]string{}
+
+	template := map[string]string{}
+	for k, v := range relationInfo.Properties {
+		template[k] = v
+	}
+
+	for k, v := range bundle.CloudFoundryConfig.Credentials {
+		substituted, err := runTemplate(v, template)
+		if err != nil {
+			log.Warn("Error while running template: %v=%v", k, v, err)
+			return nil, err
+		}
+		credentials[k] = substituted
+	}
+
+	return credentials, nil
 }
 
 func (self *baseBundleType) GetDefaultScalingPolicy() *model.ScalingPolicy {

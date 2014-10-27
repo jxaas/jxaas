@@ -28,23 +28,15 @@ type Instance struct {
 
 	Units map[string]*Unit
 
-	// The configuration, as set by the user.
+	// The configuration options, as set by the user.
 	// Some of these values will map directly to Juju instance config,
 	// some will be jxaas-specified or transformed.
-	Config map[string]string
+	Options map[string]string
 
-	ConfigParameters map[string]ConfigParameter
+	OptionDescriptions map[string]OptionDescription
 }
 
-//func (self *Instance) ConfigValues() map[string]string {
-//	flat := make(map[string]string)
-//	for k, v := range self.Config {
-//		flat[k] = v.Value
-//	}
-//	return flat
-//}
-
-type ConfigParameter struct {
+type OptionDescription struct {
 	Default     string
 	Description string
 	Type        string
@@ -83,8 +75,8 @@ func getString(m map[string]interface{}, key string) string {
 	return s
 }
 
-func MapToConfigParameters(config *params.ServiceGetResults) map[string]ConfigParameter {
-	out := make(map[string]ConfigParameter)
+func mapToOptionDescriptions(config *params.ServiceGetResults) map[string]OptionDescription {
+	out := make(map[string]OptionDescription)
 
 	if config.Config != nil {
 		for k, v := range config.Config {
@@ -94,7 +86,7 @@ func MapToConfigParameters(config *params.ServiceGetResults) map[string]ConfigPa
 				continue
 			}
 
-			p := &ConfigParameter{}
+			p := &OptionDescription{}
 			p.Type = getString(m, "type")
 			p.Description = getString(m, "description")
 
@@ -110,7 +102,7 @@ func MapToConfigParameters(config *params.ServiceGetResults) map[string]ConfigPa
 	return out
 }
 
-func MapToConfig(config *params.ServiceGetResults) map[string]string {
+func mapToOptions(config *params.ServiceGetResults) map[string]string {
 	out := make(map[string]string)
 
 	if config.Config != nil {
@@ -144,23 +136,26 @@ func MergeInstanceStatus(instance *Instance, unit *api.UnitStatus) {
 func MapToInstance(id string, api *api.ServiceStatus, config *params.ServiceGetResults) *Instance {
 	instance := &Instance{}
 	instance.Id = id
-	instance.Units = make(map[string]*Unit)
-	instance.Exposed = &api.Exposed
 
-	for key, unit := range api.Units {
-		unitState := MapToUnit(key, &unit)
-		instance.Units[key] = unitState
+	if api != nil {
+		instance.Exposed = &api.Exposed
 
-		MergeInstanceStatus(instance, &unit)
+		instance.Units = make(map[string]*Unit)
+		for key, unit := range api.Units {
+			unitState := MapToUnit(key, &unit)
+			instance.Units[key] = unitState
+
+			MergeInstanceStatus(instance, &unit)
+		}
+
+		instance.NumberUnits = new(int)
+		*instance.NumberUnits = len(api.Units)
 	}
 
 	if config != nil {
-		instance.Config = MapToConfig(config)
-		instance.ConfigParameters = MapToConfigParameters(config)
+		instance.Options = mapToOptions(config)
+		instance.OptionDescriptions = mapToOptionDescriptions(config)
 	}
-
-	instance.NumberUnits = new(int)
-	*instance.NumberUnits = len(api.Units)
 
 	return instance
 }

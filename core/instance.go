@@ -104,10 +104,10 @@ func (self *Instance) GetState() (*model.Instance, error) {
 
 	// TODO: Get the relation state instead.  This is a crazy hack.
 	// TODO: I'm not even sure this is actually needed... it may have just been other problems!
-	client := self.huddle.JujuClient
+	jujuClient := self.GetJujuClient()
 	primaryServiceId := self.primaryServiceId
 
-	annotations, err := client.GetServiceAnnotations(primaryServiceId)
+	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
 	if err != nil {
 		log.Warn("Error getting annotations", err)
 		// TODO: Ignore?
@@ -149,7 +149,7 @@ func (self *Instance) GetState() (*model.Instance, error) {
 		pairs[ANNOTATION_KEY_LAST_STATE] = state.Status
 		pairs[ANNOTATION_KEY_LAST_STATE_TIMESTAMP] = strconv.FormatInt(now, 10)
 
-		client.SetServiceAnnotations(primaryServiceId, pairs)
+		jujuClient.SetServiceAnnotations(primaryServiceId, pairs)
 	}
 
 	if delay {
@@ -172,12 +172,12 @@ func (self *Instance) Exists() (bool, error) {
 
 // Returns the current state of the instance
 func (self *Instance) getState0() (*model.Instance, error) {
-	client := self.huddle.JujuClient
+	jujuClient := self.GetJujuClient()
 
 	primaryServiceId := self.primaryServiceId
-	status, err := client.GetServiceStatus(primaryServiceId)
+	status, err := jujuClient.GetServiceStatus(primaryServiceId)
 
-	config, err := client.FindConfig(primaryServiceId)
+	jujuService, err := jujuClient.FindService(primaryServiceId)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +189,7 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	log.Debug("Service state: %v", status)
 
-	state := model.MapToInstance(self.instanceId, status, config)
+	state := model.MapToInstance(self.instanceId, status, jujuService)
 
 	serviceKeys, err := self.getBundleKeys()
 	if err != nil {
@@ -206,7 +206,7 @@ func (self *Instance) getState0() (*model.Instance, error) {
 			continue
 		}
 
-		status, err := client.GetServiceStatus(serviceId)
+		status, err := jujuClient.GetServiceStatus(serviceId)
 		if err != nil {
 			log.Warn("Error while fetching status of service: %v", serviceId, err)
 			state.Status = "pending"
@@ -222,7 +222,7 @@ func (self *Instance) getState0() (*model.Instance, error) {
 	}
 
 	// TODO: This is a bit of a hack also.  How should we wait for properties to be set?
-	annotations, err := client.GetServiceAnnotations(primaryServiceId)
+	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
 	if err != nil {
 		log.Warn("Error getting annotations", err)
 		// TODO: Mask error?
@@ -241,12 +241,12 @@ func (self *Instance) getState0() (*model.Instance, error) {
 
 	log.Info("Status of %v: %v", primaryServiceId, state.Status)
 
-	state.Config = map[string]string{}
+	state.Options = map[string]string{}
 
 	for tagName, v := range annotations {
 		if strings.HasPrefix(tagName, ANNOTATION_PREFIX_INSTANCECONFIG) {
 			key := tagName[len(ANNOTATION_PREFIX_INSTANCECONFIG):]
-			state.Config[key] = v
+			state.Options[key] = v
 		}
 	}
 
@@ -258,17 +258,17 @@ func (self *Instance) getState0() (*model.Instance, error) {
 // Deletes the instance.
 // This deletes all Juju services that make up the instance.
 func (self *Instance) Delete() error {
+	jujuClient := self.GetJujuClient()
 	prefix := self.jujuPrefix
-	client := self.huddle.JujuClient
 
-	statuses, err := client.GetServiceStatusList(prefix)
+	statuses, err := jujuClient.GetServiceStatusList(prefix)
 	if err != nil {
 		return err
 	}
 	for serviceId, _ := range statuses {
 		log.Debug("Destroying service %v", serviceId)
 
-		err = client.ServiceDestroy(serviceId)
+		err = jujuClient.ServiceDestroy(serviceId)
 		if err != nil {
 			log.Warn("Error destroying service: %v", serviceId)
 			return err
@@ -281,10 +281,10 @@ func (self *Instance) Delete() error {
 
 // Gets any log entries for the instance
 func (self *Instance) GetLog() (*model.LogData, error) {
+	jujuClient := self.GetJujuClient()
 	service := self.primaryServiceId
 
-	client := self.huddle.JujuClient
-	logStore, err := client.GetLogStore()
+	logStore, err := jujuClient.GetLogStore()
 	if err != nil {
 		log.Warn("Error fetching Juju log store", err)
 		return nil, err
@@ -339,13 +339,12 @@ func (self *Instance) setInstanceConfig(properties map[string]string) error {
 
 // Sets annotations on the specified instance.
 func (self *Instance) setServiceAnnotations(pairs map[string]string) error {
+	jujuClient := self.GetJujuClient()
 	serviceId := self.primaryServiceId
 
 	log.Info("Setting annotations on service %v: %v", serviceId, pairs)
 
-	client := self.huddle.JujuClient
-
-	err := client.SetServiceAnnotations(serviceId, pairs)
+	err := jujuClient.SetServiceAnnotations(serviceId, pairs)
 	if err != nil {
 		log.Warn("Error setting annotations", err)
 		// TODO: Mask error?
@@ -365,13 +364,13 @@ func (self *Instance) setPublicPort(port int) error {
 
 // Delete any relation properties relating to the specified unit; that unit is going away.
 func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error {
-	client := self.huddle.JujuClient
+	jujuClient := self.GetJujuClient()
 
 	serviceId := self.primaryServiceId
 
 	prefix := ANNOTATION_PREFIX_RELATIONINFO + unitId + "_" + relationId + "_"
 
-	annotations, err := client.GetServiceAnnotations(serviceId)
+	annotations, err := jujuClient.GetServiceAnnotations(serviceId)
 	if err != nil {
 		log.Warn("Error getting annotations", err)
 		// TODO: Mask error?
@@ -390,7 +389,7 @@ func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error
 	if len(deleteKeys) != 0 {
 		log.Info("Deleting annotations on service %v: %v", serviceId, deleteKeys)
 
-		err = client.DeleteServiceAnnotations(serviceId, deleteKeys)
+		err = jujuClient.DeleteServiceAnnotations(serviceId, deleteKeys)
 		if err != nil {
 			log.Warn("Error deleting annotations", err)
 			return err
@@ -400,16 +399,17 @@ func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error
 	return nil
 }
 
-// Retrieve the stored relation properties.
+// Retrieve the relation properties.
+// It doesn't seem to be possible to retrieve these direct from Juju,
+// so the stubclient stores them for us.
 func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, error) {
+	jujuClient := self.GetJujuClient()
 	serviceId := self.primaryServiceId
 
 	relationInfo := &model.RelationInfo{}
 	relationInfo.Properties = make(map[string]string)
 
-	client := self.huddle.JujuClient
-
-	status, err := client.GetServiceStatus(serviceId)
+	status, err := jujuClient.GetServiceStatus(serviceId)
 	if err != nil {
 		log.Warn("Error while fetching status of service: %v", serviceId, err)
 		return nil, err
@@ -430,7 +430,7 @@ func (self *Instance) GetRelationInfo(relationKey string) (*model.RelationInfo, 
 		return nil, nil
 	}
 
-	annotations, err := client.GetServiceAnnotations(serviceId)
+	annotations, err := jujuClient.GetServiceAnnotations(serviceId)
 	if err != nil {
 		log.Warn("Error getting annotations", err)
 		// TODO: Mask error?
@@ -575,7 +575,7 @@ func (self *Instance) buildCurrentTemplateContext() (*bundle.TemplateContext, er
 	// TODO: Need to determine current # of units
 	context.NumberUnits = 1
 
-	context.Options = state.Config
+	context.Options = state.Options
 
 	publicPortAssigner := &InstancePublicPortAssigner{}
 	publicPortAssigner.Instance = self
@@ -628,14 +628,14 @@ func (self *Instance) getBundleKeys() (map[string]string, error) {
 func (self *Instance) Configure(request *model.Instance) error {
 	var err error
 
-	jujuClient := self.huddle.JujuClient
+	jujuClient := self.GetJujuClient()
 
 	// Sanitize
 	request.Id = ""
 	request.Units = nil
 
 	// Record the (requested) configuration options
-	instanceConfigChanges := request.Config
+	instanceConfigChanges := request.Options
 
 	// Get the existing configuration
 	context, err := self.buildCurrentTemplateContext()
@@ -647,7 +647,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 	if request.NumberUnits != nil {
 		context.NumberUnits = *request.NumberUnits
 	}
-	for k, v := range request.Config {
+	for k, v := range request.Options {
 		context.Options[k] = v
 	}
 
@@ -696,15 +696,15 @@ func (self *Instance) getCurrentBundle() (*bundle.Bundle, error) {
 // Gets the Juju client
 // TODO: Should we expose this?
 func (self *Instance) GetJujuClient() *juju.Client {
-	client := self.huddle.JujuClient
-	return client
+	jujuClient := self.huddle.JujuClient
+	return jujuClient
 }
 
 // Runs a health check on the instance
 func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
-	client := self.huddle.JujuClient
+	jujuClient := self.GetJujuClient()
 
-	services, err := client.GetServiceStatusList(self.jujuPrefix)
+	services, err := jujuClient.GetServiceStatusList(self.jujuPrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -754,10 +754,10 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 }
 
 func (self *Instance) getScalingPolicy() (*model.ScalingPolicy, error) {
-	client := self.huddle.JujuClient
+	jujuClient := self.GetJujuClient()
 	primaryServiceId := self.primaryServiceId
 
-	annotations, err := client.GetServiceAnnotations(primaryServiceId)
+	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
 	if err != nil {
 		log.Warn("Error getting annotations", err)
 		// TODO: Ignore?

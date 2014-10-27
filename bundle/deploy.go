@@ -75,7 +75,7 @@ func (self *RelationConfig) deploy(apiclient *juju.Client) error {
 func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) (*DeployServiceInfo, error) {
 	serviceInfo := &DeployServiceInfo{}
 
-	config, err := apiclient.FindConfig(jujuServiceId)
+	jujuService, err := apiclient.FindService(jujuServiceId)
 	if err != nil {
 		return nil, err
 	}
@@ -92,36 +92,14 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 
 	charmUrl = charmInfo.URL
 
-	if config == nil {
+	if jujuService == nil {
 		// Create new service
-
-		//	curl, err := charm.InferURL(c.CharmName, conf.DefaultSeries())
-		//	if err != nil {
-		//		return err
-		//	}
-		//	repo, err := charm.InferRepository(curl, ctx.AbsPath(c.RepoPath))
-		//	if err != nil {
-		//		return err
-		//	}
-		//
-		//	repo = config.SpecializeCharmRepo(repo, conf)
-		//
-		//	curl, err = addCharmViaAPI(client, ctx, curl, repo)
-		//	if err != nil {
-		//		return err
-		//	}
 
 		numUnits := self.NumberUnits
 
 		if charmInfo.Meta.Subordinate {
 			numUnits = -1
 		}
-
-		//		serviceName := "service" + strconv.Itoa(rand.Int())
-
-		//	if serviceName == "" {
-		//		serviceName = charmInfo.Meta.Name
-		//	}
 
 		configYaml, err := makeConfigYaml(jujuServiceId, self.Options)
 		if err != nil {
@@ -152,19 +130,20 @@ func (self *ServiceConfig) deploy(jujuServiceId string, apiclient *juju.Client) 
 		//			time.Sleep(1 * time.Second)
 		//		}
 	} else {
-		existingValues := model.MapToConfig(config)
-		mergedValues := make(map[string]string)
+		existingInstance := model.MapToInstance(jujuServiceId, nil, jujuService)
+		existingServiceOptions := existingInstance.Options
+		mergedServiceOptions := map[string]string{}
 		{
-			for key, value := range existingValues {
-				mergedValues[key] = value
+			for key, value := range existingServiceOptions {
+				mergedServiceOptions[key] = value
 			}
 			for key, value := range self.Options {
-				mergedValues[key] = value
+				mergedServiceOptions[key] = value
 			}
 		}
 
-		if !reflect.DeepEqual(existingValues, mergedValues) {
-			err = apiclient.SetConfig(jujuServiceId, mergedValues)
+		if !reflect.DeepEqual(existingServiceOptions, mergedServiceOptions) {
+			err = apiclient.SetConfig(jujuServiceId, mergedServiceOptions)
 			if err != nil {
 				return nil, err
 			}

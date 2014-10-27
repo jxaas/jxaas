@@ -11,6 +11,8 @@ type Bundle struct {
 	Relations    []*RelationConfig
 	Properties   map[string]string
 	HealthChecks map[string]*HealthCheckConfig
+
+	CloudFoundryConfig *CloudFoundryConfig
 }
 
 type ServiceConfig struct {
@@ -29,6 +31,10 @@ type RelationConfig struct {
 
 type HealthCheckConfig struct {
 	Service string
+}
+
+type CloudFoundryConfig struct {
+	Credentials map[string]string
 }
 
 // Implement fmt.Stringer
