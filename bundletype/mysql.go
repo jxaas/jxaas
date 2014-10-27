@@ -2,8 +2,8 @@ package bundletype
 
 import (
 	"strings"
+
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/model"
 )
 
 type MysqlBundleType struct {
@@ -35,19 +35,4 @@ func (self *MysqlBundleType) IsStarted(annotations map[string]string) bool {
 	}
 
 	return annotationsReady
-}
-
-func (self *MysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	data.Relation = self.primaryRelationKey
-
-	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
-	//
-	//	// To override the IP / port
-	//	if data.ProxyHost != "" {
-	//		proxyHost := data.ProxyHost
-	//		relationInfo.Properties["host"] = proxyHost
-	//		relationInfo.Properties["private-address"] = proxyHost
-	//		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
-	//		relationInfo.PublicAddresses = []string{proxyHost}
-	//	}
 }

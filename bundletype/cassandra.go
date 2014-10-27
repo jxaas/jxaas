@@ -1,10 +1,9 @@
 package bundletype
 
 import (
-	"strconv"
 	"strings"
+
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/model"
 )
 
 type CassandraBundleType struct {
@@ -30,22 +29,4 @@ func (self *CassandraBundleType) IsStarted(annotations map[string]string) bool {
 	}
 
 	return annotationsReady
-}
-
-func (self *CassandraBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	err := self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
-	if err != nil {
-		return err
-	}
-
-	// To override the IP / port
-	if data.ProxyHost != "" {
-		proxyHost := data.ProxyHost
-		relationInfo.Properties["host"] = proxyHost
-		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
-		relationInfo.Properties["private-address"] = proxyHost
-		relationInfo.PublicAddresses = []string{proxyHost}
-	}
-
-	return nil
 }

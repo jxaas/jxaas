@@ -12,6 +12,11 @@ type PortAssigner interface {
 	GetAssignedPort() (int, bool)
 }
 
+type ProxySettings struct {
+	Host string
+	Port int
+}
+
 type TemplateContext struct {
 	SystemServices  map[string]string
 	SystemImplicits map[string]string
@@ -19,9 +24,13 @@ type TemplateContext struct {
 	// The configuration options as specified by the user
 	Options map[string]string
 
+	Relations map[string]map[string]string
+
 	NumberUnits int
 
 	PublicPortAssigner PortAssigner
+
+	Proxy *ProxySettings
 }
 
 func (self *TemplateContext) AssignPublicPort() (int, error) {
@@ -61,6 +70,9 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: Replace the "<no value>" incorrect placeholders
+	// https://code.google.com/p/go/issues/detail?id=6288
 
 	yaml := buffer.String()
 	log.Debug("Bundle is:\n%v", yaml)

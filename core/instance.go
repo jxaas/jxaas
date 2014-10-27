@@ -463,9 +463,6 @@ func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error
 func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *model.RelationInfo, error) {
 	serviceId := self.primaryServiceId
 
-	relationInfo := &model.RelationInfo{}
-	relationInfo.Properties = make(map[string]string)
-
 	// Can we rationalize all this?  We repeat a lot of calls right now...
 	state, err := self.getState0()
 	if err != nil {
@@ -476,37 +473,6 @@ func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *mode
 	if state == nil {
 		log.Warn("No status found for service: %v", serviceId)
 		return nil, nil, nil
-	}
-
-	relationInfo.PublicAddresses = state.PublicAddresses
-	relationInfo.Timestamp = state.RelationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
-
-	builder := &bundletype.RelationBuilder{}
-	builder.Relation = relationKey
-	builder.Properties = state.Relations
-	builder.InstanceConfig = state.Model
-
-	// TODO: Skip proxy host on EC2?
-	useProxyHost := true
-
-	systemProperties := state.SystemProperties
-
-	if useProxyHost && systemProperties[SYSTEM_KEY_PUBLIC_PORT] != "" {
-		publicPortString := systemProperties[SYSTEM_KEY_PUBLIC_PORT]
-		publicPort, err := strconv.Atoi(publicPortString)
-		if err != nil {
-			log.Warn("Error parsing public port: %v", publicPortString, err)
-			return nil, nil, err
-		}
-
-		proxyHost, err := self.huddle.getProxyHost()
-		if err != nil {
-			log.Warn("Error fetching proxy host", err)
-			return nil, nil, err
-		}
-
-		builder.ProxyHost = proxyHost
-		builder.ProxyPort = publicPort
 	}
 
 	//	log.Debug("relationProperties: %v", relationProperties)
@@ -521,10 +487,16 @@ func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *mode
 		return nil, nil, err
 	}
 
-	err = self.bundleType.BuildRelationInfo(bundle, relationInfo, builder)
+	relationInfo, err := self.bundleType.BuildRelationInfo(context, bundle, relationKey)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	if relationInfo.PublicAddresses == nil {
+		relationInfo.PublicAddresses = state.PublicAddresses
+	}
+
+	relationInfo.Timestamp = state.RelationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
 
 	return bundle, relationInfo, nil
 }
@@ -571,6 +543,43 @@ func (self *Instance) buildCurrentTemplateContext(state *instanceState) (*bundle
 	publicPortAssigner := &InstancePublicPortAssigner{}
 	publicPortAssigner.Instance = self
 	context.PublicPortAssigner = publicPortAssigner
+
+	// Populate relation info
+	context.Relations = map[string]map[string]string{}
+	for _, relation := range state.Relations {
+		relationType := relation.RelationType
+		relations, found := context.Relations[relationType]
+		if !found {
+			relations = map[string]string{}
+			context.Relations[relationType] = relations
+		}
+		relations[relation.Key] = relation.Value
+	}
+
+	// Populate proxy
+	// TODO: Skip proxy host on EC2?
+	useProxyHost := true
+
+	systemProperties := state.SystemProperties
+
+	if useProxyHost && systemProperties[SYSTEM_KEY_PUBLIC_PORT] != "" {
+		publicPortString := systemProperties[SYSTEM_KEY_PUBLIC_PORT]
+		publicPort, err := strconv.Atoi(publicPortString)
+		if err != nil {
+			log.Warn("Error parsing public port: %v", publicPortString, err)
+			return nil, err
+		}
+
+		proxyHost, err := self.huddle.getProxyHost()
+		if err != nil {
+			log.Warn("Error fetching proxy host", err)
+			return nil, err
+		}
+
+		context.Proxy = &bundle.ProxySettings{}
+		context.Proxy.Host = proxyHost
+		context.Proxy.Port = publicPort
+	}
 
 	return context, nil
 }

@@ -9,7 +9,7 @@ import (
 type Bundle struct {
 	Services     map[string]*ServiceConfig
 	Relations    []*RelationConfig
-	Properties   map[string]string
+	Provides     map[string]*ProvideConfig
 	HealthChecks map[string]*HealthCheckConfig
 
 	CloudFoundryConfig *CloudFoundryConfig
@@ -27,6 +27,10 @@ type ServiceConfig struct {
 type RelationConfig struct {
 	From string
 	To   string
+}
+
+type ProvideConfig struct {
+	Properties map[string]string
 }
 
 type HealthCheckConfig struct {

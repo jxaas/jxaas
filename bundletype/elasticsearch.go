@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/model"
 )
 
 type ElasticsearchBundleType struct {
@@ -28,10 +27,4 @@ func (self *ElasticsearchBundleType) IsStarted(annotations map[string]string) bo
 	}
 
 	return annotationsReady
-}
-
-func (self *ElasticsearchBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	data.Relation = self.primaryRelationKey
-
-	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

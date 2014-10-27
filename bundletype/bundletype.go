@@ -2,7 +2,6 @@ package bundletype
 
 import (
 	"bytes"
-	"strconv"
 	"text/template"
 
 	"github.com/justinsb/gova/log"
@@ -23,21 +22,11 @@ type BundleType interface {
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]string) bool
 
-	// Lets the bundle modify the relations that are returned
-	BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error
+	BuildRelationInfo(templateContext *bundle.TemplateContext, bundle *bundle.Bundle, relationKey string) (*model.RelationInfo, error)
+
 	GetHealthChecks(bundle *bundle.Bundle) (map[string]jxaas.HealthCheck, error)
 
 	GetDefaultScalingPolicy() *model.ScalingPolicy
-}
-
-// RelationProperties passes the parameters for BuildRelationInfo
-// Allows extensibility and avoids a huge parameter list
-type RelationBuilder struct {
-	Relation       string
-	Properties     []model.RelationProperty
-	ProxyHost      string
-	ProxyPort      int
-	InstanceConfig *model.Instance
 }
 
 type baseBundleType struct {
@@ -63,55 +52,40 @@ func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, t
 	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
 }
 
-func (self *baseBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	// TODO: Unclear if we should expose other properties... probably not
-	if data.Relation != "" {
-		for _, property := range data.Properties {
-			if property.RelationType != data.Relation {
-				continue
-			}
+func (self *baseBundleType) BuildRelationInfo(templateContext *bundle.TemplateContext, bundle *bundle.Bundle, relationKey string) (*model.RelationInfo, error) {
+	log.Info("BuildRelationInfo with %v", templateContext)
 
-			relationInfo.Properties[property.Key] = property.Value
+	// Find the properties the juju charm is exposing
+	relationProperties := templateContext.Relations[relationKey]
+
+	// Map those properties using the definition
+	provideProperties := map[string]string{}
+
+	if len(bundle.Provides) == 0 {
+		// No explicit provides => derive automatically
+		for k, v := range relationProperties {
+			provideProperties[k] = v
+		}
+	} else {
+		definition, found := bundle.Provides[relationKey]
+		if !found {
+			// Explicit provides, but no definition => no relation
+			log.Debug("Request for relation, but no definition found: %v", relationKey)
+			return nil, nil
+		}
+
+		for k, v := range definition.Properties {
+			provideProperties[k] = v
 		}
 	}
 
-	log.Info("BuildRelationInfo with %v", bundle.Properties)
-
-	properties := bundle.Properties
-	for k, v := range properties {
-		propertyValue := relationInfo.Properties[k]
-
-		if v == "<<" {
-			if k == "host" || k == "private-address" {
-				// Use proxy address
-				if data.ProxyHost != "" {
-					propertyValue = data.ProxyHost
-				}
-			}
-			if k == "port" {
-				// Use proxy port
-				if data.ProxyHost != "" {
-					propertyValue = strconv.Itoa(data.ProxyPort)
-				}
-			}
-			if k == "protocol" {
-				instanceValue := data.InstanceConfig.Options["protocol"]
-				if instanceValue != "" {
-					propertyValue = instanceValue
-				}
-			}
-		} else {
-			propertyValue = v
-		}
-
-		relationInfo.Properties[k] = propertyValue
+	relationInfo := &model.RelationInfo{}
+	if templateContext.Proxy != nil {
+		relationInfo.PublicAddresses = []string{templateContext.Proxy.Host}
 	}
+	relationInfo.Properties = provideProperties
 
-	if data.ProxyHost != "" {
-		relationInfo.PublicAddresses = []string{data.ProxyHost}
-	}
-
-	return nil
+	return relationInfo, nil
 }
 
 func (self *baseBundleType) GetHealthChecks(bundle *bundle.Bundle) (map[string]jxaas.HealthCheck, error) {

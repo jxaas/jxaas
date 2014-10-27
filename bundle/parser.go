@@ -64,6 +64,10 @@ func getStringMap(config map[interface{}]interface{}, key string) map[string]str
 		return nil
 	}
 
+	return asStringMap(v)
+}
+
+func asStringMap(v interface{}) map[string]string {
 	vMap, ok := v.(map[interface{}]interface{})
 	if !ok {
 		log.Warn("Expected generic map, found %T", v)
@@ -136,6 +140,12 @@ func parseRelationConfig(config interface{}) (*RelationConfig, error) {
 
 	self.From = asString(configList[0])
 	self.To = asString(configList[1])
+	return self, nil
+}
+
+func parseProvides(config interface{}) (*ProvideConfig, error) {
+	self := &ProvideConfig{}
+	self.Properties = asStringMap(config)
 	return self, nil
 }
 
@@ -236,7 +246,19 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 		self.CloudFoundryConfig.Credentials = getStringMap(cfConfigMap, "credentials")
 	}
 
-	self.Properties = getStringMap(dataMap, "properties")
-
+	self.Provides = map[string]*ProvideConfig{}
+	provides := dataMap["provides"]
+	if provides != nil {
+		providesMap, ok := provides.(map[interface{}]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for provides, found %T", provides)
+		}
+		for providesKey, providesDefinition := range providesMap {
+			self.Provides[asString(providesKey)], err = parseProvides(providesDefinition)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	return self, nil
 }

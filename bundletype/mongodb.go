@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/model"
 )
 
 type MongodbBundleType struct {
@@ -28,10 +27,4 @@ func (self *MongodbBundleType) IsStarted(annotations map[string]string) bool {
 	}
 
 	return annotationsReady
-}
-
-func (self *MongodbBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-	data.Relation = self.primaryRelationKey
-
-	return self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
 }

@@ -1,11 +1,9 @@
 package bundletype
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/jxaas/jxaas/bundle"
-	"github.com/jxaas/jxaas/model"
 )
 
 type MultitenantMysqlBundleType struct {
@@ -29,25 +27,4 @@ func (self *MultitenantMysqlBundleType) IsStarted(annotations map[string]string)
 	}
 
 	return annotationsReady
-}
-
-func (self *MultitenantMysqlBundleType) BuildRelationInfo(bundle *bundle.Bundle, relationInfo *model.RelationInfo, data *RelationBuilder) error {
-		data.Relation = self.primaryRelationKey
-
-
-	err := self.baseBundleType.BuildRelationInfo(bundle, relationInfo, data)
-	if err != nil {
-		return err
-	}
-
-	// To override the IP / port
-	if data.ProxyHost != "" {
-		proxyHost := data.ProxyHost
-		relationInfo.Properties["host"] = proxyHost
-		relationInfo.Properties["private-address"] = proxyHost
-		relationInfo.Properties["port"] = strconv.Itoa(data.ProxyPort)
-		relationInfo.PublicAddresses = []string{proxyHost}
-	}
-
-	return nil
 }

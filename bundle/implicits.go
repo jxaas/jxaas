@@ -1,6 +1,10 @@
 package bundle
 
-import "github.com/justinsb/gova/log"
+import (
+	"strconv"
+
+	"github.com/justinsb/gova/log"
+)
 
 const (
 	IMPLICIT_MARKER     = "<<"
@@ -39,6 +43,40 @@ func (self *ServiceConfig) applyImplicits(templateContext *TemplateContext) {
 func (self *RelationConfig) applyImplicits(templateContext *TemplateContext) {
 }
 
+func (self *ProvideConfig) applyImplicits(templateContext *TemplateContext, relationKey string) {
+	relationInfo := templateContext.Relations[relationKey]
+
+	//	Properties     map[string]string
+	for k, v := range self.Properties {
+		if v == IMPLICIT_MARKER {
+			propertyValue := relationInfo[k]
+
+			// Some special cases
+			// host, private-address map to the proxy host
+			if k == "host" || k == "private-address" {
+				// Use proxy address
+				if templateContext.Proxy != nil {
+					propertyValue = templateContext.Proxy.Host
+				}
+			}
+			if k == "port" {
+				// Use proxy port
+				if templateContext.Proxy != nil {
+					propertyValue = strconv.Itoa(templateContext.Proxy.Port)
+				}
+			}
+			if k == "protocol" {
+				instanceValue := templateContext.Options["protocol"]
+				if instanceValue != "" {
+					propertyValue = instanceValue
+				}
+			}
+
+			self.Properties[k] = propertyValue
+		}
+	}
+}
+
 func (self *Bundle) ApplyImplicits(templateContext *TemplateContext) {
 	for _, v := range self.Services {
 		v.applyImplicits(templateContext)
@@ -46,6 +84,10 @@ func (self *Bundle) ApplyImplicits(templateContext *TemplateContext) {
 
 	for _, v := range self.Relations {
 		v.applyImplicits(templateContext)
+	}
+
+	for k, v := range self.Provides {
+		v.applyImplicits(templateContext, k)
 	}
 
 	stub, found := self.Services["stubclient"]

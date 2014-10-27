@@ -1,9 +1,15 @@
 mysql:
-  properties:
-    protocol: <<
-    host: <<
-    private-address: <<
-    port: <<
+  provides:
+    mysql:
+      protocol: <<
+      host: <<
+      private-address: <<
+      port: <<
+      database: <<
+      password: <<
+      slave: <<
+      user: <<
+      
   services:
     mysql:
       charm: "cs:~justin-fathomdb/trusty/mysql"
@@ -45,10 +51,10 @@ mysql:
 
   cloudfoundry:
     properties:
-      jdbcUrl: jdbc:mysql://{{.Properties.user}}:{{.Properties.password}}@{{.Properties.host}}:{{.Properties.port}}/{{.Properties.database}}
-      uri: mysql://{{.Properties.user}}:{{.Properties.password}}@{{.Properties.host}}:{{.Properties.port}}/{{.Properties.database}}
-      name: {{.Properties.database}}
-      hostname: {{.Properties.host}}
-      port: {{.Properties.port}}
-      username: {{.Properties.username}}
-      password: {{.Properties.password}}
+      jdbcUrl: jdbc:mysql://{{.Relations.mysql.user}}:{{.Relations.mysql.password}}@{{.Relations.mysql.host}}:{{.Relations.mysql.port}}/{{.Relations.mysql.database}}
+      uri: mysql://{{.Relations.mysql.user}}:{{.Relations.mysql.password}}@{{.Relations.mysql.host}}:{{.Relations.mysql.port}}/{{.Relations.mysql.database}}
+      name: {{.Relations.mysql.database}}
+      hostname: {{.Relations.mysql.host}}
+      port: {{.Relations.mysql.port}}
+      username: {{.Relations.mysql.user}}
+      password: {{.Relations.mysql.password}}
