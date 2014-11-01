@@ -564,38 +564,46 @@ func (self *Instance) buildCurrentTemplateContext(state *instanceState) (*bundle
 	// TODO: Need to determine current # of units
 	context.NumberUnits = 1
 
-	context.Options = state.Model.Options
+	if state != nil && state.Model != nil {
+		context.Options = state.Model.Options
+	} else {
+		context.Options = map[string]string{}
+	}
 
 	publicPortAssigner := &InstancePublicPortAssigner{}
 	publicPortAssigner.Instance = self
 	context.PublicPortAssigner = publicPortAssigner
 
 	// Populate relation info
-	context.Relations = state.Relations
+	if state != nil {
+		context.Relations = state.Relations
+	}
 
 	// Populate proxy
 	// TODO: Skip proxy host on EC2?
 	useProxyHost := true
 
-	systemProperties := state.SystemProperties
+	if state != nil {
+		systemProperties := state.SystemProperties
 
-	if useProxyHost && systemProperties[SYSTEM_KEY_PUBLIC_PORT] != "" {
-		publicPortString := systemProperties[SYSTEM_KEY_PUBLIC_PORT]
-		publicPort, err := strconv.Atoi(publicPortString)
-		if err != nil {
-			log.Warn("Error parsing public port: %v", publicPortString, err)
-			return nil, err
+		if useProxyHost && systemProperties[SYSTEM_KEY_PUBLIC_PORT] != "" {
+			publicPortString := systemProperties[SYSTEM_KEY_PUBLIC_PORT]
+			publicPort, err := strconv.Atoi(publicPortString)
+			if err != nil {
+				log.Warn("Error parsing public port: %v", publicPortString, err)
+				return nil, err
+			}
+
+			proxyHost, err := self.huddle.getProxyHost()
+			if err != nil {
+				log.Warn("Error fetching proxy host", err)
+				return nil, err
+			}
+
+			context.Proxy = &bundle.ProxySettings{}
+			context.Proxy.Host = proxyHost
+			context.Proxy.Port = publicPort
 		}
-
-		proxyHost, err := self.huddle.getProxyHost()
-		if err != nil {
-			log.Warn("Error fetching proxy host", err)
-			return nil, err
-		}
-
-		context.Proxy = &bundle.ProxySettings{}
-		context.Proxy.Host = proxyHost
-		context.Proxy.Port = publicPort
 	}
 
 	return context, nil
