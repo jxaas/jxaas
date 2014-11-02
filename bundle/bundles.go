@@ -101,7 +101,7 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 	// https://code.google.com/p/go/issues/detail?id=6288
 
 	yaml := buffer.String()
-	log.Debug("Bundle is:\n%v", yaml)
+	//log.Debug("Bundle is:\n%v", yaml)
 
 	bundles, err := ParseBundle(yaml)
 	if err != nil {
@@ -138,7 +138,7 @@ func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
 	}
 
 	yaml := buffer.String()
-	log.Debug("Bundle is:\n%v", yaml)
+	log.Debug("System bundle is:\n%v", yaml)
 
 	bundles, err := ParseBundle(yaml)
 	if err != nil {
