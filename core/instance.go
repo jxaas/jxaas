@@ -707,8 +707,8 @@ func (self *Instance) Configure(request *model.Instance) error {
 	return nil
 }
 
-func (self *Instance) getCurrentBundle() (*bundle.Bundle, error) {
-	context, err := self.buildCurrentTemplateContext(nil)
+func (self *Instance) getCurrentBundle(state *instanceState) (*bundle.Bundle, error) {
+	context, err := self.buildCurrentTemplateContext(state)
 	if err != nil {
 		return nil, err
 	}
@@ -731,6 +731,25 @@ func (self *Instance) GetJujuClient() *juju.Client {
 func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 	jujuClient := self.GetJujuClient()
 
+	state, err := self.getState0()
+	if err != nil {
+		return nil, err
+	}
+
+	if state == nil {
+		return nil, rs.ErrNotFound()
+	}
+
+	if state.Model == nil {
+		log.Debug("No model for %v", self)
+		return nil, rs.ErrNotFound()
+	}
+
+	if state.Model.Status != "started" {
+		log.Info("Skipping health check on not-yet started instance (state %v): %s", state.Model.Status, self)
+		return nil, nil
+	}
+
 	services, err := jujuClient.GetServiceStatusList(self.jujuPrefix)
 	if err != nil {
 		return nil, err
@@ -740,7 +759,7 @@ func (self *Instance) RunHealthCheck(repair bool) (*model.Health, error) {
 		return nil, rs.ErrNotFound()
 	}
 
-	bundle, err := self.getCurrentBundle()
+	bundle, err := self.getCurrentBundle(state)
 	if err != nil {
 		return nil, err
 	}
