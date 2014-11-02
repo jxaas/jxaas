@@ -518,11 +518,13 @@ func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *mode
 		return nil, nil, err
 	}
 
-	if relationInfo.PublicAddresses == nil {
-		relationInfo.PublicAddresses = state.PublicAddresses
-	}
+	if relationInfo != nil {
+		if relationInfo.PublicAddresses == nil {
+			relationInfo.PublicAddresses = state.PublicAddresses
+		}
 
-	relationInfo.Timestamp = state.RelationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
+		relationInfo.Timestamp = state.RelationMetadata[RELATIONINFO_METADATA_TIMESTAMP]
+	}
 
 	return bundle, relationInfo, nil
 }
