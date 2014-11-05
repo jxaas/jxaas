@@ -26,6 +26,13 @@ fi
 # Get the godeps tool
 go get launchpad.net/godeps
 
+# Switch branchs (doesn't seem to be a way to do this in godeps?)
+if [[ ! -d ${GOPATH}/src/launchpad.net/goose/ ]]; then
+  pushd ${GOPATH}/src/launchpad.net/
+  bzr branch lp:~justin-fathomdb/goose/keystone_improvements goose
+  popd
+fi
+
 # Download, but do not install, the latest code (to seed godeps)
 #go get -d -u -v github.com/jxaas/jxaas
 
