@@ -18,6 +18,7 @@ mysql:
       options:
         performance: <<
         slow-query-time: <<
+        dataset-size: 256M
 
     stubclient:
       charm: "cs:~justin-fathomdb/trusty/stub-client"
