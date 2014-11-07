@@ -34,7 +34,7 @@ if [[ ! -d ${GOPATH}/src/launchpad.net/goose/ ]]; then
 fi
 
 # Download, but do not install, the latest code (to seed godeps)
-#go get -d -u -v github.com/jxaas/jxaas
+go get -d -u -v github.com/jxaas/jxaas
 
 # Install some dependencies (these are otherwise missed?)
 #go get -d github.com/mattbaird/elastigo
