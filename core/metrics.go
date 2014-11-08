@@ -30,6 +30,10 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 		return nil, rs.ErrNotFound()
 	}
 
+	if len(jujuUnitNames) == 0 {
+		return nil, nil
+	}
+
 	// TODO: Inject
 	// TODO: Use an ES client that isn't a singleton
 	elasticgo_api.Domain = es.PublicAddress
