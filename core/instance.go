@@ -254,9 +254,11 @@ func (self *Instance) getState0() (*instanceState, error) {
 			}
 		}
 
-		state.Units[serviceId] = status.Units
+		if status != nil {
+			state.Units[serviceId] = status.Units
+		}
 	}
-
+	
 	// TODO: This is a bit of a hack also.  How should we wait for properties to be set?
 	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
 	if err != nil {
