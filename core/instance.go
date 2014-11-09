@@ -170,6 +170,8 @@ type instanceState struct {
 	PublicAddresses  []string
 
 	Relations map[string]map[string]string
+
+	Units map[string]map[string]api.UnitStatus
 }
 
 // TODO: Get rid of relationProperty entirely?
@@ -211,6 +213,10 @@ func (self *Instance) getState0() (*instanceState, error) {
 	state := &instanceState{}
 	state.Model = model.MapToInstance(self.instanceId, status, jujuService)
 
+	state.Units = map[string]map[string]api.UnitStatus{}
+
+	state.Units[primaryServiceId] = status.Units
+
 	state.PublicAddresses = []string{}
 	for _, unitStatus := range status.Units {
 		if unitStatus.PublicAddress == "" {
@@ -247,6 +253,8 @@ func (self *Instance) getState0() (*instanceState, error) {
 				model.MergeInstanceStatus(state.Model, &unitStatus)
 			}
 		}
+
+		state.Units[serviceId] = status.Units
 	}
 
 	// TODO: This is a bit of a hack also.  How should we wait for properties to be set?

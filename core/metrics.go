@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/justinsb/gova/log"
@@ -229,32 +228,21 @@ func (self *Instance) GetAllMetrics() (*model.Metrics, error) {
 
 // Retrieves a specific metric-dataset for the instance
 func (self *Instance) GetMetricValues(key string) (*model.MetricDataset, error) {
-	huddle := self.huddle
-	client := huddle.JujuClient
-
-	services, err := client.GetServiceStatusList(self.jujuPrefix)
+	state, err := self.getState0()
 	if err != nil {
 		return nil, err
 	}
 
-	if services == nil || len(services) == 0 {
-		return nil, rs.ErrNotFound()
-	}
+	primaryServiceId := self.primaryServiceId
 
 	jujuUnitNames := []string{}
 
-	for serviceId, service := range services {
-		// XXX: hard-coded?
-		if strings.HasSuffix(serviceId, "-mysql") {
-			for jujuUnitName, _ := range service.Units {
-				unitId := juju.ParseUnit(jujuUnitName)
-				metricUnit := self.jujuPrefix + "metrics" + "/" + unitId
+	units := state.Units[primaryServiceId]
+	for jujuUnitName, _ := range units {
+		unitId := juju.ParseUnit(jujuUnitName)
+		metricUnit := self.jujuPrefix + "metrics" + "/" + unitId
 
-				jujuUnitNames = append(jujuUnitNames, metricUnit)
-			}
-		} else {
-			log.Debug("Skipping service: %v", serviceId)
-		}
+		jujuUnitNames = append(jujuUnitNames, metricUnit)
 	}
 
 	log.Debug("Searching with names: %v", jujuUnitNames)
