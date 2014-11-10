@@ -32,6 +32,7 @@ type BundleType interface {
 type baseBundleType struct {
 	key                string
 	primaryRelationKey string
+	readyProperty      string
 	bundleStore        *bundle.BundleStore
 }
 
@@ -158,11 +159,16 @@ func (self *baseBundleType) IsStarted(allAnnotations map[string]map[string]strin
 	// TODO: Loop over all when no primaryRelationKey?
 	annotations := allAnnotations[self.primaryRelationKey]
 
+readyProperty := self.readyProperty
+if readyProperty == "" {
+readyProperty = "password"
+}
+
 	// TODO: This is a total hack... need to figure out when annotations are 'ready' and when not.
 	// we probably should do this on set, either in the charms or in the SetAnnotations call
 	annotationsReady := false
 	for key, _ := range annotations {
-		if key == "password" {
+		if key == readyProperty {
 			annotationsReady = true
 		}
 	}
