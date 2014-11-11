@@ -24,3 +24,7 @@ pg:
       - "pg:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
+
+  checks:
+    service-postgresql:
+      service: postgresql
