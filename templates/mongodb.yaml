@@ -24,3 +24,7 @@ mongodb:
   checks:
     service-mongodb:
       service: mongodb
+
+  meta:
+    primary-relation-key: mongodb
+    ready-property: replset

@@ -1,16 +1,5 @@
 package core
 
-type StubPortAssigner struct {
-}
-
-func (self *StubPortAssigner) AssignPort() (int, error) {
-	return 0, nil
-}
-
-func (self *StubPortAssigner) GetAssignedPort() (int, bool) {
-	return 0, false
-}
-
 type InstancePublicPortAssigner struct {
 	Instance *Instance
 	Assigned bool

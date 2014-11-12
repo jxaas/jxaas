@@ -9,8 +9,8 @@ type MongodbBundleType struct {
 func NewMongodbBundleType(bundleStore *bundle.BundleStore) *MongodbBundleType {
 	self := &MongodbBundleType{}
 	self.key = "mongodb"
-	self.primaryRelationKey = "mongodb"
+	//	self.primaryRelationKey = "mongodb"
 	self.bundleStore = bundleStore
-	self.readyProperty = "replset"
+	//	self.readyProperty = "replset"
 	return self
 }

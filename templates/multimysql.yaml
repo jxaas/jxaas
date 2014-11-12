@@ -20,4 +20,7 @@ multimysql:
   
     - - "multimysql:website"
       - "{{.SystemServices.haproxy}}:reverseproxy"
+
+  meta:
+    primary-relation-key: mysql
  

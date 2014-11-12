@@ -23,3 +23,6 @@ cassandra:
   checks:
     service-main:
       service: cassandra
+
+  meta:
+    primary-relation-key: cassandra

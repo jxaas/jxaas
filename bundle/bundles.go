@@ -67,6 +67,17 @@ func (self *TemplateContext) GetSpecialProperty(relationType, key, value string)
 	return value
 }
 
+type StubPortAssigner struct {
+}
+
+func (self *StubPortAssigner) AssignPort() (int, error) {
+	return 0, nil
+}
+
+func (self *StubPortAssigner) GetAssignedPort() (int, bool) {
+	return 0, false
+}
+
 func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
 	// Copy and apply the system prefix
 	templateContextCopy := *templateContext

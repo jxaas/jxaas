@@ -236,6 +236,24 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 		}
 	}
 
+	meta := dataMap["meta"]
+	if healthChecks != nil {
+		metaMap, ok := meta.(map[interface{}]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for meta, found %T", meta)
+		}
+		for metaKey, metaValue := range metaMap {
+			metaKeyString := asString(metaKey)
+			if metaKeyString == "primary-relation-key" {
+				self.Meta.PrimaryRelationKey = asString(metaValue)
+			} else if metaKeyString == "ready-property" {
+				self.Meta.ReadyProperty = asString(metaValue)
+			} else {
+				return nil, fmt.Errorf("Unknown meta property: %v", metaKeyString)
+			}
+		}
+	}
+
 	self.CloudFoundryConfig = &CloudFoundryConfig{}
 	cfConfig := dataMap["cloudfoundry"]
 	if cfConfig != nil {

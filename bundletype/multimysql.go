@@ -9,7 +9,7 @@ type MultitenantMysqlBundleType struct {
 func NewMultitenantMysqlBundleType(bundleStore *bundle.BundleStore) *MultitenantMysqlBundleType {
 	self := &MultitenantMysqlBundleType{}
 	self.key = "multimysql"
-	self.primaryRelationKey = "mysql"
+	//	self.primaryRelationKey = "mysql"
 	self.bundleStore = bundleStore
 	return self
 }

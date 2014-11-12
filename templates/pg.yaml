@@ -28,3 +28,6 @@ pg:
   checks:
     service-postgresql:
       service: postgresql
+
+  meta:
+    primary-relation-key: pgsql

@@ -30,10 +30,37 @@ type BundleType interface {
 }
 
 type baseBundleType struct {
-	key                string
-	primaryRelationKey string
-	readyProperty      string
-	bundleStore        *bundle.BundleStore
+	key         string
+	bundleStore *bundle.BundleStore
+
+	meta bundle.BundleMeta
+}
+
+func (self *baseBundleType) Init() error {
+	context := &bundle.TemplateContext{}
+	context.SystemServices = map[string]string{}
+	context.SystemImplicits = map[string]string{}
+	context.PublicPortAssigner = &bundle.StubPortAssigner{}
+
+	tenant := "stub"
+	name := "stub"
+
+	stubBundle, err := self.GetBundle(context, tenant, name)
+	if err != nil {
+		return err
+	}
+
+	self.meta = stubBundle.Meta
+
+	if self.meta.ReadyProperty == "" {
+		self.meta.ReadyProperty = "password"
+	}
+
+	if self.meta.PrimaryRelationKey == "" {
+		self.meta.PrimaryRelationKey = self.key
+	}
+
+	return nil
 }
 
 func (self *baseBundleType) Key() string {
@@ -45,7 +72,7 @@ func (self *baseBundleType) PrimaryJujuService() string {
 }
 
 func (self *baseBundleType) PrimaryRelationKey() string {
-	return self.primaryRelationKey
+	return self.meta.PrimaryRelationKey
 }
 
 func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error) {
@@ -157,12 +184,9 @@ func (self *baseBundleType) GetDefaultScalingPolicy() *model.ScalingPolicy {
 
 func (self *baseBundleType) IsStarted(allAnnotations map[string]map[string]string) bool {
 	// TODO: Loop over all when no primaryRelationKey?
-	annotations := allAnnotations[self.primaryRelationKey]
+	annotations := allAnnotations[self.PrimaryRelationKey()]
 
-readyProperty := self.readyProperty
-if readyProperty == "" {
-readyProperty = "password"
-}
+	readyProperty := self.meta.ReadyProperty
 
 	// TODO: This is a total hack... need to figure out when annotations are 'ready' and when not.
 	// we probably should do this on set, either in the charms or in the SetAnnotations call

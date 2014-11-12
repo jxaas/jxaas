@@ -9,7 +9,7 @@ type PgBundleType struct {
 func NewPgBundleType(bundleStore *bundle.BundleStore) *PgBundleType {
 	self := &PgBundleType{}
 	self.key = "pg"
-	self.primaryRelationKey = "pgsql"
+	//	self.primaryRelationKey = "pgsql"
 	self.bundleStore = bundleStore
 	return self
 }

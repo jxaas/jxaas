@@ -7,12 +7,17 @@ import (
 )
 
 type Bundle struct {
-	Services     map[string]*ServiceConfig
-	Relations    []*RelationConfig
-	Provides     map[string]*ProvideConfig
-	HealthChecks map[string]*HealthCheckConfig
-
+	Services           map[string]*ServiceConfig
+	Relations          []*RelationConfig
+	Provides           map[string]*ProvideConfig
+	HealthChecks       map[string]*HealthCheckConfig
+	Meta               BundleMeta
 	CloudFoundryConfig *CloudFoundryConfig
+}
+
+type BundleMeta struct {
+	PrimaryRelationKey string
+	ReadyProperty      string
 }
 
 type ServiceConfig struct {

@@ -258,7 +258,7 @@ func (self *Instance) getState0() (*instanceState, error) {
 			state.Units[serviceId] = status.Units
 		}
 	}
-	
+
 	// TODO: This is a bit of a hack also.  How should we wait for properties to be set?
 	annotations, err := jujuClient.GetServiceAnnotations(primaryServiceId)
 	if err != nil {
@@ -555,7 +555,7 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	context.SystemImplicits["jxaas-user"] = "rpcuser"
 	context.SystemImplicits["jxaas-secret"] = "rpcsecret"
 
-	context.PublicPortAssigner = &StubPortAssigner{}
+	context.PublicPortAssigner = &bundle.StubPortAssigner{}
 
 	return context
 }

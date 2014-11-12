@@ -24,3 +24,7 @@ es:
   checks:
     service-elasticsearch:
       service: elasticsearch
+
+  meta:
+    primary-relation-key: elasticsearch
+    ready-property: cluster-name
