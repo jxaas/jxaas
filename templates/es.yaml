@@ -20,3 +20,7 @@ es:
       - "es:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
+
+  checks:
+    service-elasticsearch:
+      service: elasticsearch

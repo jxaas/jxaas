@@ -20,3 +20,7 @@ mongodb:
       - "mongodb:juju-info"
     - - "metrics:elasticsearch"
       - "{{.SystemServices.elasticsearch}}:cluster"
+
+  checks:
+    service-mongodb:
+      service: mongodb
