@@ -78,7 +78,7 @@ func (self *StubPortAssigner) GetAssignedPort() (int, bool) {
 	return 0, false
 }
 
-func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
+func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
 	// Copy and apply the system prefix
 	templateContextCopy := *templateContext
 
@@ -94,16 +94,8 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 		templateContextCopy.Options = map[string]string{}
 	}
 
-	template, err := self.getBundleTemplate(serviceType)
-	if err != nil {
-		return nil, err
-	}
-	if template == nil {
-		return nil, nil
-	}
-
 	var buffer bytes.Buffer
-	err = template.Execute(&buffer, &templateContextCopy)
+	err := self.template.Execute(&buffer, &templateContextCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +124,7 @@ func (self *BundleStore) GetBundle(templateContext *TemplateContext, tenant, ser
 }
 
 func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
-	template, err := self.getBundleTemplate(key)
+	template, err := self.GetBundleTemplate(key)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +135,7 @@ func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
 	context := make(map[string]string)
 
 	var buffer bytes.Buffer
-	err = template.Execute(&buffer, context)
+	err = template.template.Execute(&buffer, context)
 	if err != nil {
 		return nil, err
 	}

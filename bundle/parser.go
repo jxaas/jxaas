@@ -237,7 +237,7 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 	}
 
 	meta := dataMap["meta"]
-	if healthChecks != nil {
+	if meta != nil {
 		metaMap, ok := meta.(map[interface{}]interface{})
 		if !ok {
 			return nil, fmt.Errorf("Expected generic map for meta, found %T", meta)

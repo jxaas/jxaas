@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/justinsb/gova/log"
+	"github.com/justinsb/gova/sources"
+	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
@@ -60,11 +62,14 @@ func (self *System) AddJxaasCharm(apiclient *juju.Client, key string, charmName 
 		return fmt.Errorf("Unable to find charm url: %v", charmName)
 	}
 
-	// Sadly not readable by user
-	//	zipFile := "${HOME}/.juju/local/charmcache/cs_3a__7e_justin-fathomdb_2f_trusty_2f_mongodb-0.charm"
-	zipFile := "/tmp/mongodb.charm"
-	charmFile := NewCharmFile(zipFile)
-	config, err := charmFile.read("config.yaml")
+	contents, err := apiclient.DownloadCharm(charmName)
+	if err != nil {
+		log.Warn("Error reading charm", err)
+		return err
+	}
+
+	charmFile := NewCharmReader(contents)
+	config, err := charmFile.read("jxaas.yaml")
 	if err != nil {
 		log.Warn("Error reading jxaas.yaml from charm: %v", charmName, err)
 		return err
@@ -73,8 +78,19 @@ func (self *System) AddJxaasCharm(apiclient *juju.Client, key string, charmName 
 	if config == nil {
 		return fmt.Errorf("Could not find jxaas.yaml in charm: %v", charmName)
 	}
+	//	log.Info("Jxaas config: %v", string(config))
 
-	log.Info("Jxaas config: %v", string(config))
+	bundleTemplate, err := bundle.NewBundleTemplate(sources.NewArrayToByteSource(config))
+	if err != nil {
+		return err
+	}
+
+	bundleType, err := bundletype.NewGenericBundleType(key, bundleTemplate)
+	if err != nil {
+		return err
+	}
+
+	self.BundleTypes[key] = bundleType
 
 	return nil
 }

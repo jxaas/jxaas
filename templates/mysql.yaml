@@ -52,7 +52,7 @@ mysql:
 
   meta:
     primary-relation-key: mysql
-	
+
   cloudfoundry:
     properties:
       jdbcUrl: jdbc:mysql://{{.Relations.mysql.user}}:{{.Relations.mysql.password}}@{{.Relations.mysql.host}}:{{.Relations.mysql.port}}/{{.Relations.mysql.database}}

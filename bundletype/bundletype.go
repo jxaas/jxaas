@@ -30,8 +30,8 @@ type BundleType interface {
 }
 
 type baseBundleType struct {
-	key         string
-	bundleStore *bundle.BundleStore
+	key            string
+	bundleTemplate *bundle.BundleTemplate
 
 	meta bundle.BundleMeta
 }
@@ -77,7 +77,7 @@ func (self *baseBundleType) PrimaryRelationKey() string {
 
 func (self *baseBundleType) GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error) {
 	bundleKey := self.Key()
-	return self.bundleStore.GetBundle(templateContext, tenant, bundleKey, name)
+	return self.bundleTemplate.GetBundle(templateContext, tenant, bundleKey, name)
 }
 
 func (self *baseBundleType) BuildRelationInfo(templateContext *bundle.TemplateContext, bundle *bundle.Bundle, relationKey string) (*model.RelationInfo, error) {

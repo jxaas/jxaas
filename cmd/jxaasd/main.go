@@ -142,14 +142,60 @@ func main() {
 
 	system := core.NewSystem()
 
-	system.AddJxaasCharm(apiclient, "mongo", "cs:~justin-fathomdb/trusty/mongodb")
+	//	system.AddJxaasCharm(apiclient, "mongo", "cs:~justin-fathomdb/trusty/mongodb")
+	{
+		bundle, err := bundletype.NewMongodbBundleType(bundleStore)
+		if err != nil {
+			log.Fatal("Error building mongodb bundle", err)
+			os.Exit(1)
+		}
+		system.AddBundleType(bundle)
+	}
 
-	system.AddBundleType(bundletype.NewMysqlBundleType(bundleStore))
-	system.AddBundleType(bundletype.NewElasticsearchBundleType(bundleStore))
-	//	system.AddBundleType(bundletype.NewMongodbBundleType(bundleStore))
-	system.AddBundleType(bundletype.NewPgBundleType(bundleStore))
-	system.AddBundleType(bundletype.NewMultitenantMysqlBundleType(bundleStore))
-	system.AddBundleType(bundletype.NewCassandraBundleType(bundleStore))
+	{
+		bundle, err := bundletype.NewMysqlBundleType(bundleStore)
+		if err != nil {
+			log.Fatal("Error building mysql bundle", err)
+			os.Exit(1)
+		}
+		system.AddBundleType(bundle)
+	}
+
+	{
+		bundle, err := bundletype.NewMultitenantMysqlBundleType(bundleStore)
+		if err != nil {
+			log.Fatal("Error building multi-mysql bundle", err)
+			os.Exit(1)
+		}
+		system.AddBundleType(bundle)
+	}
+
+	{
+		bundle, err := bundletype.NewElasticsearchBundleType(bundleStore)
+		if err != nil {
+			log.Fatal("Error building elasticsearch bundle", err)
+			os.Exit(1)
+		}
+		system.AddBundleType(bundle)
+	}
+
+	{
+		bundle, err := bundletype.NewPgBundleType(bundleStore)
+		if err != nil {
+			log.Fatal("Error building postgres bundle", err)
+			os.Exit(1)
+		}
+		system.AddBundleType(bundle)
+	}
+
+	{
+		bundle, err := bundletype.NewCassandraBundleType(bundleStore)
+		if err != nil {
+			log.Fatal("Error building cassandra bundle", err)
+			os.Exit(1)
+		}
+		system.AddBundleType(bundle)
+	}
 
 	privateUrl := options.PrivateUrl
 

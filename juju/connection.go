@@ -1,9 +1,12 @@
 package juju
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -11,6 +14,7 @@ import (
 
 	"github.com/justinsb/gova/files"
 	"github.com/justinsb/gova/log"
+	"github.com/justinsb/gova/sources"
 
 	"launchpad.net/juju-core/cmd/envcmd"
 	"launchpad.net/juju-core/constraints"
@@ -372,4 +376,105 @@ func (self *Client) GetLogStore() (*JujuLogStore, error) {
 	}
 
 	return nil, errors.New("Unable to find juju log store")
+}
+
+func asString(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+
+	return fmt.Sprint(v)
+}
+
+func copyFile(srcPath string, destFile *os.File) error {
+	in, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	_, err = io.Copy(destFile, in)
+	return err
+}
+
+func shouldEncode(c uint8) bool {
+	if c >= 'A' && c <= 'Z' {
+		return false
+	}
+	if c >= 'a' && c <= 'z' {
+		return false
+	}
+	if c >= '0' && c <= '9' {
+		return false
+	}
+	switch c {
+	case '-':
+		return false
+	default:
+		return true
+	}
+}
+
+func encodeCharmPath(s string) string {
+	var buffer bytes.Buffer
+
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		if shouldEncode(c) {
+			buffer.WriteRune('_')
+			buffer.WriteByte("0123456789abcdef"[c>>4])
+			buffer.WriteByte("0123456789abcdef"[c&0xf])
+			buffer.WriteRune('_')
+		} else {
+			buffer.WriteByte(c)
+		}
+	}
+	return buffer.String()
+}
+
+func (self *Client) DownloadCharm(charmKey string) (sources.ByteSource, error) {
+	// Sadly not readable by user
+
+	charmInfo, err := self.CharmInfo(charmKey)
+	if err != nil {
+		log.Warn("Unable to get charm info: %v", charmKey, err)
+		return nil, err
+	}
+
+	environment, err := self.client.EnvironmentGet()
+	if err != nil {
+		log.Warn("Unable to get juju environment", err)
+		return nil, err
+	}
+
+	jujuType := asString(environment["type"])
+	if jujuType == "" {
+		return nil, fmt.Errorf("Could not fetch environment value 'type'")
+	}
+
+	rootDir := asString(environment["root-dir"])
+	if rootDir == "" {
+		return nil, fmt.Errorf("Could not fetch environment value 'type'")
+	}
+
+	//	zipFile := "${HOME}/.juju/local/charmcache/cs_3a__7e_justin-fathomdb_2f_trusty_2f_mongodb-0.charm"
+
+	escaped := encodeCharmPath(charmInfo.URL)
+	filename := escaped + ".charm"
+	charmPath := filepath.Join(rootDir, "charmcache", filename)
+
+	if jujuType == "local" {
+		contents := sources.NewFileByteSource(charmPath)
+
+		exists, err := contents.Exists()
+		if err != nil {
+			return nil, err
+		}
+
+		if !exists {
+			return nil, fmt.Errorf("Charm file not found: %v", charmPath)
+		}
+		return contents, nil
+	} else {
+		return nil, fmt.Errorf("Unable to handle juju configuration type: %v", jujuType)
+	}
 }
