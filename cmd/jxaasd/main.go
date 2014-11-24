@@ -214,6 +214,7 @@ func main() {
 	}
 
 	rest := rs.NewRestServer()
+	rest.SetListen(options.ListenAddress)
 
 	typeEndpointXaas := reflect.TypeOf((*endpoints.EndpointXaas)(nil)).Elem()
 	binder.AddDefaultBinding(typeEndpointXaas)

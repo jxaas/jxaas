@@ -18,6 +18,7 @@ var (
 	flagKeystoneUrl     = flag.String("openstack", "http://127.0.0.1:5000/v2.0", "URL for OpenStack Identity service")
 	flagAuth            = flag.String("auth", "development", "Authentication plugin to use")
 	flagCfTenantId      = flag.String("cf-tenant", "cf", "TenantId to use for cloudfoundry services")
+	flagListenAddress   = flag.String("listen", ":8080", "Address on which to listen")
 )
 
 type Options struct {
@@ -26,6 +27,7 @@ type Options struct {
 	PrivateUrl      string
 	Authenticator   auth.Authenticator
 	CfTenantId      string
+	ListenAddress   string
 }
 
 func localIP() (net.IP, error) {
@@ -63,16 +65,37 @@ func GetOptions() *Options {
 	self.ApiPasswordPath = *flagApiPasswordPath
 
 	self.CfTenantId = *flagCfTenantId
+	self.ListenAddress = *flagListenAddress
+
+	host, port, err := net.SplitHostPort(self.ListenAddress)
+	if err != nil {
+		log.Warn("Cannot parse listen address: %v", self.ListenAddress)
+		return nil
+	}
+	var portNum int
+	if port == "" {
+		portNum = 8080
+	} else {
+		portNum, err = net.LookupPort("tcp", port)
+		if err != nil {
+			log.Warn("Cannot resolve port: %v", port)
+			return nil
+		}
+	}
 
 	privateUrl := *flagPrivateUrl
 	if privateUrl == "" {
-		ip, err := localIP()
-		if err != nil {
-			log.Warn("Error finding local IP", err)
-			return nil
+		privateHost := host
+		if privateHost == "" {
+			ip, err := localIP()
+			if err != nil {
+				log.Warn("Error finding local IP", err)
+				return nil
+			}
+			privateHost = ip.String()
 		}
 
-		privateUrl = fmt.Sprintf("http://%v:8080/xaasprivate", ip)
+		privateUrl = fmt.Sprintf("http://%v:%v/xaasprivate", privateHost, portNum)
 		log.Info("Chose private url: %v", privateUrl)
 	}
 	self.PrivateUrl = privateUrl

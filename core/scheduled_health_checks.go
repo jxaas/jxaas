@@ -29,3 +29,7 @@ func (self *HealthCheckAllInstances) Run() error {
 
 	return nil
 }
+
+func (self *HealthCheckAllInstances) String() string {
+	return "HealthCheckAllInstances"
+}

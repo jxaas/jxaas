@@ -21,3 +21,7 @@ func (self *CleanupOldMachines) Run() error {
 
 	return nil
 }
+
+func (self *CleanupOldMachines) String() string {
+	return "CleanupOldMachines"
+}

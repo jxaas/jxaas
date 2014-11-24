@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	flagRegistryUrl = flag.String("registry", "etcd://127.0.0.1", "Registry location")
+	flagRegistryUrl = flag.String("registry", "etcd://127.0.0.1/jxaas/router", "Registry location")
 	flagListen      = flag.String("listen", ":8080", "listen on address")
 )
 
@@ -29,7 +29,7 @@ func GetOptions() *Options {
 		log.Warn("Unable to parse registry url: %v", *flagRegistryUrl)
 		return nil
 	}
-	if registryUrl.Host == "etcd" {
+	if registryUrl.Scheme == "etcd" {
 		registry, err := NewEtcdRouterRegistry(registryUrl)
 		if err != nil {
 			log.Warn("Unable to build etcd registry", err)
@@ -37,7 +37,7 @@ func GetOptions() *Options {
 		}
 		self.Registry = registry
 	} else {
-		log.Warn("Unknown registry type: %v", registryUrl.Host)
+		log.Warn("Unknown registry type: %v", registryUrl.Scheme)
 		return nil
 	}
 

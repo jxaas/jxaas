@@ -28,3 +28,7 @@ func (self *AutoScaleAllInstances) Run() error {
 
 	return nil
 }
+
+func (self *AutoScaleAllInstances) String() string {
+	return "AutoScaleAllInstances"
+}
