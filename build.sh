@@ -26,7 +26,7 @@ fi
 # Get the godeps tool
 go get launchpad.net/godeps
 
-# Switch branchs (doesn't seem to be a way to do this in godeps?)
+# Switch branches (doesn't seem to be a way to do this in godeps?)
 if [[ ! -d ${GOPATH}/src/launchpad.net/goose/ ]]; then
   pushd ${GOPATH}/src/launchpad.net/
   bzr branch lp:~justin-fathomdb/goose/keystone_improvements goose

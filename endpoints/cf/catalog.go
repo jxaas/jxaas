@@ -1,5 +1,9 @@
 package cf
 
+import (
+	"github.com/justinsb/gova/log"
+)
+
 type EndpointCatalog struct {
 	Parent *EndpointCfV2
 }
@@ -27,16 +31,25 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 		//	Metadata    map[string]string
 		service.Requires = []string{}
 
-		service.Plans = []*CatalogModelPlan{}
-		plan := &CatalogModelPlan{}
-		plan.Id = service.Id + "::" + "default"
-		plan.Name = "default"
-		plan.Description = "Default plan"
-		//	Metadata        map[string]string
-		//	Free            bool
-		//	DashboardClient *CatalogModelDashboard
-		service.Plans = append(service.Plans, plan)
+		bundleType := huddle.System.GetBundleType(bundle.Id)
 
+		cfPlans, err := bundleType.GetCfPlans()
+		if err != nil {
+			log.Warn("Error retrieving cf plans for bundle %v", bundle.Id, err)
+			return nil, err
+		}
+
+		service.Plans = []*CatalogModelPlan{}
+		for _, cfPlan := range cfPlans {
+			plan := &CatalogModelPlan{}
+			plan.Id = service.Id+"::"+cfPlan.Key
+			plan.Name = cfPlan.Key
+			plan.Description = cfPlan.Key + " plan"
+			//	Metadata        map[string]string
+			//	Free            bool
+			//	DashboardClient *CatalogModelDashboard
+			service.Plans = append(service.Plans, plan)
+		}
 		model.Services = append(model.Services, service)
 	}
 

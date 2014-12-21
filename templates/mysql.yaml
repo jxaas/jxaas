@@ -62,3 +62,18 @@ mysql:
       port: {{.Relations.mysql.port}}
       username: {{.Relations.mysql.user}}
       password: {{.Relations.mysql.password}}
+
+    plans:
+      nano:
+        properties:
+          dataset-size: 128M
+      micro:
+        properties:
+          dataset-size: 256M
+      milli:
+        properties:
+          dataset-size: 512M
+      uni:
+        properties:
+          dataset-size: 1024M
+

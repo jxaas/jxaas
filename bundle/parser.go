@@ -160,6 +160,35 @@ func parseHealthCheck(config interface{}) (*HealthCheckConfig, error) {
 	return self, nil
 }
 
+func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error) {
+	if plansObject == nil {
+		return nil, nil
+	}
+
+	plansMap, ok := plansObject.(map[interface{}]interface{})
+	if !ok {
+		return nil, fmt.Errorf("Expected generic map for plans, found %T", plansObject)
+	}
+
+	plans := []CloudFoundryPlan{}
+	for planKey, planDefinition := range plansMap {
+		plan := CloudFoundryPlan{}
+		plan.Key = asString(planKey)
+
+		planDefintionMap, ok := planDefinition.(map[interface{}]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for plan, found %T", planDefinition)
+		}
+
+		plan.Properties = getStringMap(planDefintionMap, "properties")
+
+		plans = append(plans, plan)
+	}
+
+	return plans, nil
+}
+
+
 func ParseBundle(yaml string) (map[string]*Bundle, error) {
 	config := map[string]interface{}{}
 	err := goyaml.Unmarshal([]byte(yaml), &config)
@@ -262,6 +291,10 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 			return nil, fmt.Errorf("Expected generic map for cloudfoundry, found %T", cfConfig)
 		}
 		self.CloudFoundryConfig.Credentials = getStringMap(cfConfigMap, "credentials")
+		self.CloudFoundryConfig.Plans, err = parseCloudFoundryPlans(cfConfigMap["plans"])
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	self.Provides = map[string]*ProvideConfig{}

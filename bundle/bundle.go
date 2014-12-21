@@ -42,8 +42,14 @@ type HealthCheckConfig struct {
 	Service string
 }
 
+type CloudFoundryPlan struct {
+	Key string
+	Properties map[string]string
+}
+
 type CloudFoundryConfig struct {
 	Credentials map[string]string
+	Plans []CloudFoundryPlan
 }
 
 // Implement fmt.Stringer

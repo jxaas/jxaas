@@ -18,6 +18,7 @@ type BundleType interface {
 	PrimaryRelationKey() string
 
 	MapCfCredentials(bundle *bundle.Bundle, relationInfo *model.RelationInfo) (map[string]string, error)
+	GetCfPlans() ([]bundle.CloudFoundryPlan, error)
 
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]map[string]string) bool
@@ -34,6 +35,7 @@ type baseBundleType struct {
 	bundleTemplate *bundle.BundleTemplate
 
 	meta bundle.BundleMeta
+	cloudfoundryMeta *bundle.CloudFoundryConfig
 }
 
 func (self *baseBundleType) Init() error {
@@ -50,6 +52,7 @@ func (self *baseBundleType) Init() error {
 		return err
 	}
 
+	self.cloudfoundryMeta = stubBundle.CloudFoundryConfig
 	self.meta = stubBundle.Meta
 
 	if self.meta.ReadyProperty == "" {
@@ -175,6 +178,17 @@ func (self *baseBundleType) MapCfCredentials(bundle *bundle.Bundle, relationInfo
 	}
 
 	return credentials, nil
+}
+
+func (self *baseBundleType) GetCfPlans() ([]bundle.CloudFoundryPlan, error) {
+	plans := self.cloudfoundryMeta.Plans
+	if plans == nil {
+		plan := bundle.CloudFoundryPlan{}
+		plan.Key = "default"
+		plans := []bundle.CloudFoundryPlan{ plan }
+		return plans, nil
+	}
+	return plans, nil
 }
 
 func (self *baseBundleType) GetDefaultScalingPolicy() *model.ScalingPolicy {
