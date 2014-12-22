@@ -1,33 +1,32 @@
-pg:
-  services:
-    pg:
-      charm: "cs:~justin-fathomdb/trusty/postgresql"
-      num_units: <<
-      exposed: true
-      options:
-        performance: <<
-        slow-query-time: <<
-        admin_addresses: 0.0.0.0/0
+services:
+  pg:
+    charm: "cs:~justin-fathomdb/trusty/postgresql"
+    num_units: <<
+    exposed: true
+    options:
+      performance: <<
+      slow-query-time: <<
+      admin_addresses: 0.0.0.0/0
 
-    stubclient:
-      charm: "cs:~justin-fathomdb/trusty/stub-client"
+  stubclient:
+    charm: "cs:~justin-fathomdb/trusty/stub-client"
 
-    metrics:
-      charm: "cs:~justin-fathomdb/trusty/heka-collector"
-  relations:
-    - - "stubclient:juju-info"
-      - "pg:juju-info"
-    - - "stubclient:pgsql"
-      - "pg:db"
+  metrics:
+    charm: "cs:~justin-fathomdb/trusty/heka-collector"
+relations:
+  - - "stubclient:juju-info"
+    - "pg:juju-info"
+  - - "stubclient:pgsql"
+    - "pg:db"
 
-    - - "metrics:juju-info"
-      - "pg:juju-info"
-    - - "metrics:elasticsearch"
-      - "{{.SystemServices.elasticsearch}}:cluster"
+  - - "metrics:juju-info"
+    - "pg:juju-info"
+  - - "metrics:elasticsearch"
+    - "{{.SystemServices.elasticsearch}}:cluster"
 
-  checks:
-    service-postgresql:
-      service: postgresql
+checks:
+  service-postgresql:
+    service: postgresql
 
-  meta:
-    primary-relation-key: pgsql
+meta:
+  primary-relation-key: pgsql

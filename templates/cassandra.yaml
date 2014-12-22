@@ -1,28 +1,27 @@
-cassandra:
-  services:
-    cassandra:
-      charm: "cs:~justin-fathomdb/trusty/cassandra"
-      num_units: <<
-      exposed: true
+services:
+  cassandra:
+    charm: "cs:~justin-fathomdb/trusty/cassandra"
+    num_units: <<
+    exposed: true
 
-    stubclient:
-      charm: "cs:~justin-fathomdb/trusty/stub-client"
-      
-    metrics:
-      charm: "cs:~justin-fathomdb/trusty/heka-collector"
-  relations:
-    - - "stubclient:juju-info"
-      - "cassandra:juju-info"
-    - - "stubclient:cassandra"
-      - "cassandra:database"
-    - - "metrics:juju-info"
-      - "cassandra:juju-info"
-    - - "metrics:elasticsearch"
-      - "{{.SystemServices.elasticsearch}}:cluster"
+  stubclient:
+    charm: "cs:~justin-fathomdb/trusty/stub-client"
 
-  checks:
-    service-main:
-      service: cassandra
+  metrics:
+    charm: "cs:~justin-fathomdb/trusty/heka-collector"
+relations:
+  - - "stubclient:juju-info"
+    - "cassandra:juju-info"
+  - - "stubclient:cassandra"
+    - "cassandra:database"
+  - - "metrics:juju-info"
+    - "cassandra:juju-info"
+  - - "metrics:elasticsearch"
+    - "{{.SystemServices.elasticsearch}}:cluster"
 
-  meta:
-    primary-relation-key: cassandra
+checks:
+  service-main:
+    service: cassandra
+
+meta:
+  primary-relation-key: cassandra

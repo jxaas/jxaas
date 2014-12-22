@@ -1,26 +1,24 @@
-multimysql:
-  services:
-    multimysql:
-      charm: "cs:~justin-fathomdb/trusty/stub-client"
-      exposed: true
-      options:
-        private-port: 3306
-        public-port: {{.AssignPublicPort}}
-        open-ports: 3306
-        jxaas-privateurl: <<
-        jxaas-tenant: <<
-        jxaas-user: <<
-        jxaas-secret: <<
+services:
+  multimysql:
+    charm: "cs:~justin-fathomdb/trusty/stub-client"
+    exposed: true
+    options:
+      private-port: 3306
+      public-port: {{.AssignPublicPort}}
+      open-ports: 3306
+      jxaas-privateurl: <<
+      jxaas-tenant: <<
+      jxaas-user: <<
+      jxaas-secret: <<
 
-  relations:
-    - - "multimysql:juju-info"
-      - "{{.SystemServices.mysql}}:juju-info"
-    - - "multimysql:mysql"
-      - "{{.SystemServices.mysql}}:db"
-  
-    - - "multimysql:website"
-      - "{{.SystemServices.haproxy}}:reverseproxy"
+relations:
+  - - "multimysql:juju-info"
+    - "{{.SystemServices.mysql}}:juju-info"
+  - - "multimysql:mysql"
+    - "{{.SystemServices.mysql}}:db"
 
-  meta:
-    primary-relation-key: mysql
- 
+  - - "multimysql:website"
+    - "{{.SystemServices.haproxy}}:reverseproxy"
+
+meta:
+  primary-relation-key: mysql

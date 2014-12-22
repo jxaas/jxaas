@@ -1,8 +1,8 @@
 package cf
 
 import (
+	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
@@ -48,30 +48,25 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 		return nil, err
 	}
 
-	// XXX: Copied from instance.go HttpPut; refactor into Configure call?
-	for i := 1; i <= 10; i++ {
-		model, err := instance.GetState()
-
-		if err == nil && model == nil {
-			time.Sleep(time.Second * 1)
-			continue
-		} else {
-			if err != nil {
-				return nil, err
-			}
-
-			response := &CfCreateInstanceResponse{}
-			// XXX: We need a dashboard URL - maybe a Juju GUI?
-			response.DashboardUrl = "http://localhost:8080"
-
-			httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
-			httpResponse.Content = response
-			return httpResponse, nil
-		}
+	ready, err := waitReady(instance, 300)
+	if err != nil {
+		log.Warn("Error while waiting for instance to become ready", err)
+		return nil, err
 	}
 
-	log.Warn("Unable to retrieve instance state, even after retries")
-	return nil, rs.ErrNotFound()
+	if !ready {
+		log.Warn("Timeout waiting for service to be ready")
+		return nil, fmt.Errorf("Service not ready")
+	}
+
+
+	response := &CfCreateInstanceResponse{}
+	// XXX: We need a dashboard URL - maybe a Juju GUI?
+	response.DashboardUrl = "http://localhost:8080"
+
+	httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
+	httpResponse.Content = response
+	return httpResponse, nil
 }
 
 func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfDeleteInstanceResponse, error) {

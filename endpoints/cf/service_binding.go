@@ -1,6 +1,7 @@
 package cf
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/justinsb/gova/log"
@@ -34,22 +35,36 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpRes
 		return nil, rs.ErrNotFound()
 	}
 
-	bundle, relationInfo, err := instance.GetRelationInfo(bundleType.PrimaryRelationKey())
+	ready, err := waitReady(instance, 300)
 	if err != nil {
+		log.Warn("Error while waiting for instance to become ready", err)
 		return nil, err
 	}
 
-	// XXX: Synchronous wait??
+	if !ready {
+		log.Warn("Timeout waiting for service to be ready")
+		return nil, fmt.Errorf("Service not ready")
+	}
+
+	relationKey := bundleType.PrimaryRelationKey()
+	_, relationInfo, err := instance.GetRelationInfo(relationKey)
+	if err != nil {
+		return nil, err
+	}
 
 	if relationInfo == nil {
 		return nil, rs.ErrNotFound()
 	}
 
-	credentials, err := bundleType.MapCfCredentials(bundle, relationInfo)
+	credentials, err := bundleType.MapCfCredentials(relationInfo)
 	if err != nil {
 		log.Warn("Error mapping to CF", err)
 		return nil, err
 	}
+
+	log.Debug("Relation info: %v", relationInfo)
+
+	log.Debug("Mapped to CF credentials %v", credentials)
 
 	response := &CfBindResponse{}
 	response.Credentials = credentials

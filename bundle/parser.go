@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"launchpad.net/goyaml"
-
 	"github.com/justinsb/gova/log"
 )
 
@@ -17,7 +15,7 @@ func asString(v interface{}) string {
 	return fmt.Sprint(v)
 }
 
-func getString(config map[interface{}]interface{}, key string) string {
+func getString(config map[string]interface{}, key string) string {
 	v, found := config[key]
 	if !found {
 		return ""
@@ -25,7 +23,7 @@ func getString(config map[interface{}]interface{}, key string) string {
 	return asString(v)
 }
 
-func getInt(config map[interface{}]interface{}, key string, defaultValue int) (int, error) {
+func getInt(config map[string]interface{}, key string, defaultValue int) (int, error) {
 	v, found := config[key]
 	if !found {
 		return defaultValue, nil
@@ -44,7 +42,7 @@ func getInt(config map[interface{}]interface{}, key string, defaultValue int) (i
 	return n, nil
 }
 
-func getBool(config map[interface{}]interface{}, key string, defaultValue bool) (bool, error) {
+func getBool(config map[string]interface{}, key string, defaultValue bool) (bool, error) {
 	v, found := config[key]
 	if !found {
 		return defaultValue, nil
@@ -58,7 +56,7 @@ func getBool(config map[interface{}]interface{}, key string, defaultValue bool) 
 	return b, nil
 }
 
-func getStringMap(config map[interface{}]interface{}, key string) map[string]string {
+func getStringMap(config map[string]interface{}, key string) map[string]string {
 	v, found := config[key]
 	if !found {
 		return nil
@@ -68,7 +66,7 @@ func getStringMap(config map[interface{}]interface{}, key string) map[string]str
 }
 
 func asStringMap(v interface{}) map[string]string {
-	vMap, ok := v.(map[interface{}]interface{})
+	vMap, ok := v.(map[string]interface{})
 	if !ok {
 		log.Warn("Expected generic map, found %T", v)
 		return nil
@@ -81,29 +79,29 @@ func asStringMap(v interface{}) map[string]string {
 	return out
 }
 
-func getStringArray(config map[interface{}]interface{}, key string) []string {
-	v, found := config[key]
-	if !found {
-		return []string{}
-	}
-
-	vList, ok := v.([]interface{})
-	if !ok {
-		log.Warn("Expected generic array, found %T", v)
-		return nil
-	}
-
-	out := []string{}
-	for _, v := range vList {
-		out = append(out, asString(v))
-	}
-	return out
-}
+//func getStringArray(config map[interface{}]interface{}, key string) []string {
+//	v, found := config[key]
+//	if !found {
+//		return []string{}
+//	}
+//
+//	vList, ok := v.([]interface{})
+//	if !ok {
+//		log.Warn("Expected generic array, found %T", v)
+//		return nil
+//	}
+//
+//	out := []string{}
+//	for _, v := range vList {
+//		out = append(out, asString(v))
+//	}
+//	return out
+//}
 
 func parseServiceConfig(config interface{}) (*ServiceConfig, error) {
 	var err error
 
-	configMap, ok := config.(map[interface{}]interface{})
+	configMap, ok := config.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("Expected generic map for service, found %T", config)
 	}
@@ -150,7 +148,7 @@ func parseProvides(config interface{}) (*ProvideConfig, error) {
 }
 
 func parseHealthCheck(config interface{}) (*HealthCheckConfig, error) {
-	configMap, ok := config.(map[interface{}]interface{})
+	configMap, ok := config.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("Expected generic map for health check, found %T", config)
 	}
@@ -165,7 +163,7 @@ func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error)
 		return nil, nil
 	}
 
-	plansMap, ok := plansObject.(map[interface{}]interface{})
+	plansMap, ok := plansObject.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("Expected generic map for plans, found %T", plansObject)
 	}
@@ -175,7 +173,7 @@ func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error)
 		plan := CloudFoundryPlan{}
 		plan.Key = asString(planKey)
 
-		planDefintionMap, ok := planDefinition.(map[interface{}]interface{})
+		planDefintionMap, ok := planDefinition.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("Expected generic map for plan, found %T", planDefinition)
 		}
@@ -189,30 +187,30 @@ func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error)
 }
 
 
-func ParseBundle(yaml string) (map[string]*Bundle, error) {
-	config := map[string]interface{}{}
-	err := goyaml.Unmarshal([]byte(yaml), &config)
-	if err != nil {
-		return nil, err
-	}
+//func parseBundle(config interface{}) (map[string]*Bundle, error) {
+//	bundles := map[string]*Bundle{}
+//
+//	configMap, ok := config.(map[string]interface{})
+//	if !ok {
+//		log.Warn("Unexpected type in parseBundle %T", config)
+//		return nil, fmt.Errorf("Unexpected type")
+//	}
+//
+//	for key, v := range configMap {
+//		bundle, err := parseBundleSection(v)
+//		if err != nil {
+//			return nil, err
+//		}
+//		bundles[key] = bundle
+//	}
+//
+//	return bundles, nil
+//}
 
-	bundles := map[string]*Bundle{}
-
-	for key, v := range config {
-		bundle, err := parseBundleSection(v)
-		if err != nil {
-			return nil, err
-		}
-		bundles[key] = bundle
-	}
-
-	return bundles, nil
-}
-
-func parseBundleSection(data interface{}) (*Bundle, error) {
+func parseBundle(data interface{}) (*Bundle, error) {
 	var err error
 
-	dataMap, ok := data.(map[interface{}]interface{})
+	dataMap, ok := data.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("Expected generic map for top-level, found %T", data)
 	}
@@ -223,7 +221,7 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 	if services == nil {
 		return nil, fmt.Errorf("Expected services section")
 	}
-	serviceMap, ok := services.(map[interface{}]interface{})
+	serviceMap, ok := services.(map[string]interface{})
 	if !ok {
 		return nil, fmt.Errorf("Expected generic map for services, found %T", services)
 	}
@@ -253,7 +251,7 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 	self.HealthChecks = map[string]*HealthCheckConfig{}
 	healthChecks := dataMap["checks"]
 	if healthChecks != nil {
-		healthChecksMap, ok := healthChecks.(map[interface{}]interface{})
+		healthChecksMap, ok := healthChecks.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("Expected generic map for health checks, found %T", services)
 		}
@@ -265,42 +263,10 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 		}
 	}
 
-	meta := dataMap["meta"]
-	if meta != nil {
-		metaMap, ok := meta.(map[interface{}]interface{})
-		if !ok {
-			return nil, fmt.Errorf("Expected generic map for meta, found %T", meta)
-		}
-		for metaKey, metaValue := range metaMap {
-			metaKeyString := asString(metaKey)
-			if metaKeyString == "primary-relation-key" {
-				self.Meta.PrimaryRelationKey = asString(metaValue)
-			} else if metaKeyString == "ready-property" {
-				self.Meta.ReadyProperty = asString(metaValue)
-			} else {
-				return nil, fmt.Errorf("Unknown meta property: %v", metaKeyString)
-			}
-		}
-	}
-
-	self.CloudFoundryConfig = &CloudFoundryConfig{}
-	cfConfig := dataMap["cloudfoundry"]
-	if cfConfig != nil {
-		cfConfigMap, ok := cfConfig.(map[interface{}]interface{})
-		if !ok {
-			return nil, fmt.Errorf("Expected generic map for cloudfoundry, found %T", cfConfig)
-		}
-		self.CloudFoundryConfig.Credentials = getStringMap(cfConfigMap, "credentials")
-		self.CloudFoundryConfig.Plans, err = parseCloudFoundryPlans(cfConfigMap["plans"])
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	self.Provides = map[string]*ProvideConfig{}
 	provides := dataMap["provides"]
 	if provides != nil {
-		providesMap, ok := provides.(map[interface{}]interface{})
+		providesMap, ok := provides.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("Expected generic map for provides, found %T", provides)
 		}
@@ -312,4 +278,44 @@ func parseBundleSection(data interface{}) (*Bundle, error) {
 		}
 	}
 	return self, nil
+}
+
+
+func parseMeta(meta interface{}) (*BundleMeta, error) {
+	ret := &BundleMeta{}
+	if meta != nil {
+		metaMap, ok := meta.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for meta, found %T", meta)
+		}
+		for metaKey, metaValue := range metaMap {
+			metaKeyString := asString(metaKey)
+			if metaKeyString == "primary-relation-key" {
+				ret.PrimaryRelationKey = asString(metaValue)
+			} else if metaKeyString == "ready-property" {
+				ret.ReadyProperty = asString(metaValue)
+			} else {
+				return nil, fmt.Errorf("Unknown meta property: %v", metaKeyString)
+			}
+		}
+	}
+	return ret, nil
+}
+
+func parseCloudFoundryConfig(cfConfig interface{}) (*CloudFoundryConfig, error) {
+	var err error
+
+	cloudFoundryConfig := &CloudFoundryConfig{}
+	if cfConfig != nil {
+		cfConfigMap, ok := cfConfig.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for cloudfoundry, found %T", cfConfig)
+		}
+		cloudFoundryConfig.Credentials = getStringMap(cfConfigMap, "credentials")
+		cloudFoundryConfig.Plans, err = parseCloudFoundryPlans(cfConfigMap["plans"])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return cloudFoundryConfig, nil
 }

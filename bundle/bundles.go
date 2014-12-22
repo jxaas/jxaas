@@ -1,7 +1,6 @@
 package bundle
 
 import (
-	"bytes"
 	"fmt"
 	"strconv"
 
@@ -85,7 +84,7 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 	systemServices := map[string]string{}
 	if templateContextCopy.SystemServices != nil {
 		for k, v := range templateContextCopy.SystemServices {
-			systemServices[k] = SYSTEM_PREFIX + v
+			systemServices[k] = SYSTEM_PREFIX+v
 		}
 	}
 	templateContextCopy.SystemServices = systemServices
@@ -94,27 +93,20 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 		templateContextCopy.Options = map[string]string{}
 	}
 
-	var buffer bytes.Buffer
-	err := self.template.Execute(&buffer, &templateContextCopy)
+	config, err := self.executeTemplate(&templateContextCopy)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: Replace the "<no value>" incorrect placeholders
-	// https://code.google.com/p/go/issues/detail?id=6288
-
-	yaml := buffer.String()
-	//log.Debug("Bundle is:\n%v", yaml)
-
-	bundles, err := ParseBundle(yaml)
+	bundle, err := parseBundle(config)
 	if err != nil {
 		return nil, err
 	}
 
-	bundle, err := getOnly(bundles)
-	if err != nil {
-		return nil, err
-	}
+//	bundle, err := getOnly(bundles)
+//	if err != nil {
+//		return nil, err
+//	}
 
 	bundle.ApplyImplicits(&templateContextCopy)
 
@@ -123,7 +115,24 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 	return bundle, nil
 }
 
+
+//func (self *BundleTemplate) GetRaw() (*Bundle, error) {
+//	bundles, err := parseBundle(self.template.Raw())
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	bundle, err := getOnly(bundles)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return bundle, nil
+//}
+
 func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
+	log.Debug("Getting system bundle %v", key)
+
 	template, err := self.GetBundleTemplate(key)
 	if err != nil {
 		return nil, err
@@ -132,38 +141,35 @@ func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
 		return nil, nil
 	}
 
-	context := make(map[string]string)
+	context := &TemplateContext{}
 
-	var buffer bytes.Buffer
-	err = template.template.Execute(&buffer, context)
+	config, err := template.executeTemplate(context)
 	if err != nil {
 		return nil, err
 	}
 
-	yaml := buffer.String()
-	log.Debug("System bundle is:\n%v", yaml)
-
-	bundles, err := ParseBundle(yaml)
+	bundle, err := parseBundle(config)
 	if err != nil {
 		return nil, err
 	}
 
-	bundle, err := getOnly(bundles)
-	if err != nil {
-		return nil, err
-	}
+//	bundle, err := getOnly(bundles)
+//	if err != nil {
+//		return nil, err
+//	}
+
 
 	return bundle, nil
 }
 
-func getOnly(bundles map[string]*Bundle) (*Bundle, error) {
-	if len(bundles) > 1 {
-		return nil, fmt.Errorf("Multiple sections not handled")
-	}
-
-	for _, v := range bundles {
-		return v, nil
-	}
-
-	return nil, nil
-}
+//func getOnly(bundles map[string]*Bundle) (*Bundle, error) {
+//	if len(bundles) > 1 {
+//		return nil, fmt.Errorf("Multiple sections not handled")
+//	}
+//
+//	for _, v := range bundles {
+//		return v, nil
+//	}
+//
+//	return nil, nil
+//}

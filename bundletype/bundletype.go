@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"text/template"
 
+	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
+
 	"github.com/jxaas/jxaas"
 	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/checks"
@@ -17,7 +19,7 @@ type BundleType interface {
 	PrimaryJujuService() string
 	PrimaryRelationKey() string
 
-	MapCfCredentials(bundle *bundle.Bundle, relationInfo *model.RelationInfo) (map[string]string, error)
+	MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error)
 	GetCfPlans() ([]bundle.CloudFoundryPlan, error)
 
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
@@ -35,25 +37,15 @@ type baseBundleType struct {
 	bundleTemplate *bundle.BundleTemplate
 
 	meta bundle.BundleMeta
-	cloudfoundryMeta *bundle.CloudFoundryConfig
 }
 
 func (self *baseBundleType) Init() error {
-	context := &bundle.TemplateContext{}
-	context.SystemServices = map[string]string{}
-	context.SystemImplicits = map[string]string{}
-	context.PublicPortAssigner = &bundle.StubPortAssigner{}
+	assert.That(self.bundleTemplate != nil)
 
-	tenant := "stub"
-	name := "stub"
-
-	stubBundle, err := self.GetBundle(context, tenant, name)
-	if err != nil {
-		return err
+	meta := self.bundleTemplate.GetMeta()
+	if meta != nil {
+		self.meta = *meta
 	}
-
-	self.cloudfoundryMeta = stubBundle.CloudFoundryConfig
-	self.meta = stubBundle.Meta
 
 	if self.meta.ReadyProperty == "" {
 		self.meta.ReadyProperty = "password"
@@ -160,7 +152,7 @@ func runTemplate(templateDefinition string, context map[string]string) (string, 
 	return buffer.String(), nil
 }
 
-func (self *baseBundleType) MapCfCredentials(bundle *bundle.Bundle, relationInfo *model.RelationInfo) (map[string]string, error) {
+func (self *baseBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
 	credentials := map[string]string{}
 
 	template := map[string]string{}
@@ -168,20 +160,23 @@ func (self *baseBundleType) MapCfCredentials(bundle *bundle.Bundle, relationInfo
 		template[k] = v
 	}
 
-	for k, v := range bundle.CloudFoundryConfig.Credentials {
-		substituted, err := runTemplate(v, template)
-		if err != nil {
-			log.Warn("Error while running template: %v=%v", k, v, err)
-			return nil, err
-		}
-		credentials[k] = substituted
+	// Note that we use the raw (not-expanded version)
+	// This is to avoid a circular dependency
+	// (the cloudfoundry section is treated specially)
+	credentials, err := self.bundleTemplate.GetCloudFoundryCredentials(template)
+	if err != nil {
+		log.Warn("Error building cloudfoundry credentials", err)
+		return nil, err
 	}
 
 	return credentials, nil
 }
 
 func (self *baseBundleType) GetCfPlans() ([]bundle.CloudFoundryPlan, error) {
-	plans := self.cloudfoundryMeta.Plans
+	// Note that we use the raw (not-expanded version)
+	// (the cloudfoundry plans section is not templated)
+	assert.That(self.bundleTemplate != nil)
+	plans := self.bundleTemplate.GetCloudFoundryPlans()
 	if plans == nil {
 		plan := bundle.CloudFoundryPlan{}
 		plan.Key = "default"

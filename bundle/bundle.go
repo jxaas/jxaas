@@ -11,8 +11,8 @@ type Bundle struct {
 	Relations          []*RelationConfig
 	Provides           map[string]*ProvideConfig
 	HealthChecks       map[string]*HealthCheckConfig
-	Meta               BundleMeta
-	CloudFoundryConfig *CloudFoundryConfig
+//	Meta               BundleMeta
+//	CloudFoundryConfig *CloudFoundryConfig
 }
 
 type BundleMeta struct {
