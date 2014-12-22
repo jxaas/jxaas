@@ -11,13 +11,17 @@ type Bundle struct {
 	Relations          []*RelationConfig
 	Provides           map[string]*ProvideConfig
 	HealthChecks       map[string]*HealthCheckConfig
-//	Meta               BundleMeta
-//	CloudFoundryConfig *CloudFoundryConfig
+	//	Meta               BundleMeta
+	//	CloudFoundryConfig *CloudFoundryConfig
 }
 
 type BundleMeta struct {
 	PrimaryRelationKey string
 	ReadyProperty      string
+}
+
+type OptionsConfig struct {
+	Defaults map[string]string
 }
 
 type ServiceConfig struct {
@@ -44,12 +48,12 @@ type HealthCheckConfig struct {
 
 type CloudFoundryPlan struct {
 	Key string
-	Properties map[string]string
+	Options map[string]string
 }
 
 type CloudFoundryConfig struct {
 	Credentials map[string]string
-	Plans []CloudFoundryPlan
+	Plans []*CloudFoundryPlan
 }
 
 // Implement fmt.Stringer

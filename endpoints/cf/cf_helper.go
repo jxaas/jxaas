@@ -54,20 +54,20 @@ func (self *CfHelper) mapCfServiceIdToBundleTypeId(cfServiceId string) string {
 
 }
 
-func (self *CfHelper) getInstance(serviceId string, instanceId string) *core.Instance {
+func (self *CfHelper) getInstance(serviceId string, instanceId string) (bundletype.BundleType, *core.Instance) {
 	huddle := self.Huddle
 
 	bundleType := self.getBundleType(serviceId)
 	if bundleType == nil {
 		log.Warn("Bundle type not found: %v", serviceId)
-		return nil
+		return nil, nil
 	}
 
 	instanceId = strings.Replace(instanceId, "-", "", -1)
 
 	tenantId := self.TenantIdMap.TenantId
 	instance := huddle.NewInstance(tenantId, bundleType, instanceId)
-	return instance
+	return bundleType, instance
 }
 
 func (self *CfHelper) getBundleType(serviceId string) bundletype.BundleType {

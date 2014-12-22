@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/rs"
 
+	"github.com/jxaas/jxaas/bundle"
 	"github.com/jxaas/jxaas/model"
 )
 
@@ -35,15 +37,39 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 
 	log.Info("CF instance put request: %v", request)
 
-	instance := helper.getInstance(request.ServiceId, self.Id)
-	if instance == nil {
+	planId := request.PlanId
+
+	bundleType, instance := helper.getInstance(request.ServiceId, self.Id)
+	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
 	}
 
-	// XXX: Support multiple plans?
-	configureRequest := &model.Instance{}
+	cfPlans, err := bundleType.GetCloudFoundryPlans()
+	if err != nil {
+		log.Warn("Error retrieving CloudFoundry plans for bundle %v", bundleType, err)
+		return nil, err
+	}
 
-	err := instance.Configure(configureRequest)
+	var foundPlan *bundle.CloudFoundryPlan
+	for _, cfPlan := range cfPlans {
+		cfPlanId := request.ServiceId + "::" + cfPlan.Key
+		if cfPlanId == planId {
+			assert.That(foundPlan == nil)
+			foundPlan = cfPlan
+		}
+	}
+
+	if foundPlan == nil {
+		log.Warn("Plan not found %v", planId)
+		return nil, rs.ErrNotFound()
+	}
+
+	log.Debug("Found CF plan: %v", foundPlan)
+
+	configureRequest := &model.Instance{}
+	configureRequest.Options = foundPlan.Options
+
+	err = instance.Configure(configureRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +104,8 @@ func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfD
 
 	log.Info("Deleting item %v %v", serviceId, self.Id)
 
-	instance := helper.getInstance(serviceId, self.getInstanceId())
-	if instance == nil {
+	bundletype, instance := helper.getInstance(serviceId, self.getInstanceId())
+	if instance == nil || bundletype == nil {
 		return nil, rs.ErrNotFound()
 	}
 

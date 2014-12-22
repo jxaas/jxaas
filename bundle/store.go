@@ -40,6 +40,7 @@ type BundleTemplate struct {
 	//	templateString string
 
 	meta *BundleMeta
+	options *OptionsConfig
 	cloudfoundryTemplate TemplateBlock
 	cloudfoundryRaw      *CloudFoundryConfig
 }
@@ -48,7 +49,8 @@ func (self *BundleTemplate) GetMeta() *BundleMeta {
 	return self.meta
 }
 
-func (self *BundleTemplate) GetCloudFoundryPlans() []CloudFoundryPlan {
+func (self *BundleTemplate) GetCloudFoundryPlans() []*CloudFoundryPlan {
+	// Plans are not templated
 	if self.cloudfoundryRaw == nil {
 		return nil
 	}
@@ -138,6 +140,13 @@ func NewBundleTemplate(templateData sources.ByteSource) (*BundleTemplate, error)
 	meta := self.template.Remove("meta")
 	if meta != nil {
 		self.meta, err = parseMeta(meta.Raw())
+		if err != nil {
+			return nil, err
+		}
+	}
+	options := self.template.Remove("options")
+	if options != nil {
+		self.options, err = parseOptions(options.Raw())
 		if err != nil {
 			return nil, err
 		}

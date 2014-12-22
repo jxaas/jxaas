@@ -24,14 +24,8 @@ func (self *EndpointServiceBinding) getInstanceId() string {
 func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpResponse, error) {
 	helper := self.getHelper()
 
-	instance := helper.getInstance(request.ServiceId, self.getInstanceId())
-	if instance == nil {
-		return nil, rs.ErrNotFound()
-	}
-
-	bundleType := helper.getBundleType(request.ServiceId)
-	if bundleType == nil {
-		log.Warn("BundleType not found for serviceId: %v", request.ServiceId)
+	bundleType, instance := helper.getInstance(request.ServiceId, self.getInstanceId())
+	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
 	}
 
@@ -56,15 +50,15 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpRes
 		return nil, rs.ErrNotFound()
 	}
 
-	credentials, err := bundleType.MapCfCredentials(relationInfo)
+	credentials, err := bundleType.MapCloudFoundryCredentials(relationInfo)
 	if err != nil {
-		log.Warn("Error mapping to CF", err)
+		log.Warn("Error mapping to CloudFoundry credentials", err)
 		return nil, err
 	}
 
-	log.Debug("Relation info: %v", relationInfo)
+	//	log.Debug("Relation info: %v", relationInfo)
 
-	log.Debug("Mapped to CF credentials %v", credentials)
+	//	log.Debug("Mapped to CloudFoundry credentials %v", credentials)
 
 	response := &CfBindResponse{}
 	response.Credentials = credentials
@@ -81,8 +75,8 @@ func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUn
 	serviceId := queryValues.Get("service_id")
 	//	planId := queryValues.Get("plan_id")
 
-	instance := helper.getInstance(serviceId, self.getInstanceId())
-	if instance == nil {
+	bundleType, instance := helper.getInstance(serviceId, self.getInstanceId())
+	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
 	}
 

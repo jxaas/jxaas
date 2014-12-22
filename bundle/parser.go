@@ -158,7 +158,7 @@ func parseHealthCheck(config interface{}) (*HealthCheckConfig, error) {
 	return self, nil
 }
 
-func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error) {
+func parseCloudFoundryPlans(plansObject interface{}) ([]*CloudFoundryPlan, error) {
 	if plansObject == nil {
 		return nil, nil
 	}
@@ -168,9 +168,9 @@ func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error)
 		return nil, fmt.Errorf("Expected generic map for plans, found %T", plansObject)
 	}
 
-	plans := []CloudFoundryPlan{}
+	plans := []*CloudFoundryPlan{}
 	for planKey, planDefinition := range plansMap {
-		plan := CloudFoundryPlan{}
+		plan := &CloudFoundryPlan{}
 		plan.Key = asString(planKey)
 
 		planDefintionMap, ok := planDefinition.(map[string]interface{})
@@ -178,14 +178,13 @@ func parseCloudFoundryPlans(plansObject interface{}) ([]CloudFoundryPlan, error)
 			return nil, fmt.Errorf("Expected generic map for plan, found %T", planDefinition)
 		}
 
-		plan.Properties = getStringMap(planDefintionMap, "properties")
+		plan.Options = getStringMap(planDefintionMap, "options")
 
 		plans = append(plans, plan)
 	}
 
 	return plans, nil
 }
-
 
 //func parseBundle(config interface{}) (map[string]*Bundle, error) {
 //	bundles := map[string]*Bundle{}
@@ -318,4 +317,16 @@ func parseCloudFoundryConfig(cfConfig interface{}) (*CloudFoundryConfig, error) 
 		}
 	}
 	return cloudFoundryConfig, nil
+}
+
+func parseOptions(src interface{}) (*OptionsConfig, error) {
+	optionsConfig := &OptionsConfig{}
+	if src != nil {
+		srcMap, ok := src.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("Expected generic map for options, found %T", src)
+		}
+		optionsConfig.Defaults = getStringMap(srcMap, "defaults")
+	}
+	return optionsConfig, nil
 }

@@ -19,8 +19,8 @@ type BundleType interface {
 	PrimaryJujuService() string
 	PrimaryRelationKey() string
 
-	MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error)
-	GetCfPlans() ([]bundle.CloudFoundryPlan, error)
+	MapCloudFoundryCredentials(relationInfo *model.RelationInfo) (map[string]string, error)
+	GetCloudFoundryPlans() ([]*bundle.CloudFoundryPlan, error)
 
 	GetBundle(templateContext *bundle.TemplateContext, tenant, name string) (*bundle.Bundle, error)
 	IsStarted(annotations map[string]map[string]string) bool
@@ -152,7 +152,7 @@ func runTemplate(templateDefinition string, context map[string]string) (string, 
 	return buffer.String(), nil
 }
 
-func (self *baseBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
+func (self *baseBundleType) MapCloudFoundryCredentials(relationInfo *model.RelationInfo) (map[string]string, error) {
 	credentials := map[string]string{}
 
 	template := map[string]string{}
@@ -172,15 +172,13 @@ func (self *baseBundleType) MapCfCredentials(relationInfo *model.RelationInfo) (
 	return credentials, nil
 }
 
-func (self *baseBundleType) GetCfPlans() ([]bundle.CloudFoundryPlan, error) {
-	// Note that we use the raw (not-expanded version)
-	// (the cloudfoundry plans section is not templated)
+func (self *baseBundleType) GetCloudFoundryPlans() ([]*bundle.CloudFoundryPlan, error) {
 	assert.That(self.bundleTemplate != nil)
 	plans := self.bundleTemplate.GetCloudFoundryPlans()
 	if plans == nil {
-		plan := bundle.CloudFoundryPlan{}
+		plan := &bundle.CloudFoundryPlan{}
 		plan.Key = "default"
-		plans := []bundle.CloudFoundryPlan{ plan }
+		plans := []*bundle.CloudFoundryPlan{ plan }
 		return plans, nil
 	}
 	return plans, nil

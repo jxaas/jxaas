@@ -33,9 +33,9 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 
 		bundleType := huddle.System.GetBundleType(bundle.Id)
 
-		cfPlans, err := bundleType.GetCfPlans()
+		cfPlans, err := bundleType.GetCloudFoundryPlans()
 		if err != nil {
-			log.Warn("Error retrieving cf plans for bundle %v", bundle.Id, err)
+			log.Warn("Error retrieving CloudFoundry plans for bundle %v", bundle.Id, err)
 			return nil, err
 		}
 

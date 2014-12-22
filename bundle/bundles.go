@@ -77,6 +77,13 @@ func (self *StubPortAssigner) GetAssignedPort() (int, bool) {
 	return 0, false
 }
 
+func (self *BundleTemplate) getDefaultOptions() map[string]string {
+	if self.options == nil {
+		return nil
+	}
+	return self.options.Defaults
+}
+
 func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, serviceType, name string) (*Bundle, error) {
 	// Copy and apply the system prefix
 	templateContextCopy := *templateContext
@@ -103,10 +110,12 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 		return nil, err
 	}
 
-//	bundle, err := getOnly(bundles)
-//	if err != nil {
-//		return nil, err
-//	}
+	for k, v := range self.getDefaultOptions() {
+		_, found := templateContext.Options[k]
+		if !found {
+			templateContext.Options[k] = v
+		}
+	}
 
 	bundle.ApplyImplicits(&templateContextCopy)
 
