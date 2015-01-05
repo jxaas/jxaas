@@ -1,7 +1,7 @@
 code.google.com/p/go.crypto	hg	6478cc9340cbbe6c04511280c5007722269108e9	184
 code.google.com/p/go.net	hg	c17ad62118ea511e1051721b429779fa40bddc74	116
-github.com/errgo/errgo  git     5b21d03d47b5159751522fa3b1a24045f6c8f997        2014-02-04T19:31:05Z
-github.com/juju/loggo	git	fa3acf9ab9ed09aea29030558528e24a254d27af
+github.com/errgo/errgo	git	5b21d03d47b5159751522fa3b1a24045f6c8f997	2014-02-04T19:31:05Z
+github.com/juju/loggo	git	fa3acf9ab9ed09aea29030558528e24a254d27af	2014-02-09T17:21:46Z
 github.com/justinsb/gova	git	e8d4e1a98e7b8ce6112217eed694b6261ac71884	2014-11-24T00:28:15Z
 github.com/mattbaird/elastigo	git	2fd1d30e58eca4ef6d491310cd871dc5dd210064	
 labix.org/v2/mgo	bzr	gustavo@niemeyer.net-20131118213720-aralgr4ienh0gdyq	248
