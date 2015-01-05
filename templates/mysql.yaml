@@ -23,7 +23,7 @@ services:
       slow-query-time: <<
       dataset-size: <<
 
-  stubclient:
+  sc:
     charm: "cs:~justin-fathomdb/trusty/stub-client"
     exposed: true
     options:

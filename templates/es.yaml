@@ -4,7 +4,7 @@ services:
     num_units: <<
     exposed: true
 
-  stubclient:
+  sc:
     charm: "cs:~justin-fathomdb/trusty/stub-client"
 
   metrics:
