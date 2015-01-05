@@ -13,11 +13,10 @@ KEYSTONE_HOST=127.0.0.1
 export OS_SERVICE_ENDPOINT=http://127.0.0.1:35357/v2.0
 export OS_SERVICE_TOKEN=ADMIN
 
-apt-get install keystone
+apt-get install --yes keystone
 keystone user-list
 
-# Undifferentiated heavy lifting
-#  (and the primary reason why Openstack is hard to install!)
+# Create initial accounts
 keystone role-create --name admin 
 keystone user-create --name=admin --pass=${ADMIN_PASSWORD}
 keystone tenant-create --name admin --description "Admin Tenant" --enabled true
@@ -39,7 +38,7 @@ keystone endpoint-create \
 ### Create a service account for jxaas
 
 ```
-IP=127.0.0.1
+IP=10.0.3.1
 
 JXAAS_PASSWORD=secret
 JXAAS_BASE=http://${IP}:8080/xaas
