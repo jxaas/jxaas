@@ -10,9 +10,9 @@ services:
   metrics:
     charm: "cs:~justin-fathomdb/trusty/heka-collector"
 relations:
-  - - "stubclient:juju-info"
+  - - "sc:juju-info"
     - "mongodb:juju-info"
-  - - "stubclient:mongodb"
+  - - "sc:mongodb"
     - "mongodb:database"
 
   - - "metrics:juju-info"

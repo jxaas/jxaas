@@ -67,12 +67,12 @@ func (self *Bundle) ApplyImplicits(templateContext *TemplateContext) {
 		v.applyImplicits(templateContext, k)
 	}
 
-	stub, found := self.Services["stubclient"]
+	stub, found := self.Services["sc"]
 	if found {
 		self.configureStubClient(templateContext, stub)
 		log.Info("Configured stubclient: %v", stub)
 	} else {
-		log.Info("stubclient not found")
+		log.Info("sc (stubclient) not found")
 	}
 }
 

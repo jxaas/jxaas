@@ -10,9 +10,9 @@ services:
   metrics:
     charm: "cs:~justin-fathomdb/trusty/heka-collector"
 relations:
-  - - "stubclient:juju-info"
+  - - "sc:juju-info"
     - "cassandra:juju-info"
-  - - "stubclient:cassandra"
+  - - "sc:cassandra"
     - "cassandra:database"
   - - "metrics:juju-info"
     - "cassandra:juju-info"

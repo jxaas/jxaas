@@ -36,9 +36,9 @@ services:
     charm: "cs:~justin-fathomdb/trusty/heka-collector"
 
 relations:
-  - - "stubclient:juju-info"
+  - - "sc:juju-info"
     - "mysql:juju-info"
-  - - "stubclient:mysql"
+  - - "sc:mysql"
     - "mysql:db"
 
   - - "metrics:juju-info"
@@ -46,7 +46,7 @@ relations:
   - - "metrics:elasticsearch"
     - "{{.SystemServices.elasticsearch}}:cluster"
 
-  - - "stubclient:website"
+  - - "sc:website"
     - "{{.SystemServices.haproxy}}:reverseproxy"
 
 checks:
