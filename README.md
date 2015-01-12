@@ -24,12 +24,18 @@ Extra features:
 
 # Next steps
 
-There is a simple guided tour in docs/tutorial.
+You should probably read or try out the [tutorial](docs/tutorial).
 
-If you want to create a service, you can do that using
+If you want to create a service, you should read about the [manifest](docs/manifest)
 
 # Related projects
 
 Check out all the official [JXaaS projects on Github](https://github.com/jxaas)
+
+Notable projects:
+
+* [The command-line interface](https://github.com/jxaas/cli)
+* [Python client bindings for the API](https://github.com/jxaas/python-client)
+* [The integration test suite](https://github.com/jxaas/jxaas-tests)
 
 
