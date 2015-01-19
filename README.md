@@ -1,10 +1,11 @@
 # JXaaS: Juju as-a-service
 
-JXaaS turns any Juju charm into a XaaS.  For example, running JXaaS with the
-MySQL charm can power a MySQL-aaS, similar to Amazon RDS.
+JXaaS turns any Juju charm into a service - we call this XaaS.
 
-These XaaS can be consumed through a simple RESTful API, or from another Juju
-instance, or from CloudFoundry.
+For example, running JXaaS with the MySQL charm can power a MySQL-aaS, similar to Amazon RDS.
+
+JXaaS automatically gives you a simple RESTful API, which can be used from a [command-line tool](https://github.com/jxaas/cli),
+or from another Juju system, or from CloudFoundry.
 
 Authentication is pluggable; JXaaS currently supports OpenStack authentication.
 
@@ -13,7 +14,7 @@ interface for creating, modifying & destroying services backed by Juju charms.
 It launches those services in a private Juju cluster, and exposes the service to
 the caller.
 
-Extra features:
+Highlights:
 
 * Health-checking and monitoring of the services
 * Supports TLS encryption for the exposed connections
@@ -22,7 +23,7 @@ Extra features:
 * Can act as a CloudFoundry service broker
 * Can authenticate using OpenStack Identity
 
-# Next steps
+# Getting started
 
 You should probably read or try out the [tutorial](docs/tutorial).
 
