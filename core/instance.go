@@ -337,6 +337,13 @@ func (self *Instance) getState0() (*instanceState, error) {
 
 	// TODO: Only if otherwise ready?
 	annotationsReady := self.bundleType.IsStarted(state.Relations)
+
+	// For a subordinate charm service (e.g. multimysql), we just watch for the annotation
+	if annotationsReady && state.Model.Status == "" && len(status.SubordinateTo) != 0 {
+		log.Info("Subordinate instance started (per annotations): %v", self)
+		state.Model.Status = "started"
+	}
+
 	if !annotationsReady {
 		log.Info("Instance not started (per annotations): %v", state.Relations)
 		state.Model.Status = "pending"
