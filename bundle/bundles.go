@@ -77,7 +77,7 @@ func (self *StubPortAssigner) GetAssignedPort() (int, bool) {
 	return 0, false
 }
 
-func (self *BundleTemplate) getDefaultOptions() map[string]string {
+func (self *BundleTemplate) GetDefaultOptions() map[string]string {
 	if self.options == nil {
 		return nil
 	}
@@ -110,7 +110,7 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 		return nil, err
 	}
 
-	for k, v := range self.getDefaultOptions() {
+	for k, v := range self.GetDefaultOptions() {
 		_, found := templateContext.Options[k]
 		if !found {
 			templateContext.Options[k] = v

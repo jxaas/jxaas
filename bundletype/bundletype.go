@@ -30,6 +30,8 @@ type BundleType interface {
 	GetHealthChecks(bundle *bundle.Bundle) (map[string]jxaas.HealthCheck, error)
 
 	GetDefaultScalingPolicy() *model.ScalingPolicy
+
+	GetDefaultOptions() map[string]string
 }
 
 type baseBundleType struct {
@@ -64,6 +66,10 @@ func (self *baseBundleType) Key() string {
 
 func (self *baseBundleType) PrimaryJujuService() string {
 	return self.key
+}
+
+func (self *baseBundleType) GetDefaultOptions() map[string]string {
+	return self.bundleTemplate.GetDefaultOptions()
 }
 
 func (self *baseBundleType) PrimaryRelationKey() string {

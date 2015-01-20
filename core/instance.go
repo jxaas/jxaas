@@ -213,6 +213,16 @@ func (self *Instance) getState0() (*instanceState, error) {
 	state := &instanceState{}
 	state.Model = model.MapToInstance(self.instanceId, status, jujuService)
 
+	for k, v := range self.bundleType.GetDefaultOptions() {
+		option, found := state.Model.OptionDescriptions[k]
+		if !found {
+			log.Warn("Option not found in OptionDescriptions %v in %v", k, state.Model.OptionDescriptions)
+			continue
+		}
+		option.Default = v
+		state.Model.OptionDescriptions[k] = option
+	}
+	
 	state.Units = map[string]map[string]api.UnitStatus{}
 
 	state.Units[primaryServiceId] = status.Units
