@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -21,6 +22,8 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 
 	keyValue := metricId
 	keyTimestamp := "Timestamp"
+	keyHostname := "Hostname"
+	keyType := "Type"
 
 	huddle := instance.huddle
 
@@ -45,7 +48,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 
 	{
 		match := map[string]string{}
-		match["Hostname"] = jujuUnitNames[0]
+		match[keyHostname] = jujuUnitNames[0]
 		filter := map[string]interface{}{"query": map[string]interface{}{"match": match}}
 		filters = append(filters, filter)
 	}
@@ -53,7 +56,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 	{
 		// XXX: Hard-coded
 		match := map[string]string{}
-		match["Type"] = "LoadAverage"
+		match[keyType] = "LoadAverage"
 		filter := map[string]interface{}{"query": map[string]interface{}{"match": match}}
 		filters = append(filters, filter)
 	}
@@ -99,6 +102,27 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 			return nil, fmt.Errorf("Error searching elasticsearch")
 		}
 
+		// Post-filter the ES results...
+		// TODO: See if we can persuade ES to filter it correctly
+		hostname, found := value[keyHostname]
+		if !found {
+			log.Debug("No hostname in %v", string(jsonBytes))
+			continue
+		}
+
+		hostnameStr, ok := hostname.(string)
+		if !ok {
+			log.Debug("Cannot cast hostname to string: %v", hostname)
+			continue
+		}
+
+		if hostnameStr != jujuUnitNames[0] {
+			log.Debug("Post-filtering query results from ES")
+			continue
+		}
+
+
+		// Grab the timestamp & value
 		t, found := value[keyTimestamp]
 		if !found {
 			log.Debug("No timestamp in %v", string(jsonBytes))
@@ -142,6 +166,8 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 		metrics.Points = append(metrics.Points, p)
 	}
 	//	fmt.Println(values)
+
+	sort.Sort(metrics.Points)
 
 	return metrics, nil
 }
