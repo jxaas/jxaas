@@ -1,21 +1,59 @@
-Install bosh lite following the instructions here: https://github.com/cloudfoundry/bosh-lite
+# CloudFoundry integration
+
+JXaaS can provide services directly to CloudFoundry, acting as a service broker.
+
+## Install CloudFoundry
+
+We're going to install CloudFoundry in a development mode configuration.  CloudFoundry will run inside of VirtualBox.
+This still takes a long time and a lot of resources though!
+
+First install virtualbox and vagrant:
+
+```
+which virtualbox || sudo apt-get install --yes virtualbox
+wget -O /tmp/vagrant.deb https://dl.bintray.com/mitchellh/vagrant/vagrant_1.7.2_x86_64.deb
+sudo dpkg -i /tmp/vagrant.deb
+```
+
+Now install the bosh command line tool:
+
+```
+which gem || sudo apt-get install --yes ruby
+sudo apt-get install --yes ruby-dev
+which bosh || sudo gem install bosh_cli
+```
+
+Now install bosh-lite:
 
 ```
 mkdir ~/cf
 cd ~/cf
 git clone https://github.com/cloudfoundry/bosh-lite.git
 cd ~/cf/bosh-lite
-VBoxManage --version
 vagrant up --provider=virtualbox
 bosh target 192.168.50.4 lite
 bosh login admin admin
-bin/add-route
-# May need to enter sudo password
+sudo bin/add-route
 ```
 
-Edit the CF configuration to allow access to 1.0.3.x:
+Download spiff:
 
-```vim ../cf-release/templates/cf-properties.yml```
+```
+cd ~/cf
+wget -O /tmp/spiff.zip https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.3/spiff_linux_amd64.zip
+mkdir -p ~/cf/spiff
+cd ~/cf/spiff
+unzip /tmp/spiff.zip
+```
+
+Check out the cloudfoundry code:
+
+```
+cd ~/cf
+git clone https://github.com/cloudfoundry/cf-release
+```
+
+Edit the CF configuration to allow access to 10.0.3.x, using `vim ~/cf/cf-release/templates/cf-properties.yml`
 
 Add these lines to default_security_group_definitions
 (and this is YAML, so be careful about spaces, and don't use tabs).
@@ -25,13 +63,25 @@ Add these lines to default_security_group_definitions
       destination: 10.0.3.0-10.0.3.255
 ```
 
-Now install CloudFoundry (this step takes a while):
+Now install CloudFoundry (this step takes a _long_ time):
 
 ```
+cd ~/cf/bosh-lite
+export PATH=~/cf/spiff:$PATH
 bin/provision_cf
+```
 
-#sudo ip route add 10.0.2.0/24 via 192.168.50.4 dev vboxnet0
+Install the CloudFoundry CLI:
 
+```
+wget -O /tmp/cf.deb "https://cli.run.pivotal.io/stable?release=debian64&source=github"
+sudo dpkg -i /tmp/cf.deb
+rm /tmp/cf.deb
+```
+
+Finally, you can use CloudFoundry!
+
+```
 cf api --skip-ssl-validation https://api.10.244.0.34.xip.io
 cf auth admin admin
 cf create-org me
@@ -41,30 +91,109 @@ cf target -s development
 
 ```
 
-If you want to run an example app:
-
+Let's run an example app; spring music is a simple CRUD webapp that shows some music albums.  By default it runs
+with an in-memory database.
+ 
 ```
-
 mkdir -p ~/cf/apps
 cd ~/cf/apps
 git clone https://github.com/cloudfoundry-samples/spring-music.git
 
 cd spring-music
 ./gradlew assemble
-cf push
+cf push spring-music -n spring-music
 
-cf service-brokers
-cf create-service-broker jxaas admin admin http://10.0.3.1:8080/cf
-cf enable-service-access mysql
-cf service-access
+x-www-browser http://spring-music.10.244.0.34.xip.io
+```
 
-cf create-service mysql default mysql1
-cf services
-cf bind-service spring-music mysql1
+You can see that the app is currently bound to an in-memory data store:
 
-cf restage spring-music
+```
+# Should include 'in-memory', not 'mysql'
+curl http://spring-music.10.244.0.34.xip.io/info | grep memory
+```
 
-cf env myapp
+Let's have it persist to a MySQL database instead.  And let's create that MySQL database using Juju and JXaas.
+
+First we install Juju & JXaaS (locally):
+
+```
+juju init
+juju switch local
+juju bootstrap
+juju status
+
+juju deploy cs:~justin-fathomdb/trusty/jxaas jxaas
+
+API_SECRET=`grep admin-secret ~/.juju/environments/local.jenv | cut -f 2 -d ':' | tr -d ' '`
+echo "API_SECRET=${API_SECRET}"
+juju set jxaas api-password=${API_SECRET}
+
+juju expose jxaas
+
+PUBLIC_ADDRESS=`juju status jxaas | grep public-address | cut -f 2 -d ':' | tr -d ' '`
+echo "JXaaS is listening at http://${PUBLIC_ADDRESS}:8080"
 ```
 
 
+Now, we tell CloudFoundry about JXaaS.  In the CloudFoundry vocabulary, JXaaS is called a service broker, because it
+provides services to CloudFoundry.  First we add the service-broker, by specifying the '/cf' URL for JXaaS:
+
+```
+export JXAAS_URL_CF=http://${PUBLIC_ADDRESS}:8080/cf
+echo "JXAAS_URL_CF is ${JXAAS_URL_CF}"
+
+cf service-brokers
+cf create-service-broker jxaas admin admin ${JXAAS_URL_CF}
+cf service-brokers
+```
+
+Next, we tell CloudFoundry to allow users to access the MySQL service:
+
+```
+cf service-access
+cf enable-service-access mysql
+cf service-access
+```
+
+Let's create a mysql service named "mysql1".  This step is a little slower, because CF operations are
+generally synchronous:
+
+```
+cf create-service mysql nano mysql1
+cf services
+```
+
+What happened here was that CloudFoundry asked JXaaS to create the mysql service.  JXaaS implements the CloudFoundry
+service-broker interface, and the manifest specifies several plans which can be chosen - here we chose the nano
+plan.  Because we created it through CloudFoundry, that means CloudFoundry knows about the MySQL service and 
+we can easily bind our app to it:
+
+```
+cf bind-service spring-music mysql1
+cf restage spring-music
+```
+
+And now the database will be mysql:
+
+```
+# Should include 'mysql', not 'in-memory':
+curl http://spring-music.10.244.0.34.xip.io/info | grep mysql
+```
+
+You can see the configuration:
+
+```
+cf env spring-music
+```
+
+You can see that the app still works:
+```
+x-www-browser http://spring-music.10.244.0.34.xip.io
+```
+
+
+# Summary
+
+JXaaS can act as a CloudFoundry service-broker, so Juju charms can easily be bound
+to CloudFoundry applications.  This opens up the whole world of Juju services to CloudFoundry!
