@@ -7,10 +7,10 @@ import (
 )
 
 type Bundle struct {
-	Services           map[string]*ServiceConfig
-	Relations          []*RelationConfig
-	Provides           map[string]*ProvideConfig
-	HealthChecks       map[string]*HealthCheckConfig
+	Services     map[string]*ServiceConfig
+	Relations    []*RelationConfig
+	Provides     map[string]*ProvideConfig
+	HealthChecks map[string]*HealthCheckConfig
 	//	Meta               BundleMeta
 	//	CloudFoundryConfig *CloudFoundryConfig
 }
@@ -47,13 +47,13 @@ type HealthCheckConfig struct {
 }
 
 type CloudFoundryPlan struct {
-	Key string
+	Key     string
 	Options map[string]string
 }
 
 type CloudFoundryConfig struct {
 	Credentials map[string]string
-	Plans []*CloudFoundryPlan
+	Plans       []*CloudFoundryPlan
 }
 
 // Implement fmt.Stringer

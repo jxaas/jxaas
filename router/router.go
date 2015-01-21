@@ -32,7 +32,7 @@ func copyHeaders(src http.Header, dest http.Header) {
 	}
 }
 
-func (self*Router) httpHandlerFunc(w http.ResponseWriter, r *http.Request) {
+func (self *Router) httpHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Got http request %v %v", r.Method, r.RequestURI)
 
 	// Tweak the request as appropriate:
@@ -94,13 +94,13 @@ func (self*Router) httpHandlerFunc(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, resp.Body)
 }
 
-func (self*Router) Run() error {
+func (self *Router) Run() error {
 	proxyHandler := http.HandlerFunc(self.httpHandlerFunc)
 	err := http.ListenAndServe(self.listen, proxyHandler)
 	return err
 }
 
-func (self * Router) listServices(tenant string, req *http.Request, res http.ResponseWriter) {
+func (self *Router) listServices(tenant string, req *http.Request, res http.ResponseWriter) {
 	bundles, err := self.registry.ListServicesForTenant(tenant)
 	if err != nil {
 		http.Error(res, "Internal error", http.StatusInternalServerError)
@@ -114,5 +114,3 @@ func sendJsonResponse(data interface{}, req *http.Request, res http.ResponseWrit
 	t := reflect.TypeOf(data)
 	writer.Write(data, t, req, res)
 }
-
-

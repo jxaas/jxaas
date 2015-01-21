@@ -36,11 +36,11 @@ func (self *BundleStore) GetBundleTemplate(key string) (*BundleTemplate, error) 
 }
 
 type BundleTemplate struct {
-	template       TemplateBlock
+	template TemplateBlock
 	//	templateString string
 
-	meta *BundleMeta
-	options *OptionsConfig
+	meta                 *BundleMeta
+	options              *OptionsConfig
 	cloudfoundryTemplate TemplateBlock
 	cloudfoundryRaw      *CloudFoundryConfig
 }
@@ -107,7 +107,6 @@ func (self *BundleTemplate) executeTemplate(context *TemplateContext) (map[strin
 	//		return nil, err
 	//	}
 
-
 	//	var buffer bytes.Buffer
 	//	err := self.template.Execute(&buffer, &templateContextCopy)
 	//	if err != nil {
@@ -128,7 +127,7 @@ func NewBundleTemplate(templateData sources.ByteSource) (*BundleTemplate, error)
 		return nil, err
 	}
 
-//	log.Debug("Reading template: %v", templateString)
+	//	log.Debug("Reading template: %v", templateString)
 
 	template, err := parseYamlTemplate(templateString)
 	if err != nil {

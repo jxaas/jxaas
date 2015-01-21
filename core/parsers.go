@@ -28,7 +28,7 @@ func parseService(s string) (tenant, bundleType, instanceId, module string, err 
 		module = ""
 	} else {
 		instanceId = tail[:lastDash]
-		module = tail[(lastDash+1):]
+		module = tail[(lastDash + 1):]
 	}
 
 	return

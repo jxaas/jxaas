@@ -184,7 +184,7 @@ func (self *baseBundleType) GetCloudFoundryPlans() ([]*bundle.CloudFoundryPlan, 
 	if plans == nil {
 		plan := &bundle.CloudFoundryPlan{}
 		plan.Key = "default"
-		plans := []*bundle.CloudFoundryPlan{ plan }
+		plans := []*bundle.CloudFoundryPlan{plan}
 		return plans, nil
 	}
 	return plans, nil

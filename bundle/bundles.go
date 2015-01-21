@@ -91,7 +91,7 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 	systemServices := map[string]string{}
 	if templateContextCopy.SystemServices != nil {
 		for k, v := range templateContextCopy.SystemServices {
-			systemServices[k] = SYSTEM_PREFIX+v
+			systemServices[k] = SYSTEM_PREFIX + v
 		}
 	}
 	templateContextCopy.SystemServices = systemServices
@@ -123,7 +123,6 @@ func (self *BundleTemplate) GetBundle(templateContext *TemplateContext, tenant, 
 
 	return bundle, nil
 }
-
 
 //func (self *BundleTemplate) GetRaw() (*Bundle, error) {
 //	bundles, err := parseBundle(self.template.Raw())
@@ -162,11 +161,10 @@ func (self *BundleStore) GetSystemBundle(key string) (*Bundle, error) {
 		return nil, err
 	}
 
-//	bundle, err := getOnly(bundles)
-//	if err != nil {
-//		return nil, err
-//	}
-
+	//	bundle, err := getOnly(bundles)
+	//	if err != nil {
+	//		return nil, err
+	//	}
 
 	return bundle, nil
 }

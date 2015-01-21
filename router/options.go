@@ -13,8 +13,8 @@ var (
 )
 
 type Options struct {
-	Registry       RouterRegistry
-	Listen         string
+	Registry RouterRegistry
+	Listen   string
 }
 
 func GetOptions() *Options {

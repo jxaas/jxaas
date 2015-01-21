@@ -279,7 +279,6 @@ func parseBundle(data interface{}) (*Bundle, error) {
 	return self, nil
 }
 
-
 func parseMeta(meta interface{}) (*BundleMeta, error) {
 	ret := &BundleMeta{}
 	if meta != nil {

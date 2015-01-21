@@ -121,7 +121,6 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 			continue
 		}
 
-
 		// Grab the timestamp & value
 		t, found := value[keyTimestamp]
 		if !found {

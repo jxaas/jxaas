@@ -361,8 +361,8 @@ func (self *Huddle) cleanupOldMachines(state map[string]int, threshold int) (map
 			// Machine id 0 is special (the system machine); we can't destroy it
 			continue
 		}
-		
-		log.Info("Machine is idle; removing: %v", machineId);
+
+		log.Info("Machine is idle; removing: %v", machineId)
 		err = self.JujuClient.DestroyMachine(machineId)
 		if err != nil {
 			log.Warn("Failed to delete machine %v", machineId, err)

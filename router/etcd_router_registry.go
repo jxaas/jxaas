@@ -18,7 +18,7 @@ var (
 )
 
 type EtcdRouterRegistry struct {
-	client *etcd.Client
+	client   *etcd.Client
 	basePath string
 }
 
@@ -53,17 +53,16 @@ func NewEtcdRouterRegistry(etcdUrl *url.URL) (*EtcdRouterRegistry, error) {
 	return self, nil
 }
 
-func (self*EtcdRouterRegistry) keyForTenant(service string, tenant string) string {
+func (self *EtcdRouterRegistry) keyForTenant(service string, tenant string) string {
 	return self.basePath + "/tenant/" + tenant + "/" + service
 }
 
-func (self*EtcdRouterRegistry) keyForService(service string) string {
+func (self *EtcdRouterRegistry) keyForService(service string) string {
 	return self.basePath + "/service/" + service
 }
 
-
-func (self*EtcdRouterRegistry) ListServicesForTenant(tenant string) (*model.Bundles, error) {
-	children, err := self.listSubkeys(self.basePath + "/service/");
+func (self *EtcdRouterRegistry) ListServicesForTenant(tenant string) (*model.Bundles, error) {
+	children, err := self.listSubkeys(self.basePath + "/service/")
 	if err != nil {
 		log.Warn("Error listing subkeys in etcd", err)
 		return nil, err
@@ -71,7 +70,7 @@ func (self*EtcdRouterRegistry) ListServicesForTenant(tenant string) (*model.Bund
 
 	tenantChildren := []string{}
 	if tenant != "" {
-		tenantChildren, err = self.listSubkeys(self.basePath+"/tenant/"+tenant);
+		tenantChildren, err = self.listSubkeys(self.basePath + "/tenant/" + tenant)
 		if err != nil {
 			log.Warn("Error listing subkeys in etcd", err)
 			return nil, err
@@ -91,7 +90,7 @@ func (self*EtcdRouterRegistry) ListServicesForTenant(tenant string) (*model.Bund
 	return bundles, nil
 }
 
-func (self*EtcdRouterRegistry) GetBackendForTenant(service string, tenant string) string {
+func (self *EtcdRouterRegistry) GetBackendForTenant(service string, tenant string) string {
 	var data *etcdRouterData
 	var err error
 
@@ -117,8 +116,7 @@ func (self*EtcdRouterRegistry) GetBackendForTenant(service string, tenant string
 	return ""
 }
 
-
-func (self*EtcdRouterRegistry) SetBackendForTenant(service string, tenant string, backend string) error {
+func (self *EtcdRouterRegistry) SetBackendForTenant(service string, tenant string, backend string) error {
 	key := self.keyForTenant(service, tenant)
 
 	data := &etcdRouterData{}
@@ -129,9 +127,8 @@ func (self*EtcdRouterRegistry) SetBackendForTenant(service string, tenant string
 	return self.put(key, data)
 }
 
-
-func (self*EtcdRouterRegistry) ListServices() ([]string, error) {
-	children, err := self.listSubkeys(self.basePath + "/service/");
+func (self *EtcdRouterRegistry) ListServices() ([]string, error) {
+	children, err := self.listSubkeys(self.basePath + "/service/")
 	if err != nil {
 		log.Warn("Error listing subkeys in etcd", err)
 		return nil, err
@@ -139,7 +136,7 @@ func (self*EtcdRouterRegistry) ListServices() ([]string, error) {
 	return children, nil
 }
 
-func (self*EtcdRouterRegistry) SetBackendForService(service string, backend string) error {
+func (self *EtcdRouterRegistry) SetBackendForService(service string, backend string) error {
 	key := self.keyForService(service)
 
 	data := &etcdRouterData{}

@@ -109,4 +109,3 @@ func (self *EndpointInstance) HttpDelete() (*rs.HttpResponse, error) {
 	// TODO: Remove machines
 	return &rs.HttpResponse{Status: http.StatusAccepted}, nil
 }
-

@@ -42,7 +42,7 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 		service.Plans = []*CatalogModelPlan{}
 		for _, cfPlan := range cfPlans {
 			plan := &CatalogModelPlan{}
-			plan.Id = service.Id+"::"+cfPlan.Key
+			plan.Id = service.Id + "::" + cfPlan.Key
 			plan.Name = cfPlan.Key
 			plan.Description = cfPlan.Key + " plan"
 			//	Metadata        map[string]string

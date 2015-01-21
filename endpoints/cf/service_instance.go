@@ -85,7 +85,6 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 		return nil, fmt.Errorf("Service not ready")
 	}
 
-
 	response := &CfCreateInstanceResponse{}
 	// XXX: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"

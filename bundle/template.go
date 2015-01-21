@@ -13,7 +13,7 @@ import (
 
 type TemplateBlock interface {
 	Render(context interface{}) (interface{}, error)
-	Raw() (interface{})
+	Raw() interface{}
 
 	Get(key string) TemplateBlock
 	Remove(key string) TemplateBlock
@@ -21,7 +21,7 @@ type TemplateBlock interface {
 
 type StringTemplateBlock struct {
 	template *template.Template
-	text string
+	text     string
 }
 
 func newStringTemplateBlock(s string) (*StringTemplateBlock, error) {
@@ -61,15 +61,13 @@ func (self *StringTemplateBlock) Render(context interface{}) (interface{}, error
 	return s, nil
 }
 
-func (self *StringTemplateBlock) Raw() (interface{}) {
+func (self *StringTemplateBlock) Raw() interface{} {
 	return self.text
 }
 
-
-
 type ValueTemplateBlock struct {
 	value interface{}
-	text string
+	text  string
 }
 
 func newValueTemplateBlock(value interface{}, text string) (*ValueTemplateBlock, error) {
@@ -91,10 +89,9 @@ func (self *ValueTemplateBlock) Render(context interface{}) (interface{}, error)
 	return self.value, nil
 }
 
-func (self *ValueTemplateBlock) Raw() (interface{}) {
+func (self *ValueTemplateBlock) Raw() interface{} {
 	return self.text
 }
-
 
 type MapTemplateBlock struct {
 	template map[string]TemplateBlock
@@ -131,7 +128,7 @@ func (self *MapTemplateBlock) Render(context interface{}) (interface{}, error) {
 	return result, nil
 }
 
-func (self *MapTemplateBlock) Raw() (interface{}) {
+func (self *MapTemplateBlock) Raw() interface{} {
 	result := map[string]interface{}{}
 	for k, v := range self.template {
 		result[k] = v.Raw()
@@ -139,12 +136,9 @@ func (self *MapTemplateBlock) Raw() (interface{}) {
 	return result
 }
 
-
-
 type ArrayTemplateBlock struct {
 	template []TemplateBlock
 }
-
 
 func newArrayTemplateBlock(template []TemplateBlock) (*ArrayTemplateBlock, error) {
 	self := &ArrayTemplateBlock{}
@@ -172,14 +166,13 @@ func (self *ArrayTemplateBlock) Render(context interface{}) (interface{}, error)
 	return result, nil
 }
 
-func (self *ArrayTemplateBlock) Raw() (interface{}) {
+func (self *ArrayTemplateBlock) Raw() interface{} {
 	result := []interface{}{}
 	for _, v := range self.template {
 		result = append(result, v.Raw())
 	}
 	return result
 }
-
 
 func toTemplateBlock(src interface{}) (TemplateBlock, error) {
 	asMap, ok := src.(map[interface{}]interface{})
@@ -251,7 +244,6 @@ func toTemplateBlock(src interface{}) (TemplateBlock, error) {
 
 	return nil, fmt.Errorf("Unhandled type in template: %T", src)
 }
-
 
 func parseYamlTemplate(yaml string) (TemplateBlock, error) {
 	replaced := strings.Replace(yaml, "{{", "__JXAAS_BEGIN_TEMPLATE__", -1)

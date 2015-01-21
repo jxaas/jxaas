@@ -222,7 +222,7 @@ func (self *Instance) getState0() (*instanceState, error) {
 		option.Default = v
 		state.Model.OptionDescriptions[k] = option
 	}
-	
+
 	state.Units = map[string]map[string]api.UnitStatus{}
 
 	state.Units[primaryServiceId] = status.Units

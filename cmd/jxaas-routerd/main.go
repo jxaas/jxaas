@@ -9,7 +9,6 @@ import (
 	"github.com/jxaas/jxaas/router"
 )
 
-
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
