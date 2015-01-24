@@ -5,7 +5,6 @@
 If you don't have an existing Keystone installation, you'll need to install one.
 
 
-
 ```
 ADMIN_PASSWORD=secret
 KEYSTONE_HOST=127.0.0.1
@@ -13,7 +12,7 @@ KEYSTONE_HOST=127.0.0.1
 export OS_SERVICE_ENDPOINT=http://127.0.0.1:35357/v2.0
 export OS_SERVICE_TOKEN=ADMIN
 
-apt-get install --yes keystone
+sudo apt-get install --yes keystone
 keystone user-list
 
 # Create initial accounts
@@ -33,15 +32,46 @@ keystone endpoint-create \
   --adminurl=http://${KEYSTONE_HOST}:35357/v2.0
 
 ```
- 
- 
-### Create a service account for jxaas
+
+### Use OpenStack to authenticate
+
+Let's install Juju & JXaaS (locally):
+
+```
+juju init
+juju switch local
+juju bootstrap
+juju status
+
+juju deploy cs:~justin-fathomdb/trusty/jxaas jxaas
+
+API_SECRET=`grep admin-secret ~/.juju/environments/local.jenv | cut -f 2 -d ':' | tr -d ' '`
+echo "API_SECRET=${API_SECRET}"
+juju set jxaas api-password=${API_SECRET}
+
+juju set jxaas openstack-auth="http://10.0.3.1:5000/v2.0"
+
+juju expose jxaas
+
+PUBLIC_ADDRESS=`juju status jxaas | grep public-address | cut -f 2 -d ':' | tr -d ' '`
+echo "JXaaS is listening at http://${PUBLIC_ADDRESS}:8080"
+
+export JXAAS_URL=http://${PUBLIC_ADDRESS}:8080/xaas
+echo "export JXAAS_URL=http://${PUBLIC_ADDRESS}:8080/xaas"
+```
+
+
+### Create a service account in OpenStack for jxaas
+
+Now, we register the JXaaS server with OpenStack Keystone.  This allows
+users to authenticate with KeyStone and discover services available to them,
+including JXaaS.
 
 ```
 IP=10.0.3.1
 
 JXAAS_PASSWORD=secret
-JXAAS_BASE=http://${IP}:8080/xaas
+JXAAS_BASE=http://${PUBLIC_ADDRESS}:8080/xaas
 
 keystone user-create --name=jxaas --pass=${JXAAS_PASSWORD}
 keystone user-role-add --user=jxaas --tenant=service --role=admin
@@ -56,3 +86,28 @@ keystone endpoint-create \
 ```
 
 
+### Use the JXaaS CLI
+
+To use JXaaS with Openstack authentication, you point it to the Keystone server.
+
+After authenticating, the CLI uses the JXaaS server you registered in Keystone.
+
+```
+export JXAAS_AUTH=openstack
+export JXAAS_URL=http://10.0.3.1:5000/v2.0
+
+jxaas list-instances mysql
+
+jxaas create-instance mysql m1
+
+jxaas list-instances mysql
+
+```
+
+JXaaS now creates Juju instances based on your OpenStack project:
+
+```
+juju status *mysql-m1-mysql
+```
+
+The juju service id will include your OpenStack project ID.
