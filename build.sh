@@ -43,6 +43,8 @@ go get -d -u -v github.com/jxaas/jxaas
 ${GOBIN}/godeps -u dependencies.tsv 
 
 # Make sure it is installed
+go install -v github.com/jxaas/jxaas/cmd/jxaas-admin
+go install -v github.com/jxaas/jxaas/cmd/jxaas-routerd
 go install -v github.com/jxaas/jxaas/cmd/jxaasd
 
 rm -rf ${WORKDIR}/templates/
