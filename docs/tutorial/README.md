@@ -20,8 +20,11 @@ In this tutorial, we'll go step-by-step through JXaaS, exploring how it works.  
 
 [9) Scaling & auto-scaling](9.md)
 
-TODO: Cloud Foundry
 
-TODO: Openstack auth
+# Advanced Functionality
 
-TODO: Proxied services
+[Cloud Foundry](cf.md)
+
+[OpenStack Authentication](auth.md)
+
+[JXaaS Router for Scale-Out](router.md)
