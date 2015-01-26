@@ -57,5 +57,6 @@ func main() {
 	}
 	fmt.Println("Valid commands:")
 	fmt.Println("  set-service-backend")
+	fmt.Println("  list-service-backends")
 	os.Exit(1)
 }
