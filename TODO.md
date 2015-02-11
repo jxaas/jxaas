@@ -37,12 +37,3 @@ Support all services through proxy (Mongo, PG)
 
 Support PG in multitenant mode
 
-
-
-
-TODO: CF need to wait for service ready (during bind?  during create?)
-
-CF: Weird error - bad response line - from CF CLI - maybe bump timeout up??
-
-Maybe need sync & async modes??
-Or maybe sync for CF, async elsewhere?

@@ -29,7 +29,7 @@ func (self *EndpointServiceInstance) getService() *EndpointCfService {
 	return self.Parent.getService()
 }
 
-// XXX: This needs to map service_bindings... may need to use Item
+// TODO: This needs to map service_bindings... may need to use Item
 func (self *EndpointServiceInstance) ItemServiceBindings() *EndpointServiceBindings {
 	child := &EndpointServiceBindings{}
 	child.Parent = self
@@ -89,7 +89,7 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 	}
 
 	response := &CfCreateInstanceResponse{}
-	// XXX: We need a dashboard URL - maybe a Juju GUI?
+	// TODO: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"
 	response.State = CF_STATE_CREATING
 
@@ -130,7 +130,7 @@ func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
 	}
 
 	response := &CfCreateInstanceResponse{}
-	// XXX: We need a dashboard URL - maybe a Juju GUI?
+	// TODO: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"
 	if ready {
 		response.State = CF_STATE_AVAILABLE
@@ -166,7 +166,7 @@ func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfD
 		return nil, err
 	}
 
-	// XXX: Wait for deletion?
+	// TODO: Wait for deletion?
 
 	response := &CfDeleteInstanceResponse{}
 	return response, nil

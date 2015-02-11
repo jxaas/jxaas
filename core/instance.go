@@ -196,7 +196,7 @@ func (self *Instance) getState0() (*instanceState, error) {
 	primaryServiceId := self.primaryServiceId
 	status, err := jujuClient.GetServiceStatus(primaryServiceId)
 
-	// XXX: check err?
+	// TODO: check err?
 
 	jujuService, err := jujuClient.FindService(primaryServiceId)
 	if err != nil {
@@ -927,7 +927,7 @@ func (self *Instance) RunScaling(changeScale bool) (*model.Scaling, error) {
 	var scaleTarget int
 
 	if policy.MetricName != nil {
-		// XXX: Filter by time window
+		// TODO: Filter by time window
 		metricData, err := self.GetMetricValues(*policy.MetricName)
 		if err != nil {
 			log.Warn("Error retrieving metrics for scaling", err)

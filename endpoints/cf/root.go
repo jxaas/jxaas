@@ -8,7 +8,7 @@ func (self *EndpointCfRoot) getHelper() *CfHelper {
 	return self.Helper
 }
 
-// XXX: We should probably authenticate against CloudFoundry!
+// TODO: We should probably authenticate against CloudFoundry!
 
 func (self *EndpointCfRoot) Item(bundleId string) *EndpointCfService {
 	child := &EndpointCfService{}

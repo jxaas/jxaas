@@ -95,7 +95,7 @@ func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUn
 		return nil, rs.ErrNotFound()
 	}
 
-	// XXX: actually remove something?
+	// TODO: actually remove something?
 
 	response := &CfUnbindResponse{}
 
