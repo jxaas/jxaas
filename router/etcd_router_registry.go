@@ -90,7 +90,7 @@ func (self *EtcdRouterRegistry) ListServicesForTenant(tenant string) (*model.Bun
 	return bundles, nil
 }
 
-func (self *EtcdRouterRegistry) GetBackendForTenant(service string, tenant string) string {
+func (self *EtcdRouterRegistry) GetBackendForTenant(service string, tenant *string) string {
 	var data *etcdRouterData
 	var err error
 

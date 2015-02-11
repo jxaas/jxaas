@@ -46,7 +46,7 @@ func main() {
 			os.Exit(2)
 		}
 		for _, service := range services {
-			backend := options.Registry.GetBackendForTenant(service, "")
+			backend := options.Registry.GetBackendForTenant(service, nil)
 			fmt.Println(service, "\t", backend)
 		}
 		return

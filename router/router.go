@@ -48,7 +48,7 @@ func (self *Router) httpHandlerFunc(w http.ResponseWriter, r *http.Request) {
 
 	tokens := strings.Split(path, "/")
 	log.Debug("URL tokens: %v", tokens)
-	if len(tokens) >= 3 {
+	if len(tokens) >= 2 {
 		app := tokens[0]
 		if app == "xaas" {
 			tenant := tokens[1]
@@ -57,8 +57,12 @@ func (self *Router) httpHandlerFunc(w http.ResponseWriter, r *http.Request) {
 				return
 			} else if len(tokens) >= 4 {
 				service := tokens[3]
-				proxyHost = self.registry.GetBackendForTenant(service, tenant)
+				proxyHost = self.registry.GetBackendForTenant(service, &tenant)
 			}
+		}
+		if app == "cf" {
+			service := tokens[1]
+			proxyHost = self.registry.GetBackendForTenant(service, nil)
 		}
 	}
 

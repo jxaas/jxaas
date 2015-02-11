@@ -10,8 +10,11 @@ func NewSimpleRouterRegistry() *SimpleRouterRegistry {
 	return self
 }
 
-func (self *SimpleRouterRegistry) GetBackendForTenant(service string, tenant string) string {
-	v := self.tenants[tenant][service]
+func (self *SimpleRouterRegistry) GetBackendForTenant(service string, tenant *string) string {
+	v := ""
+	if tenant != nil {
+		v = self.tenants[*tenant][service]
+	}
 	if v == "" {
 		v = self.services[service]
 	}
