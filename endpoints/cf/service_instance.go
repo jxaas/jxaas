@@ -1,7 +1,6 @@
 package cf
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/justinsb/gova/assert"
@@ -12,9 +11,15 @@ import (
 	"github.com/jxaas/jxaas/model"
 )
 
+const (
+	CF_STATE_CREATING  = "creating"
+	CF_STATE_AVAILABLE = "available"
+)
+
 type EndpointServiceInstance struct {
 	Parent *EndpointServiceInstances
 	Id     string
+	Service string
 }
 
 func (self *EndpointServiceInstance) getHelper() *CfHelper {
@@ -39,7 +44,11 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 
 	planId := request.PlanId
 
-	bundleType, instance := helper.getInstance(request.ServiceId, self.Id)
+	if request.ServiceId != self.Service {
+		return nil, rs.ErrNotFound()
+	}
+	
+	bundleType, instance := helper.getInstance(self.Service, self.Id)
 	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
 	}
@@ -52,7 +61,7 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 
 	var foundPlan *bundle.CloudFoundryPlan
 	for _, cfPlan := range cfPlans {
-		cfPlanId := request.ServiceId + "::" + cfPlan.Key
+		cfPlanId := self.Service + "::" + cfPlan.Key
 		if cfPlanId == planId {
 			assert.That(foundPlan == nil)
 			foundPlan = cfPlan
@@ -74,25 +83,61 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 		return nil, err
 	}
 
-	ready, err := waitReady(instance, 300)
-	if err != nil {
-		log.Warn("Error while waiting for instance to become ready", err)
-		return nil, err
-	}
-
-	if !ready {
-		log.Warn("Timeout waiting for service to be ready")
-		return nil, fmt.Errorf("Service not ready")
-	}
-
 	response := &CfCreateInstanceResponse{}
 	// XXX: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"
+	response.State = CF_STATE_CREATING
 
 	httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
 	httpResponse.Content = response
 	return httpResponse, nil
 }
+
+
+func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
+	helper := self.getHelper()
+
+	log.Info("CF instance GET request: %v", self.Id)
+
+	bundleType, instance := helper.getInstance(self.Service, self.Id)
+	if instance == nil || bundleType == nil {
+		return nil, rs.ErrNotFound()
+	}
+
+	state, err := instance.GetState()
+	if err != nil {
+		log.Warn("Error while waiting for instance to become ready", err)
+		return nil, err
+	}
+
+	ready := false
+	if state == nil {
+		log.Warn("Instance not yet created")
+	} else {
+		status := state.Status
+
+		if status == "started" {
+			ready = true
+		} else if status == "pending" {
+			ready = false
+		} else {
+			log.Warn("Unknown instance status: %v", status)
+		}
+	}
+
+	response := &CfCreateInstanceResponse{}
+	// XXX: We need a dashboard URL - maybe a Juju GUI?
+	response.DashboardUrl = "http://localhost:8080"
+	if ready {
+		response.State = CF_STATE_AVAILABLE
+	} else {
+		response.State = CF_STATE_CREATING
+	}
+	httpResponse := &rs.HttpResponse{Status: http.StatusOK}
+	httpResponse.Content = response
+	return httpResponse, nil
+}
+
 
 func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfDeleteInstanceResponse, error) {
 	helper := self.getHelper()
@@ -100,6 +145,10 @@ func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfD
 	queryValues := httpRequest.URL.Query()
 	serviceId := queryValues.Get("service_id")
 	//	planId := queryValues.Get("plan_id")
+	
+	if serviceId != self.Service {
+		return nil, rs.ErrNotFound()
+	}
 
 	log.Info("Deleting item %v %v", serviceId, self.Id)
 
@@ -128,6 +177,7 @@ type CfCreateInstanceRequest struct {
 
 type CfCreateInstanceResponse struct {
 	DashboardUrl string `json:"dashboard_url"`
+	State        string `json:"state"`
 }
 
 type CfDeleteInstanceResponse struct {

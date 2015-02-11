@@ -10,8 +10,8 @@ func (self *EndpointCfRoot) getHelper() *CfHelper {
 
 // XXX: We should probably authenticate against CloudFoundry!
 
-func (self *EndpointCfRoot) ItemV2() *EndpointCfV2 {
-	child := &EndpointCfV2{}
+func (self *EndpointCfRoot) Item(service string) *EndpointCfService {
+	child := &EndpointCfService{}
 	child.Parent = self
 	return child
 }

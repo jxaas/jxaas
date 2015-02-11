@@ -3,7 +3,8 @@ package cf
 import ()
 
 type EndpointCfV2 struct {
-	Parent *EndpointCfRoot
+	Parent *EndpointCfService
+	Service string
 }
 
 func (self *EndpointCfV2) getHelper() *CfHelper {
@@ -19,5 +20,6 @@ func (self *EndpointCfV2) ItemCatalog() *EndpointCatalog {
 func (self *EndpointCfV2) ItemServiceInstances() *EndpointServiceInstances {
 	child := &EndpointServiceInstances{}
 	child.Parent = self
+	child.Service = self.Service
 	return child
 }

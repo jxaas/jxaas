@@ -85,7 +85,7 @@ func main() {
 			info := api.Info{
 				Addrs:    servers,
 				Password: password,
-				CACert:   []byte(ca),
+				CACert:   ca,
 				Tag:      tag,
 				Nonce:    nonce,
 			}
