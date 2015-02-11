@@ -5,8 +5,8 @@ import (
 
 	"github.com/justinsb/gova/log"
 
-	"launchpad.net/juju-core/state/api"
-	"launchpad.net/juju-core/state/api/params"
+	"github.com/juju/juju/state/api"
+	"github.com/juju/juju/state/api/params"
 )
 
 type RelationInfo struct {

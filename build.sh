@@ -13,16 +13,6 @@ if [ ! -h ${GOPATH}/src/github.com/jxaas/jxaas ]; then
 fi
 
 
-# Get the trusty version of juju-core
-# It would sure be nice if godeps handled go dependencies...
-if [ ! -d ${GOPATH}/src/launchpad.net/juju-core ]; then
-       mkdir -p ${GOPATH}/src/launchpad.net
-       echo "Fetching lp:juju-core/1.18"
-       pushd ${GOPATH}/src/launchpad.net/
-       bzr branch lp:juju-core/1.18 juju-core
-       popd
-fi
-
 # Get the godeps tool
 go get launchpad.net/godeps
 

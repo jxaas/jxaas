@@ -5,8 +5,8 @@ import (
 
 	"github.com/justinsb/gova/log"
 
-	"launchpad.net/juju-core/charm"
-	"launchpad.net/juju-core/state/api"
+	"github.com/juju/charm"
+	"github.com/juju/juju/state/api"
 )
 
 // addCharmViaAPI calls the appropriate client API calls to add the

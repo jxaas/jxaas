@@ -16,13 +16,13 @@ import (
 	"github.com/justinsb/gova/log"
 	"github.com/justinsb/gova/sources"
 
-	"launchpad.net/juju-core/cmd/envcmd"
-	"launchpad.net/juju-core/constraints"
-	"launchpad.net/juju-core/environs"
-	"launchpad.net/juju-core/environs/config"
-	"launchpad.net/juju-core/juju"
-	"launchpad.net/juju-core/state/api"
-	"launchpad.net/juju-core/state/api/params"
+	"github.com/juju/juju/cmd/envcmd"
+	"github.com/juju/juju/constraints"
+	"github.com/juju/juju/environs"
+	"github.com/juju/juju/environs/config"
+	"github.com/juju/juju/juju"
+	"github.com/juju/juju/state/api"
+	"github.com/juju/juju/state/api/params"
 )
 
 var connectionError = `Unable to connect to environment "%s".

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"launchpad.net/juju-core/state/api"
+	"github.com/juju/juju/state/api"
 
 	"github.com/justinsb/gova/assert"
 	"github.com/justinsb/gova/log"

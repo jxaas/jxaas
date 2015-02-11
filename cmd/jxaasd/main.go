@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"launchpad.net/goyaml"
-	"launchpad.net/juju-core/state/api"
+	"github.com/juju/juju/state/api"
 
 	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/log"
