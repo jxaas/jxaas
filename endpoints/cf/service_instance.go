@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	CF_STATE_CREATING  = "creating"
-	CF_STATE_AVAILABLE = "available"
+	CF_STATE_SUCCEEDED   = "succeeded"
+	CF_STATE_FAILED      = "failed"
+	CF_STATE_IN_PROGRESS = "in progress"
 )
 
 type EndpointServiceInstance struct {
@@ -91,7 +92,8 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 	response := &CfCreateInstanceResponse{}
 	// TODO: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"
-	response.State = CF_STATE_CREATING
+	response.LastOperation = &CfOperation{}
+	response.LastOperation.State = CF_STATE_IN_PROGRESS
 
 	httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
 	httpResponse.Content = response
@@ -132,10 +134,11 @@ func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
 	response := &CfCreateInstanceResponse{}
 	// TODO: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"
+	response.LastOperation = &CfOperation{}
 	if ready {
-		response.State = CF_STATE_AVAILABLE
+		response.LastOperation.State = CF_STATE_SUCCEEDED
 	} else {
-		response.State = CF_STATE_CREATING
+		response.LastOperation.State = CF_STATE_IN_PROGRESS
 	}
 	httpResponse := &rs.HttpResponse{Status: http.StatusOK}
 	httpResponse.Content = response
@@ -180,8 +183,13 @@ type CfCreateInstanceRequest struct {
 }
 
 type CfCreateInstanceResponse struct {
-	DashboardUrl string `json:"dashboard_url"`
-	State        string `json:"state"`
+	DashboardUrl  string       `json:"dashboard_url"`
+	LastOperation *CfOperation `json:"last_operation"`
+}
+
+type CfOperation struct {
+	State       string `json:"state"`
+	Description string `json:"description"`
 }
 
 type CfDeleteInstanceResponse struct {
