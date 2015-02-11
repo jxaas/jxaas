@@ -94,8 +94,8 @@ func (self *EtcdRouterRegistry) GetBackendForTenant(service string, tenant *stri
 	var data *etcdRouterData
 	var err error
 
-	if tenant != "" {
-		key := self.keyForTenant(service, tenant)
+	if tenant != nil {
+		key := self.keyForTenant(service, *tenant)
 		data, err = self.read(key)
 	}
 
