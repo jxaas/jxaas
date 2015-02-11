@@ -82,12 +82,12 @@ func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUn
 
 	queryValues := httpRequest.URL.Query()
 	serviceId := queryValues.Get("service_id")
-	
+
 	if serviceId != service.CfServiceId {
 		log.Warn("service mismatch: %v vs %v", serviceId, service.CfServiceId)
 		return nil, rs.ErrNotFound()
 	}
-	
+
 	//	planId := queryValues.Get("plan_id")
 
 	bundleType, instance := service.getInstance(self.getInstanceId())

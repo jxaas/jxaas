@@ -42,17 +42,17 @@ func (self *EndpointServiceInstance) getInstanceId() string {
 
 func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (*rs.HttpResponse, error) {
 	service := self.getService()
-	
+
 	log.Info("CF instance put request: %v", request)
 
 	planId := request.PlanId
 	cfServiceId := request.ServiceId
-	
+
 	if cfServiceId != service.CfServiceId {
 		log.Warn("Service mismatch: %v vs %v", cfServiceId, service.CfServiceId)
 		return nil, rs.ErrNotFound()
 	}
-	
+
 	bundleType, instance := service.getInstance(self.Id)
 	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
@@ -98,13 +98,11 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 	return httpResponse, nil
 }
 
-
 func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
 	service := self.getService()
-	
+
 	log.Info("CF instance GET request: %v", self.Id)
 
-	
 	bundleType, instance := service.getInstance(self.Id)
 	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
@@ -144,14 +142,13 @@ func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
 	return httpResponse, nil
 }
 
-
 func (self *EndpointServiceInstance) HttpDelete(httpRequest *http.Request) (*CfDeleteInstanceResponse, error) {
 	service := self.getService()
 
 	queryValues := httpRequest.URL.Query()
 	serviceId := queryValues.Get("service_id")
 	//	planId := queryValues.Get("plan_id")
-	
+
 	if serviceId != service.CfServiceId {
 		log.Warn("Service mismatch: %v vs %v", serviceId, service.CfServiceId)
 		return nil, rs.ErrNotFound()

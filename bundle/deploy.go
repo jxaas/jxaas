@@ -10,8 +10,8 @@ import (
 	"github.com/jxaas/jxaas/juju"
 	"github.com/jxaas/jxaas/model"
 
-	"launchpad.net/goyaml"
 	"github.com/juju/juju/state/api"
+	"launchpad.net/goyaml"
 
 	"github.com/justinsb/gova/log"
 )

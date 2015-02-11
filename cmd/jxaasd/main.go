@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"time"
 
-	"launchpad.net/goyaml"
 	"github.com/juju/juju/state/api"
+	"launchpad.net/goyaml"
 
 	"github.com/justinsb/gova/inject"
 	"github.com/justinsb/gova/log"

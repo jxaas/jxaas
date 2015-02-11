@@ -19,7 +19,7 @@ func (self *EndpointCatalog) getService() *EndpointCfService {
 func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 	helper := self.getHelper()
 	service := self.getService()
-	
+
 	huddle := helper.getHuddle()
 	bundles := huddle.System.ListBundleTypes()
 

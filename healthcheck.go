@@ -1,8 +1,8 @@
 package jxaas
 
 import (
-	"github.com/jxaas/jxaas/model"
 	"github.com/juju/juju/state/api"
+	"github.com/jxaas/jxaas/model"
 )
 
 type HealthCheck interface {

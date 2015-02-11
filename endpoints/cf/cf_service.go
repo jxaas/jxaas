@@ -1,14 +1,14 @@
 package cf
 
 import (
-	"strings"
+	"github.com/justinsb/gova/log"
 	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
-	"github.com/justinsb/gova/log"
+	"strings"
 )
 
 type EndpointCfService struct {
-	Parent *EndpointCfRoot
+	Parent      *EndpointCfRoot
 	CfServiceId string
 	BundleId    string
 }
@@ -26,7 +26,6 @@ func (self *EndpointCfService) ItemV2() *EndpointCfV2 {
 	child.Parent = self
 	return child
 }
-
 
 func (self *EndpointCfService) getInstance(instanceId string) (bundletype.BundleType, *core.Instance) {
 	helper := self.getHelper()
@@ -57,4 +56,3 @@ func (self *EndpointCfService) getBundleType() bundletype.BundleType {
 	bundleType := huddle.System.GetBundleType(self.BundleId)
 	return bundleType
 }
-
