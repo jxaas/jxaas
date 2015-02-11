@@ -137,14 +137,14 @@ echo "JXaaS is listening at http://${PUBLIC_ADDRESS}:8080"
 
 
 Now, we tell CloudFoundry about JXaaS.  In the CloudFoundry vocabulary, JXaaS is called a service broker, because it
-provides services to CloudFoundry.  First we add the service-broker, by specifying the '/cf' URL for JXaaS:
+provides services to CloudFoundry.  First we add the service-broker, by specifying the '/cf/mysql' URL for JXaaS:
 
 ```
-export JXAAS_URL_CF=http://${PUBLIC_ADDRESS}:8080/cf
+export JXAAS_URL_CF=http://${PUBLIC_ADDRESS}:8080/cf/mysql
 echo "JXAAS_URL_CF is ${JXAAS_URL_CF}"
 
 cf service-brokers
-cf create-service-broker jxaas admin admin ${JXAAS_URL_CF}
+cf create-service-broker jxaas-mysql admin admin ${JXAAS_URL_CF}
 cf service-brokers
 ```
 
