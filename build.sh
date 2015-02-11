@@ -23,12 +23,6 @@ if [[ ! -d ${GOPATH}/src/launchpad.net/goose/ ]]; then
   popd
 fi
 
-# Download, but do not install, the latest code (to seed godeps)
-go get -d -u -v github.com/jxaas/jxaas
-
-# Install some dependencies (these are otherwise missed?)
-#go get -d github.com/mattbaird/elastigo
-
 # Install the correct versions of dependencies
 ${GOBIN}/godeps -u dependencies.tsv 
 
