@@ -6,7 +6,6 @@ import (
 	"github.com/justinsb/gova/log"
 
 	"github.com/jxaas/jxaas/auth"
-	"github.com/jxaas/jxaas/bundletype"
 	"github.com/jxaas/jxaas/core"
 )
 
@@ -52,32 +51,4 @@ func (self *CfHelper) mapCfServiceIdToBundleTypeId(cfServiceId string) string {
 
 	return cfServiceId[len(prefix):]
 
-}
-
-func (self *CfHelper) getInstance(serviceId string, instanceId string) (bundletype.BundleType, *core.Instance) {
-	huddle := self.Huddle
-
-	bundleType := self.getBundleType(serviceId)
-	if bundleType == nil {
-		log.Warn("Bundle type not found: %v", serviceId)
-		return nil, nil
-	}
-
-	instanceId = strings.Replace(instanceId, "-", "", -1)
-
-	tenantId := self.TenantIdMap.TenantId
-	instance := huddle.NewInstance(tenantId, bundleType, instanceId)
-	return bundleType, instance
-}
-
-func (self *CfHelper) getBundleType(serviceId string) bundletype.BundleType {
-	huddle := self.Huddle
-
-	bundleTypeId := self.mapCfServiceIdToBundleTypeId(serviceId)
-	if bundleTypeId == "" {
-		return nil
-	}
-
-	bundleType := huddle.System.GetBundleType(bundleTypeId)
-	return bundleType
 }

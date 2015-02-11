@@ -10,6 +10,10 @@ func (self *EndpointServiceBindings) getHelper() *CfHelper {
 	return self.Parent.getHelper()
 }
 
+func (self *EndpointServiceBindings) getService() *EndpointCfService {
+	return self.Parent.getService()
+}
+
 func (self *EndpointServiceBindings) getInstanceId() string {
 	return self.Parent.getInstanceId()
 }

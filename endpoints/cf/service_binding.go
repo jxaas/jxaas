@@ -17,14 +17,23 @@ func (self *EndpointServiceBinding) getHelper() *CfHelper {
 	return self.Parent.getHelper()
 }
 
+func (self *EndpointServiceBinding) getService() *EndpointCfService {
+	return self.Parent.getService()
+}
+
 func (self *EndpointServiceBinding) getInstanceId() string {
 	return self.Parent.getInstanceId()
 }
 
 func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpResponse, error) {
-	helper := self.getHelper()
+	service := self.getService()
 
-	bundleType, instance := helper.getInstance(request.ServiceId, self.getInstanceId())
+	if request.ServiceId != service.CfServiceId {
+		log.Warn("service mismatch: %v vs %v", request.ServiceId, service.CfServiceId)
+		return nil, rs.ErrNotFound()
+	}
+
+	bundleType, instance := service.getInstance(self.getInstanceId())
 	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
 	}
@@ -69,13 +78,19 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpRes
 }
 
 func (self *EndpointServiceBinding) HttpDelete(httpRequest *http.Request) (*CfUnbindResponse, error) {
-	helper := self.getHelper()
+	service := self.getService()
 
 	queryValues := httpRequest.URL.Query()
 	serviceId := queryValues.Get("service_id")
+	
+	if serviceId != service.CfServiceId {
+		log.Warn("service mismatch: %v vs %v", serviceId, service.CfServiceId)
+		return nil, rs.ErrNotFound()
+	}
+	
 	//	planId := queryValues.Get("plan_id")
 
-	bundleType, instance := helper.getInstance(serviceId, self.getInstanceId())
+	bundleType, instance := service.getInstance(self.getInstanceId())
 	if instance == nil || bundleType == nil {
 		return nil, rs.ErrNotFound()
 	}

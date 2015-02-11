@@ -12,8 +12,14 @@ func (self *EndpointCatalog) getHelper() *CfHelper {
 	return self.Parent.getHelper()
 }
 
+func (self *EndpointCatalog) getService() *EndpointCfService {
+	return self.Parent.getService()
+}
+
 func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 	helper := self.getHelper()
+	service := self.getService()
+	
 	huddle := helper.getHuddle()
 	bundles := huddle.System.ListBundleTypes()
 
@@ -21,15 +27,19 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 	model.Services = []*CatalogModelService{}
 
 	for _, bundle := range bundles.Bundles {
-		service := &CatalogModelService{}
+		serviceModel := &CatalogModelService{}
 
-		service.Id = helper.mapBundleTypeIdToCfServiceId(bundle.Id)
-		service.Name = bundle.Name
-		service.Description = bundle.Name + " service"
-		service.Bindable = true
-		service.Tags = []string{}
+		if bundle.Id != service.BundleId {
+			continue
+		}
+
+		serviceModel.Id = helper.mapBundleTypeIdToCfServiceId(bundle.Id)
+		serviceModel.Name = bundle.Name
+		serviceModel.Description = bundle.Name + " service"
+		serviceModel.Bindable = true
+		serviceModel.Tags = []string{}
 		//	Metadata    map[string]string
-		service.Requires = []string{}
+		serviceModel.Requires = []string{}
 
 		bundleType := huddle.System.GetBundleType(bundle.Id)
 
@@ -39,18 +49,18 @@ func (self *EndpointCatalog) HttpGet() (*CatalogModel, error) {
 			return nil, err
 		}
 
-		service.Plans = []*CatalogModelPlan{}
+		serviceModel.Plans = []*CatalogModelPlan{}
 		for _, cfPlan := range cfPlans {
 			plan := &CatalogModelPlan{}
-			plan.Id = service.Id + "::" + cfPlan.Key
+			plan.Id = serviceModel.Id + "::" + cfPlan.Key
 			plan.Name = cfPlan.Key
 			plan.Description = cfPlan.Key + " plan"
 			//	Metadata        map[string]string
 			//	Free            bool
 			//	DashboardClient *CatalogModelDashboard
-			service.Plans = append(service.Plans, plan)
+			serviceModel.Plans = append(serviceModel.Plans, plan)
 		}
-		model.Services = append(model.Services, service)
+		model.Services = append(model.Services, serviceModel)
 	}
 
 	return model, nil
