@@ -1,5 +1,5 @@
-github.com/coreos/go-etcd	git	6aa2da5a7a905609c93036b9307185a04a5a84a5	2014-12-31T03:30:01Z
-github.com/justinsb/gova	git	e8d4e1a98e7b8ce6112217eed694b6261ac71884	2014-11-24T00:28:15Z
+github.com/coreos/go-etcd	git	6aa2da5a7a905609c93036b9307185a04a5a84a5
+github.com/justinsb/gova	git	e8d4e1a98e7b8ce6112217eed694b6261ac71884
 
 
 code.google.com/p/go.crypto	hg	5478be1963aafa9025e9bf0837aff6013eb92e5b	199
