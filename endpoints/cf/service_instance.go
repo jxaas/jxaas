@@ -95,7 +95,9 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 	response.LastOperation = &CfOperation{}
 	response.LastOperation.State = CF_STATE_IN_PROGRESS
 
-	httpResponse := &rs.HttpResponse{Status: http.StatusCreated}
+	log.Info("Sending response to CF service create", log.AsJson(response))
+
+	httpResponse := &rs.HttpResponse{Status: http.StatusAccepted}
 	httpResponse.Content = response
 	return httpResponse, nil
 }
@@ -140,6 +142,9 @@ func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
 	} else {
 		response.LastOperation.State = CF_STATE_IN_PROGRESS
 	}
+
+	log.Info("Sending response to CF service get", log.AsJson(response))
+
 	httpResponse := &rs.HttpResponse{Status: http.StatusOK}
 	httpResponse.Content = response
 	return httpResponse, nil
