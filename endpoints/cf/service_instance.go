@@ -93,8 +93,8 @@ func (self *EndpointServiceInstance) HttpPut(request *CfCreateInstanceRequest) (
 	// TODO: We need a dashboard URL - maybe a Juju GUI?
 	response.DashboardUrl = "http://localhost:8080"
 	response.State = CF_STATE_IN_PROGRESS
-	//	response.LastOperation = &CfOperation{}
-	//	response.LastOperation.State = CF_STATE_IN_PROGRESS
+	response.LastOperation = &CfOperation{}
+	response.LastOperation.State = CF_STATE_IN_PROGRESS
 
 	log.Info("Sending response to CF service create", log.AsJson(response))
 
@@ -144,8 +144,8 @@ func (self *EndpointServiceInstance) HttpGet() (*rs.HttpResponse, error) {
 		cfState = CF_STATE_IN_PROGRESS
 	}
 	response.State = cfState
-	//	response.LastOperation = &CfOperation{}
-	//	response.LastOperation.State = cfState
+	response.LastOperation = &CfOperation{}
+	response.LastOperation.State = cfState
 
 	log.Info("Sending response to CF service get", log.AsJson(response))
 
@@ -192,9 +192,9 @@ type CfCreateInstanceRequest struct {
 }
 
 type CfCreateInstanceResponse struct {
-	DashboardUrl string `json:"dashboard_url"`
-	State        string `json:"state"`
-	//LastOperation *CfOperation `json:"last_operation"`
+	DashboardUrl  string       `json:"dashboard_url"`
+	State         string       `json:"state"`
+	LastOperation *CfOperation `json:"last_operation"`
 }
 
 type CfOperation struct {
