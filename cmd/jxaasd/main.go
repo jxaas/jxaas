@@ -173,7 +173,7 @@ func main() {
 	}
 
 	{
-		bundle, err := bundletype.LoadFromStore(bundleStore, "elasticsearch")
+		bundle, err := bundletype.LoadFromStore(bundleStore, "es")
 		if err != nil {
 			log.Fatal("Error building elasticsearch bundle", err)
 			os.Exit(1)
