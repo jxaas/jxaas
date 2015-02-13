@@ -19,7 +19,7 @@ func NewGenericBundleType(key string, bundleTemplate *bundle.BundleTemplate) (*G
 	return self, nil
 }
 
-func buildGenericFromStore(bundleStore *bundle.BundleStore, key string) (*GenericBundleType, error) {
+func LoadFromStore(bundleStore *bundle.BundleStore, key string) (*GenericBundleType, error) {
 	bundleTemplate, err := bundleStore.GetBundleTemplate(key)
 	if err != nil {
 		return nil, err

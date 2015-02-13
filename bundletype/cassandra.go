@@ -2,6 +2,7 @@ package bundletype
 
 import "github.com/jxaas/jxaas/bundle"
 
+// Simple example ... we could override methods in BundleType
 func NewCassandraBundleType(bundleStore *bundle.BundleStore) (*GenericBundleType, error) {
-	return buildGenericFromStore(bundleStore, "cassandra")
+	return LoadFromStore(bundleStore, "cassandra")
 }

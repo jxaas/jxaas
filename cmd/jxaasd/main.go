@@ -142,9 +142,11 @@ func main() {
 
 	system := core.NewSystem()
 
+	// This sadly doesn't work, because it is very difficult to download a charm :-(
 	//	system.AddJxaasCharm(apiclient, "mongo", "cs:~justin-fathomdb/trusty/mongodb")
+
 	{
-		bundle, err := bundletype.NewMongodbBundleType(bundleStore)
+		bundle, err := bundletype.LoadFromStore(bundleStore, "mongodb")
 		if err != nil {
 			log.Fatal("Error building mongodb bundle", err)
 			os.Exit(1)
@@ -153,7 +155,7 @@ func main() {
 	}
 
 	{
-		bundle, err := bundletype.NewMysqlBundleType(bundleStore)
+		bundle, err := bundletype.LoadFromStore(bundleStore, "mysql")
 		if err != nil {
 			log.Fatal("Error building mysql bundle", err)
 			os.Exit(1)
@@ -162,7 +164,7 @@ func main() {
 	}
 
 	{
-		bundle, err := bundletype.NewMultitenantMysqlBundleType(bundleStore)
+		bundle, err := bundletype.LoadFromStore(bundleStore, "multimysql")
 		if err != nil {
 			log.Fatal("Error building multi-mysql bundle", err)
 			os.Exit(1)
@@ -171,7 +173,7 @@ func main() {
 	}
 
 	{
-		bundle, err := bundletype.NewElasticsearchBundleType(bundleStore)
+		bundle, err := bundletype.LoadFromStore(bundleStore, "elasticsearch")
 		if err != nil {
 			log.Fatal("Error building elasticsearch bundle", err)
 			os.Exit(1)
@@ -180,7 +182,7 @@ func main() {
 	}
 
 	{
-		bundle, err := bundletype.NewPgBundleType(bundleStore)
+		bundle, err := bundletype.LoadFromStore(bundleStore, "pg")
 		if err != nil {
 			log.Fatal("Error building postgres bundle", err)
 			os.Exit(1)
