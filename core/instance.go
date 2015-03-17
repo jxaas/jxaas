@@ -2,6 +2,7 @@ package core
 
 import (
 	"encoding/json"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -1011,6 +1012,11 @@ func (self *Instance) RunScaling(changeScale bool) (*model.Scaling, error) {
 			log.Warn("Error changing scale", err)
 			return nil, err
 		}
+	}
+
+	if math.IsNaN(float64(health.MetricCurrent)) {
+		// Avoid error when golang tries to convert NaN to JSON (!)
+		health.MetricCurrent = 0
 	}
 
 	return health, nil
