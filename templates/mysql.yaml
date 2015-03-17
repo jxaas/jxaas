@@ -44,10 +44,10 @@ relations:
   - - "metrics:juju-info"
     - "mysql:juju-info"
   - - "metrics:elasticsearch"
-    - "{{.SystemServices.elasticsearch}}:cluster"
+    - "{{.SystemServices.jx-elasticsearch}}:cluster"
 
   - - "sc:website"
-    - "{{.SystemServices.haproxy}}:reverseproxy"
+    - "{{.SystemServices.jx-haproxy}}:reverseproxy"
 
 checks:
   service-mysql:

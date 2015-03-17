@@ -143,7 +143,7 @@ func contains(s []int, e int) bool {
 
 // Returns the IP address of the proxy
 func (self *Huddle) getProxyHost() (string, error) {
-	proxyServiceKey := "haproxy"
+	proxyServiceKey := "jx-haproxy"
 	proxyService := self.SharedServices[proxyServiceKey]
 	if proxyService == nil {
 		log.Warn("Unable to find proxy service: %v", proxyServiceKey)

@@ -27,7 +27,7 @@ func (self *Instance) readMetrics(jujuUnitNames []string, metricId string) (*mod
 
 	huddle := instance.huddle
 
-	es := huddle.SharedServices["elasticsearch"]
+	es := huddle.SharedServices["jx-elasticsearch"]
 	if es == nil {
 		return nil, rs.ErrNotFound()
 	}
@@ -190,7 +190,7 @@ func (self *Instance) GetAllMetrics() (*model.Metrics, error) {
 
 	jujuUnitName := self.jujuPrefix + "metrics"
 
-	es := huddle.SharedServices["elasticsearch"]
+	es := huddle.SharedServices["jx-elasticsearch"]
 	if es == nil {
 		return nil, rs.ErrNotFound()
 	}

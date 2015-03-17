@@ -1,16 +1,16 @@
 services:
-  elasticsearch:
+  jx-elasticsearch:
     charm: "cs:~justin-fathomdb/trusty/elasticsearch"
     exposed: true
-  kibana:
+  jx-kibana:
     charm: "cs:~justin-fathomdb/trusty/kibana"
-  mysql:
+  jx-mysql:
     charm: "cs:~justin-fathomdb/trusty/mysql"
     options:
       dataset-size: 256M
-  haproxy:
+  jx-haproxy:
     charm: "cs:~justin-fathomdb/trusty/haproxy"
     exposed: true
 relations:
-  - - "kibana"
-    - "elasticsearch:rest"
+  - - "jx-kibana"
+    - "jx-elasticsearch:rest"

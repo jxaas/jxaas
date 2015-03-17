@@ -18,7 +18,7 @@ relations:
   - - "metrics:juju-info"
     - "mongodb:juju-info"
   - - "metrics:elasticsearch"
-    - "{{.SystemServices.elasticsearch}}:cluster"
+    - "{{.SystemServices.jx-elasticsearch}}:cluster"
 
 checks:
   service-mongodb:
