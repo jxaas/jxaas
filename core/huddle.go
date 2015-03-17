@@ -55,7 +55,7 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 		return nil, nil
 	}
 
-	info, err := systemBundle.Deploy(jujuApi)
+	info, err := systemBundle.Deploy("jx-", jujuApi)
 	if err != nil {
 		log.Warn("Error deploying system bundle", err)
 		return nil, err

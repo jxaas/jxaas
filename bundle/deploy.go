@@ -40,14 +40,14 @@ func makeConfigYaml(serviceName string, config map[string]string) (string, error
 	return string(bytes), nil
 }
 
-func (self *Bundle) Deploy(apiclient *juju.Client) (*DeployInfo, error) {
+func (self *Bundle) Deploy(jujuPrefix string, apiclient *juju.Client) (*DeployInfo, error) {
 	log.Debug("Deploying bundle: %v", self)
 
 	info := &DeployInfo{}
 	info.Services = map[string]*DeployServiceInfo{}
 
 	for key, service := range self.Services {
-		serviceInfo, err := service.deploy(key, apiclient)
+		serviceInfo, err := service.deploy(jujuPrefix + key, apiclient)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +55,11 @@ func (self *Bundle) Deploy(apiclient *juju.Client) (*DeployInfo, error) {
 	}
 
 	for _, relation := range self.Relations {
-		err := relation.deploy(apiclient)
+		prefixed := &RelationConfig{}
+		prefixed.From = jujuPrefix + relation.From
+		prefixed.To = jujuPrefix + relation.To
+
+		err := prefixed.deploy(apiclient)
 		if err != nil {
 			return nil, err
 		}

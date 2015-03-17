@@ -715,7 +715,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 		return rs.ErrNotFound()
 	}
 
-	_, err = b.Deploy(jujuClient)
+	_, err = b.Deploy("", jujuClient)
 	if err != nil {
 		return err
 	}
