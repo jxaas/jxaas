@@ -28,7 +28,7 @@ type Huddle struct {
 	PrivateUrl string
 
 	System         *System
-	SharedServices map[string]*SharedService
+	SystemServices map[string]*SystemService
 
 	JujuClient *juju.Client
 
@@ -63,24 +63,24 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 
 	huddle := &Huddle{}
 	huddle.PrivateUrl = privateUrl
-	huddle.SharedServices = map[string]*SharedService{}
+	huddle.SystemServices = map[string]*SystemService{}
 	huddle.assignedPublicPorts = map[string]int{}
 
 	for key, service := range info.Services {
-		sharedService := &SharedService{}
-		sharedService.JujuName = key
-		sharedService.Key = key
+		systemService := &SystemService{}
+		systemService.JujuName = "jx-" + key
+		systemService.Key = key
 
 		status := service.Status
 		if status != nil {
 			for _, unit := range status.Units {
 				if unit.PublicAddress != "" {
-					sharedService.PublicAddress = unit.PublicAddress
+					systemService.PublicAddress = unit.PublicAddress
 				}
 			}
 		}
 
-		huddle.SharedServices[key] = sharedService
+		huddle.SystemServices[key] = systemService
 	}
 
 	huddle.JujuClient = jujuApi
@@ -116,14 +116,14 @@ func (self *Huddle) String() string {
 
 // A Juju service that is used by multiple JXaaS instances
 // Used, for example, for logging/monitoring services.
-type SharedService struct {
+type SystemService struct {
 	Key           string
 	JujuName      string
 	PublicAddress string
 }
 
 // Implement fmt.Stringer
-func (self *SharedService) String() string {
+func (self *SystemService) String() string {
 	return log.AsJson(self)
 }
 
@@ -143,8 +143,8 @@ func contains(s []int, e int) bool {
 
 // Returns the IP address of the proxy
 func (self *Huddle) getProxyHost() (string, error) {
-	proxyServiceKey := "jx-haproxy"
-	proxyService := self.SharedServices[proxyServiceKey]
+	proxyServiceKey := "haproxy"
+	proxyService := self.SystemServices[proxyServiceKey]
 	if proxyService == nil {
 		log.Warn("Unable to find proxy service: %v", proxyServiceKey)
 		return "", errors.New("Unable to find proxy service")

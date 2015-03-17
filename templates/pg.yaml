@@ -22,7 +22,7 @@ relations:
   - - "metrics:juju-info"
     - "pg:juju-info"
   - - "metrics:elasticsearch"
-    - "{{.SystemServices.jx-elasticsearch}}:cluster"
+    - "{{.SystemServices.elasticsearch}}:cluster"
 
 checks:
   service-postgresql:

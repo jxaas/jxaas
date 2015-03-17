@@ -23,7 +23,7 @@ import (
 )
 
 func isHuddleReady(huddle *core.Huddle) bool {
-	for key, service := range huddle.SharedServices {
+	for key, service := range huddle.SystemServices {
 		if service.PublicAddress == "" {
 			log.Info("Service not ready (no public address): %v", key)
 			return false

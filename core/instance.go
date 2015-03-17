@@ -562,7 +562,7 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 
 	context := &bundle.TemplateContext{}
 	context.SystemServices = map[string]string{}
-	for key, service := range huddle.SharedServices {
+	for key, service := range huddle.SystemServices {
 		context.SystemServices[key] = service.JujuName
 	}
 

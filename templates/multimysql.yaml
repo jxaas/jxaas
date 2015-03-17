@@ -13,12 +13,12 @@ services:
 
 relations:
   - - "multimysql:juju-info"
-    - "{{.SystemServices.jx-mysql}}:juju-info"
+    - "{{.SystemServices.mysql}}:juju-info"
   - - "multimysql:mysql"
-    - "{{.SystemServices.jx-mysql}}:db"
+    - "{{.SystemServices.mysql}}:db"
 
   - - "multimysql:website"
-    - "{{.SystemServices.jx-haproxy}}:reverseproxy"
+    - "{{.SystemServices.haproxy}}:reverseproxy"
 
 meta:
   primary-relation-key: mysql

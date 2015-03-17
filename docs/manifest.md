@@ -63,10 +63,10 @@ relations:
   - - "metrics:juju-info"
     - "mysql:juju-info"
   - - "metrics:elasticsearch"
-    - "{{.SystemServices.jx-elasticsearch}}:cluster"
+    - "{{.SystemServices.elasticsearch}}:cluster"
 
   - - "sc:website"
-    - "{{.SystemServices.jx-haproxy}}:reverseproxy"
+    - "{{.SystemServices.haproxy}}:reverseproxy"
 ```
 
 The relations section defines how these Juju services are connected; JXaaS will create the Juju services
