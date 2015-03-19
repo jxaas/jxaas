@@ -307,6 +307,33 @@ func (self *Client) DestroyUnit(serviceId string, unitId int) error {
 	return nil
 }
 
+func (self *Client) PrivateAddress(target string) (string, error) {
+	address, err := self.client.PrivateAddress(target)
+	if err != nil {
+		return "", err
+	}
+
+	return address, nil
+}
+
+func (self *Client) PublicAddress(target string) (string, error) {
+	address, err := self.client.PublicAddress(target)
+	if err != nil {
+		return "", err
+	}
+
+	return address, nil
+}
+
+func (self *Client) EnvironmentInfo() (*api.EnvironmentInfo, error) {
+	info, err := self.client.EnvironmentInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	return info, nil
+}
+
 func (self *Client) Run(serviceId string, unitIds []string, command string, timeout time.Duration) ([]params.RunResult, error) {
 	params := params.RunParams{
 		Commands: command,

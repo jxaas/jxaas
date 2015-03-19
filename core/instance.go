@@ -514,7 +514,7 @@ func (self *Instance) DeleteRelationInfo(unitId string, relationId string) error
 // Retrieve the relation properties.
 // It doesn't seem to be possible to retrieve these direct from Juju,
 // so the stubclient stores them for us.
-func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *model.RelationInfo, error) {
+func (self *Instance) GetRelationInfo(relationKey string, cloudfoundry bool) (*bundle.Bundle, *model.RelationInfo, error) {
 	serviceId := self.primaryServiceId
 
 	// Can we rationalize all this?  We repeat a lot of calls right now...
@@ -532,7 +532,7 @@ func (self *Instance) GetRelationInfo(relationKey string) (*bundle.Bundle, *mode
 	//	log.Debug("relationProperties: %v", relationProperties)
 	//	log.Debug("relationMetadata: %v", relationMetadata)
 
-	context, err := self.buildCurrentTemplateContext(state)
+	context, err := self.buildCurrentTemplateContext(state, cloudfoundry)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -578,7 +578,7 @@ func (self *Instance) buildSkeletonTemplateContext() *bundle.TemplateContext {
 	return context
 }
 
-func (self *Instance) buildCurrentTemplateContext(state *instanceState) (*bundle.TemplateContext, error) {
+func (self *Instance) buildCurrentTemplateContext(state *instanceState, cloudfoundry bool) (*bundle.TemplateContext, error) {
 	var err error
 
 	if state == nil {
@@ -624,10 +624,23 @@ func (self *Instance) buildCurrentTemplateContext(state *instanceState) (*bundle
 				return nil, err
 			}
 
-			proxyHost, err := self.huddle.getProxyHost()
+			proxyHost, err := self.huddle.getProxyHost(false)
 			if err != nil {
 				log.Warn("Error fetching proxy host", err)
 				return nil, err
+			}
+
+			if cloudfoundry && self.huddle.EnvironmentProviderType() == "amazon" {
+				// CloudFoundry prevents apps from accessing private CIDRs (10.x.x.x, 172.16.x.x etc)
+				// This would be OK, because the hostname on EC2 is a DNS name assigned by AWS to the instance
+				// .. except that within AWS, this hostname resolves to an internal IP.
+				// For this special case, we force the extenal IP
+				log.Info("Using external IP for AWS & CloudFoundry")
+				proxyHost, err = self.huddle.getProxyHost(true)
+				if err != nil {
+					log.Warn("Error fetching (external) proxy host", err)
+					return nil, err
+				}
 			}
 
 			context.Proxy = &bundle.ProxySettings{}
@@ -693,7 +706,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 	instanceConfigChanges := request.Options
 
 	// Get the existing configuration
-	context, err := self.buildCurrentTemplateContext(nil)
+	context, err := self.buildCurrentTemplateContext(nil, false)
 	if err != nil {
 		return err
 	}
@@ -736,7 +749,7 @@ func (self *Instance) Configure(request *model.Instance) error {
 }
 
 func (self *Instance) getCurrentBundle(state *instanceState) (*bundle.Bundle, error) {
-	context, err := self.buildCurrentTemplateContext(state)
+	context, err := self.buildCurrentTemplateContext(state, false)
 	if err != nil {
 		return nil, err
 	}

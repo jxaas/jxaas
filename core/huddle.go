@@ -32,6 +32,8 @@ type Huddle struct {
 
 	JujuClient *juju.Client
 
+	environmentProviderType string
+
 	// A lock for operations that aren't concurrent-safe
 	mutex sync.Mutex
 
@@ -43,6 +45,21 @@ type Huddle struct {
 
 func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Client, privateUrl string) (*Huddle, error) {
 	key := "shared"
+
+	huddle := &Huddle{}
+	environmentInfo, err := jujuApi.EnvironmentInfo()
+	if err != nil {
+		log.Warn("Error reading juju environment info", err)
+		return nil, err
+	}
+	if environmentInfo == nil {
+		return nil, fmt.Errorf("No juju environment info found")
+	}
+
+	huddle.environmentProviderType = environmentInfo.ProviderType
+	if huddle.environmentProviderType == "" {
+		return nil, fmt.Errorf("Juju environment info invalid: no ProviderType")
+	}
 
 	systemBundle, err := bundleStore.GetSystemBundle(key)
 	if err != nil {
@@ -61,7 +78,6 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 		return nil, err
 	}
 
-	huddle := &Huddle{}
 	huddle.PrivateUrl = privateUrl
 	huddle.SystemServices = map[string]*SystemService{}
 	huddle.assignedPublicPorts = map[string]int{}
@@ -77,6 +93,25 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 				if unit.PublicAddress != "" {
 					systemService.PublicAddress = unit.PublicAddress
 				}
+
+				externalAddress := ""
+				if unit.Machine != "" {
+					externalAddress, err = jujuApi.PublicAddress(unit.Machine)
+					if err != nil {
+						log.Warn("Error getting public address for machine", err)
+						return nil, err
+					} else if externalAddress != "" {
+						log.Info("Chose public address for machine: %v", externalAddress)
+					} else {
+						log.Warn("Got empty public address for machine: %v", unit.Machine)
+					}
+				}
+
+				if externalAddress == "" {
+					log.Warn("Unable to get external address for machine %v, falling back to public address %v", unit.Machine, systemService.PublicAddress)
+					externalAddress = systemService.PublicAddress
+				}
+				systemService.ExternalAddress = externalAddress
 			}
 		}
 
@@ -120,6 +155,12 @@ type SystemService struct {
 	Key           string
 	JujuName      string
 	PublicAddress string
+
+	// On EC2, PublicAddress is a magic AWS hostname that resolves to an external IP outside AWS,
+	// and an internal IP inside AWS.
+	// That is normally a good thing, but this interferes with CloudFoundry, which blocks internal CIDRs.
+	// For CF, we sometimes need to force use of the external IP.
+	ExternalAddress string
 }
 
 // Implement fmt.Stringer
@@ -132,6 +173,12 @@ func (self *Huddle) GetPrivateUrl() string {
 	return self.PrivateUrl
 }
 
+// Returns the configured environment (cloud provider)
+// e.g. amazon
+func (self *Huddle) EnvironmentProviderType() string {
+	return self.environmentProviderType
+}
+
 func contains(s []int, e int) bool {
 	for _, a := range s {
 		if a == e {
@@ -142,7 +189,7 @@ func contains(s []int, e int) bool {
 }
 
 // Returns the IP address of the proxy
-func (self *Huddle) getProxyHost() (string, error) {
+func (self *Huddle) getProxyHost(forceExternal bool) (string, error) {
 	proxyServiceKey := "haproxy"
 	proxyService := self.SystemServices[proxyServiceKey]
 	if proxyService == nil {
@@ -150,7 +197,11 @@ func (self *Huddle) getProxyHost() (string, error) {
 		return "", errors.New("Unable to find proxy service")
 	}
 
-	return proxyService.PublicAddress, nil
+	if forceExternal {
+		return proxyService.ExternalAddress, nil
+	} else {
+		return proxyService.PublicAddress, nil
+	}
 }
 
 // Assigns a public port to the serviceId

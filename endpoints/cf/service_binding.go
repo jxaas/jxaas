@@ -50,7 +50,7 @@ func (self *EndpointServiceBinding) HttpPut(request *CfBindRequest) (*rs.HttpRes
 	}
 
 	relationKey := bundleType.PrimaryRelationKey()
-	_, relationInfo, err := instance.GetRelationInfo(relationKey)
+	_, relationInfo, err := instance.GetRelationInfo(relationKey, true)
 	if err != nil {
 		return nil, err
 	}
