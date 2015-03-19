@@ -60,6 +60,7 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 	if huddle.environmentProviderType == "" {
 		return nil, fmt.Errorf("Juju environment info invalid: no ProviderType")
 	}
+	log.Info("Juju environment ProviderType is '%v'", huddle.environmentProviderType)
 
 	systemBundle, err := bundleStore.GetSystemBundle(key)
 	if err != nil {
@@ -119,8 +120,7 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 							}
 						}
 
-						log.Info("Chose public address for machine: %v", externalAddress)
-
+						log.Info("Chose public address for machine: '%v'", externalAddress)
 					} else {
 						log.Warn("Got empty public address for machine: %v", unit.Machine)
 					}
