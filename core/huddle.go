@@ -102,7 +102,7 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 						log.Warn("Error getting public address for machine", err)
 						return nil, err
 					} else if externalAddress != "" {
-						if huddle.environmentProviderType == "amazon" {
+						if huddle.IsAmazon() {
 							// Amazon has a special DNS name: ec2-54-172-123-123.compute-1.amazonaws.com
 							// Externally that resolves to 54.172.123.123 (i.e. the value embedded in the name)
 							// Internally (inside EC2) that resolves to the internal IP (172.16.x.x)
@@ -196,6 +196,10 @@ func (self *Huddle) GetPrivateUrl() string {
 // e.g. amazon
 func (self *Huddle) EnvironmentProviderType() string {
 	return self.environmentProviderType
+}
+
+func (self *Huddle) IsAmazon() bool {
+	return self.environmentProviderType == "ec2"
 }
 
 func contains(s []int, e int) bool {

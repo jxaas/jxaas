@@ -630,7 +630,7 @@ func (self *Instance) buildCurrentTemplateContext(state *instanceState, cloudfou
 				return nil, err
 			}
 
-			if cloudfoundry && self.huddle.EnvironmentProviderType() == "amazon" {
+			if cloudfoundry && self.huddle.IsAmazon() {
 				// CloudFoundry prevents apps from accessing private CIDRs (10.x.x.x, 172.16.x.x etc)
 				// This would be OK, because the hostname on EC2 is a DNS name assigned by AWS to the instance
 				// .. except that within AWS, this hostname resolves to an internal IP.
