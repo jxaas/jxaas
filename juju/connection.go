@@ -319,6 +319,11 @@ func (self *Client) PrivateAddress(target string) (string, error) {
 func (self *Client) PublicAddress(target string) (string, error) {
 	address, err := self.client.PublicAddress(target)
 	if err != nil {
+		// TODO: Fix this hack (juju should expose an error code)
+		message := err.Error()
+		if strings.Contains(message, "has no public address") {
+			return "", nil
+		}
 		return "", err
 	}
 
