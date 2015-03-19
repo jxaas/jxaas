@@ -47,7 +47,7 @@ func (self *Bundle) Deploy(jujuPrefix string, apiclient *juju.Client) (*DeployIn
 	info.Services = map[string]*DeployServiceInfo{}
 
 	for key, service := range self.Services {
-		serviceInfo, err := service.deploy(jujuPrefix + key, apiclient)
+		serviceInfo, err := service.deploy(jujuPrefix+key, apiclient)
 		if err != nil {
 			return nil, err
 		}
