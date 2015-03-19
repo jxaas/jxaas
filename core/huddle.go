@@ -101,7 +101,26 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 						log.Warn("Error getting public address for machine", err)
 						return nil, err
 					} else if externalAddress != "" {
+						if huddle.environmentProviderType == "amazon" {
+							// Amazon has a special DNS name: ec2-54-172-123-123.compute-1.amazonaws.com
+							// Externally that resolves to 54.172.123.123 (i.e. the value embedded in the name)
+							// Internally (inside EC2) that resolves to the internal IP (172.16.x.x)
+							// We don't want that internal resolution to happen here (this is an _external_ IP)
+							// But we may be within EC2, so we can't simply resolve the name
+							if strings.HasPrefix(externalAddress, "ec2-") && strings.HasSuffix(externalAddress, ".compute-1.amazonaws.com") {
+								ipString := externalAddress[4:]
+								firstDot := strings.IndexRune(ipString, '.')
+								ipString = ipString[:firstDot]
+
+								ipString = strings.Replace(ipString, "-", ".", -1)
+
+								log.Info("Replaced EC2 switching-address '%v' with IP '%v'", externalAddress, ipString)
+								externalAddress = ipString
+							}
+						}
+
 						log.Info("Chose public address for machine: %v", externalAddress)
+
 					} else {
 						log.Warn("Got empty public address for machine: %v", unit.Machine)
 					}
