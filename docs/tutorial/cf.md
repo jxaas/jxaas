@@ -8,7 +8,7 @@ There are two ways to install CloudFoundry - either using a Juju charm, or via t
 
 The Juju charm is much easier!
 
-### The Juju way
+### Installing: The Juju way
 
 Make sure you have Juju running, and it is recommended to use AWS for your cloud provider.  Then:
 
@@ -16,16 +16,17 @@ Make sure you have Juju running, and it is recommended to use AWS for your cloud
 mkdir -p ~/cf/trusty
 cd ~/cf/
 bzr branch lp:~cf-charmers/charms/trusty/cloudfoundry/trunk trusty/cloudfoundry
+cd trusty/cloudfoundry
 ./cfdeploy <cf_admin_password>
 ```
 
-### The BOSH way
+### Installing: The BOSH way
 
 This technique uses the official CloudFoundry installation process, which is a pretty slow process.
 Everything runs inside of VirtualBox.  This downloads a lot of data, needs a lot of disk space, and
 takes a long time.  We're also getting a non-production environment.
 
-The one advantage is that this method seems to work better if you would rather run everything locally instead
+The one advantage is that this method seems to work better if you want to run everything locally, instead
 of using AWS (i.e. if you want a free configuration).
 
 First install virtualbox and vagrant:
