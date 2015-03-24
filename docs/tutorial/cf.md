@@ -4,8 +4,29 @@ JXaaS can provide services directly to CloudFoundry, acting as a service broker.
 
 ## Install CloudFoundry
 
-We're going to install CloudFoundry in a development mode configuration.  CloudFoundry will run inside of VirtualBox.
-This still takes a long time and a lot of resources though!
+There are two ways to install CloudFoundry - either using a Juju charm, or via the BOSH installer.
+
+The Juju charm is much easier!
+
+### The Juju way
+
+Make sure you have Juju running, and it is recommended to use AWS for your cloud provider.  Then:
+
+```
+mkdir -p ~/cf/trusty
+cd ~/cf/
+bzr branch lp:~cf-charmers/charms/trusty/cloudfoundry/trunk trusty/cloudfoundry
+./cfdeploy <cf_admin_password>
+```
+
+### The BOSH way
+
+This technique uses the official CloudFoundry installation process, which is a pretty slow process.
+Everything runs inside of VirtualBox.  This downloads a lot of data, needs a lot of disk space, and
+takes a long time.  We're also getting a non-production environment.
+
+The one advantage is that this method seems to work better if you would rather run everything locally instead
+of using AWS (i.e. if you want a free configuration).
 
 First install virtualbox and vagrant:
 
@@ -79,11 +100,18 @@ sudo dpkg -i /tmp/cf.deb
 rm /tmp/cf.deb
 ```
 
-Finally, you can use CloudFoundry!
+Configure the command line tools:
 
 ```
 cf api --skip-ssl-validation https://api.10.244.0.34.xip.io
 cf auth admin admin
+```
+
+## Use CloudFoundry
+
+Finally, you can use CloudFoundry!
+
+```
 cf create-org me
 cf target -o me
 cf create-space development
@@ -103,26 +131,25 @@ cd spring-music
 ./gradlew assemble
 cf push spring-music -n spring-music
 
-x-www-browser http://spring-music.10.244.0.34.xip.io
+APP_HOST=`cf app spring-music | grep urls | cut -f 2 -d ' '`
+x-www-browser http://${APP_HOST}
 ```
 
 You can see that the app is currently bound to an in-memory data store:
 
 ```
 # Should include 'in-memory', not 'mysql'
-curl http://spring-music.10.244.0.34.xip.io/info | grep memory
+APP_HOST=`cf app spring-music | grep urls | cut -f 2 -d ' '`
+curl http://${APP_HOST}/info | grep memory
 ```
+
+## Use CloudFoundry with JXaaS
 
 Let's have it persist to a MySQL database instead.  And let's create that MySQL database using Juju and JXaas.
 
-First we install Juju & JXaaS (locally):
+First we install JXaaS:
 
 ```
-juju init
-juju switch local
-juju bootstrap
-juju status
-
 juju deploy cs:~justin-fathomdb/trusty/jxaas jxaas
 
 API_SECRET=`grep admin-secret ~/.juju/environments/local.jenv | cut -f 2 -d ':' | tr -d ' '`
@@ -178,7 +205,8 @@ And now the database will be mysql:
 
 ```
 # Should include 'mysql', not 'in-memory':
-curl http://spring-music.10.244.0.34.xip.io/info | grep mysql
+APP_HOST=`cf app spring-music | grep urls | cut -f 2 -d ' '`
+curl http://${APP_HOST}/info | grep mysql
 ```
 
 You can see the configuration:
@@ -189,7 +217,7 @@ cf env spring-music
 
 You can see that the app still works:
 ```
-x-www-browser http://spring-music.10.244.0.34.xip.io
+x-www-browser http://${APP_HOST}
 ```
 
 
