@@ -153,7 +153,7 @@ First we install JXaaS:
 ```
 juju deploy cs:~justin-fathomdb/trusty/jxaas jxaas
 
-API_SECRET=`grep admin-secret ~/.juju/environments/local.jenv | cut -f 2 -d ':' | tr -d ' '`
+API_SECRET=`grep admin-secret ~/.juju/environments/amazon.jenv | cut -f 2 -d ':' | tr -d ' '`
 echo "API_SECRET=${API_SECRET}"
 juju set jxaas api-password=${API_SECRET}
 
