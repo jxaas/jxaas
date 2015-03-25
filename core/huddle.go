@@ -101,8 +101,15 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 					if err != nil {
 						log.Warn("Error getting public address for machine", err)
 						return nil, err
-					} else if externalAddress != "" {
+					} else {
 						if huddle.IsAmazon() {
+							// Work around a problem where we sometimes get an address that is ip-X-X-X-X.ece2.internal
+							// I think this is a Juju bug (?)
+							if (strings.HasSuffix(externalAddress, ".ec2.internal")) {
+								log.Warn("Juju gave invalid PublicAddress: %v", externalAddress)
+								externalAddress = systemService.PublicAddress
+							}
+
 							// Amazon has a special DNS name: ec2-54-172-123-123.compute-1.amazonaws.com
 							// Externally that resolves to 54.172.123.123 (i.e. the value embedded in the name)
 							// Internally (inside EC2) that resolves to the internal IP (172.16.x.x)
@@ -120,9 +127,12 @@ func NewHuddle(system *System, bundleStore *bundle.BundleStore, jujuApi *juju.Cl
 							}
 						}
 
-						log.Info("Chose public address for machine: '%v'", externalAddress)
-					} else {
-						log.Warn("Got empty public address for machine: %v", unit.Machine)
+
+						if externalAddress != "" {
+							log.Info("Chose public address for machine: '%v'", externalAddress)
+						} else {
+							log.Warn("Got empty public address for machine: %v", unit.Machine)
+						}
 					}
 				}
 
